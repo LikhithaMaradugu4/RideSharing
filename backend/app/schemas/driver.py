@@ -26,3 +26,12 @@ class DriverMeResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class TenantResponse(BaseModel):
+    tenant_id: int
+    name: str
+    status: str
+
+    class Config:
+        from_attributes = True

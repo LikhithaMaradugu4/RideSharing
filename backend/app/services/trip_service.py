@@ -20,13 +20,29 @@ class TripService:
         user: AppUser,
         data: RiderRequestTrip
     ):
-        # 1️⃣ Role check
-        if user.role != "RIDER":
+        # 1️⃣ Validate user has active session
+        if not user.is_active:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="Only riders can request trips"
+                detail="User account is not active"
             )
-
+        
+        # Check if user already has an active trip
+        existing_trip = (
+            db.query(Trip)
+            .filter(
+                Trip.rider_id == user.user_id,
+                Trip.status.in_(["REQUESTED", "ACCEPTED", "ARRIVED", "IN_PROGRESS"])
+            )
+            .first()
+        )
+        
+        if existing_trip:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"You already have an active trip (Trip ID: {existing_trip.trip_id})"
+            )
+        
         # 2️⃣ Create trip (REQUESTED)
         trip = Trip(
             rider_id=user.user_id,

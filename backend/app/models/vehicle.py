@@ -7,7 +7,8 @@ class Vehicle(Base, AuditMixin, StatusMixin):
 
     vehicle_id = Column(BigInteger, primary_key=True)
     tenant_id = Column(BigInteger, ForeignKey("tenant.tenant_id"), nullable=False)
-    fleet_id = Column(BigInteger, ForeignKey("fleet.fleet_id"), nullable=False)
+    # Independent drivers may not belong to a fleet, so fleet_id is optional
+    fleet_id = Column(BigInteger, ForeignKey("fleet.fleet_id"), nullable=True)
 
     category = Column(String, ForeignKey("lu_vehicle_category.category_code"), nullable=False)
     registration_no = Column(String(50), unique=True, nullable=False)

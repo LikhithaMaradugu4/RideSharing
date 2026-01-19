@@ -2,12 +2,32 @@ from sqlalchemy.orm import Session
 from fastapi import HTTPException
 from app.models.trips import Trip
 from app.models.dispatch import DispatchAttempt
+from app.models.fleet import DriverProfile
 from datetime import timezone,datetime
 from sqlalchemy import and_
 class DriverTripService:
 
     @staticmethod
     def get_trip_offers(db: Session, driver_id: int):
+        # Check if driver is approved
+        profile = (
+            db.query(DriverProfile)
+            .filter(DriverProfile.driver_id == driver_id)
+            .first()
+        )
+
+        if not profile:
+            raise HTTPException(
+                status_code=404,
+                detail="Driver profile not found"
+            )
+
+        if profile.approval_status != "APPROVED":
+            raise HTTPException(
+                status_code=403,
+                detail="Driver is not approved to accept trips"
+            )
+
         offers = (
             db.query(DispatchAttempt, Trip)
             .join(Trip, Trip.trip_id == DispatchAttempt.trip_id)
@@ -31,6 +51,25 @@ class DriverTripService:
         ]
     @staticmethod
     def accept_trip(db: Session, driver_id: int, trip_id: int):
+        # Check if driver is approved
+        profile = (
+            db.query(DriverProfile)
+            .filter(DriverProfile.driver_id == driver_id)
+            .first()
+        )
+
+        if not profile:
+            raise HTTPException(
+                status_code=404,
+                detail="Driver profile not found"
+            )
+
+        if profile.approval_status != "APPROVED":
+            raise HTTPException(
+                status_code=403,
+                detail="Driver is not approved to accept trips"
+            )
+
         trip = (
             db.query(Trip)
             .filter(

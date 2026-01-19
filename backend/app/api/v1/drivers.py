@@ -3,8 +3,9 @@ from sqlalchemy.orm import Session
 
 from app.core.database import SessionLocal
 from app.api.deps.auth import get_current_user
-from app.schemas.driver import DriverApplyRequest, DriverProfileResponse,DriverMeResponse
+from app.schemas.driver import DriverApplyRequest, DriverProfileResponse, DriverMeResponse, TenantResponse
 from app.services.driver_service import DriverService
+from app.services.tenant_service import TenantService
 from app.models.identity import AppUser
 from app.services.driver_shift_service import DriverShiftService
 from app.schemas.driver_location import DriverLocationUpdateRequest
@@ -21,6 +22,13 @@ def get_db():
 
 
 router = APIRouter(prefix="/drivers", tags=["Drivers"])
+
+@router.get("/tenants", response_model=list[TenantResponse])
+def get_available_tenants(
+    db: Session = Depends(get_db)
+):
+    """Get all available (ACTIVE) tenants for driver application"""
+    return TenantService.get_active_tenants(db)
 
 @router.post(
     "/apply",

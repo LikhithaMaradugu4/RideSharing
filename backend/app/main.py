@@ -4,8 +4,10 @@ from contextlib import asynccontextmanager
 from app.core.database import engine, Base
 from app.api.routers import auth
 from app.api.routers import test_protected
-from app.api.v1 import drivers,tenant_admin,riders,ride_requests,pricing,driver_trips
+from app.api.v1 import drivers,tenant_admin,riders,ride_requests,pricing,driver_trips,trips
 from app.api.v1 import payments
+from fastapi.middleware.cors import CORSMiddleware
+
 
 
 @asynccontextmanager
@@ -14,6 +16,15 @@ async def lifespan(app: FastAPI):
     yield
 
 app = FastAPI(lifespan=lifespan)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],  # React app
+    allow_credentials=True,
+    allow_methods=["*"],  # allows POST, GET, OPTIONS, etc.
+    allow_headers=["*"],  # allows X-Session-ID
+)
+
 
 # 👇 AFTER app is created
 app.include_router(auth.router)
@@ -24,6 +35,7 @@ app.include_router(riders.router)
 app.include_router(ride_requests.router)
 app.include_router(pricing.router)
 app.include_router(driver_trips.router)
+app.include_router(trips.router)
 app.include_router(payments.router)
 
 

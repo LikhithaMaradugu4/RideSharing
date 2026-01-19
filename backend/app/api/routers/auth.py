@@ -24,8 +24,9 @@ def login(data: LoginRequest, db: Session = Depends(get_db)):
     if not user:
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
-    if user.status != "ACTIVE":
-        raise HTTPException(status_code=403, detail="Account inactive")
+    if user.status in ("SUSPENDED", "CLOSED"):
+        raise HTTPException(status_code=403, detail="Account disabled")
+
 
     auth = db.query(UserAuth).filter(UserAuth.user_id == user.user_id).first()
     if not auth or not verify_password(data.password, auth.password_hash):

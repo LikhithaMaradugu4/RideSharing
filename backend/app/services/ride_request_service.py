@@ -1,17 +1,13 @@
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
 from datetime import datetime, timezone
-from sqlalchemy.orm import Session
-
 
 from app.models.trips import RideRequest,Trip
 from app.models.identity import AppUser
 from app.schemas.ride_request import RideRequestCreate
 from app.models.fleet import DriverProfile
 from app.models.operations import DriverShift
-from app.models.operations import DriverShift,DriverLocation,DriverLocationHistory
-from sqlalchemy.orm import Session
-from app.models.operations import DriverShift,DriverLocation,DriverLocationHistory
+from app.models.operations import DriverLocation,DriverLocationHistory
 from app.models.dispatch import DispatchAttempt
 from app.models.core import Tenant
 from app.models.pricing import FareConfig
@@ -27,10 +23,43 @@ class RideRequestService:
         user: AppUser,
         data: RideRequestCreate
     ):
-        if user.role != "RIDER":
+        # 1️⃣ Validate user status
+        if user.status != "ACTIVE":
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="Only riders can create ride requests"
+                detail="User account is not active"
+            )
+        
+        # Check if user already has a pending ride request
+        existing_request = (
+            db.query(RideRequest)
+            .filter(
+                RideRequest.rider_id == user.user_id,
+                RideRequest.status == "REQUESTED"
+            )
+            .first()
+        )
+        
+        if existing_request:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"You already have a pending ride request (Request ID: {existing_request.request_id})"
+            )
+        
+        # Check if user already has an active trip
+        existing_trip = (
+            db.query(Trip)
+            .filter(
+                Trip.rider_id == user.user_id,
+                Trip.status.in_(["REQUESTED", "ACCEPTED", "ARRIVED", "IN_PROGRESS"])
+            )
+            .first()
+        )
+        
+        if existing_trip:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"You already have an active trip (Trip ID: {existing_trip.trip_id})"
             )
 
         request = RideRequest(
@@ -57,6 +86,13 @@ class RideRequestService:
         request_id: int,
         data
     ):
+        # 0️⃣ Validate user status
+        if user.status != "ACTIVE":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="User account is not active"
+            )
+        
         # 1️⃣ Validate ride request
         ride_request = (
             db.query(RideRequest)
