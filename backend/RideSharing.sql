@@ -348,7 +348,7 @@ CREATE TABLE vehicle (
     updated_by BIGINT REFERENCES app_user(user_id),
     updated_on TIMESTAMPTZ
 );
-
+ALTER TABLE vehicle ALTER COLUMN fleet_id DROP NOT NULL;
 CREATE TABLE vehicle_document (
     document_id BIGSERIAL PRIMARY KEY,
     vehicle_id BIGINT NOT NULL REFERENCES vehicle(vehicle_id) ON DELETE CASCADE,
@@ -938,7 +938,7 @@ CREATE TABLE driver_incentive_reward (
 select * from lu_gender;
 
 
-
+select * from tenant;
 INSERT INTO country (
   country_code, name, phone_code, default_timezone, default_currency
 ) VALUES
@@ -987,6 +987,15 @@ select * from lu_tenant_role;
 
 INSERT INTO tenant (name, default_currency, default_timezone, status)
 VALUES ('DemoTenantIndia', 'INR', 'Asia/Kolkata', 'ACTIVE');
+
+INSERT INTO tenant (name, default_currency, default_timezone, status)
+VALUES ('Quick Rides', 'INR', 'Asia/Kolkata', 'ACTIVE');
+INSERT INTO tenant (name, default_currency, default_timezone, status)
+VALUES ('City Taxi', 'INR', 'Asia/Kolkata', 'ACTIVE');
+INSERT INTO tenant (name, default_currency, default_timezone, status)
+VALUES ('Premuim Cabs', 'INR', 'Asia/Kolkata', 'ACTIVE');
+
+select  * from lu_vehicle_category;
 INSERT INTO app_user
 (full_name, email, role, status, country_code, city_id)
 VALUES
@@ -1048,8 +1057,102 @@ VALUES
 INSERT INTO user_auth
 (user_id, password_hash, is_locked, last_password_change)
 VALUES
-(10, '$2b$12$8ffBaRjjS2TDy2fI.Ai57.5MTYe.baeXRw8qF1PjRM2Ju4e8ykF5a', FALSE, now());
+(11, '$2b$12$8ffBaRjjS2TDy2fI.Ai57.5MTYe.baeXRw8qF1PjRM2Ju4e8ykF5a', FALSE, now());
 
 
 select * from app_user;
 select * from user_session;
+select * from ride_request;
+select * from dispatch_attempt;
+select * from user_auth;
+INSERT INTO fare_config (
+  tenant_id,
+  city_id,
+  vehicle_category,
+  base_fare,
+  per_km,
+  per_minute,
+  minimum_fare
+)
+VALUES
+  (1, 1, 'BIKE', 30, 12, 1, 50), 
+  (2, 1, 'AUTO', 20, 8, 1, 40), 
+  (3, 1, 'SEDAN', 50, 15, 2, 80);
+
+select * from ride_request;
+
+truncate table ride_request restart identity cascade; 
+-- 1) Make driver user ACTIVE
+UPDATE app_user SET status = 'ACTIVE' WHERE email IN ('driver@test.com','driverone@test.com');
+
+-- 2) Driver profile (APPROVED) for tenant 1
+INSERT INTO driver_profile (driver_id, tenant_id, driver_type, approval_status, rating)
+VALUES 
+  (4, 1, 'INDEPENDENT', 'APPROVED', 4.9)  -- driver@test.com (user_id=4)
+ON CONFLICT (driver_id) DO NOTHING;
+
+-- 3) Vehicle for tenant 1 (AUTO)
+INSERT INTO vehicle (tenant_id, category, status, registration_no)
+VALUES
+  (1, 1, 'AUTO', 'ACTIVE', 'TS09AB0001')
+ON CONFLICT (registration_no) DO NOTHING;
+
+-- 4) Assign vehicle to driver
+INSERT INTO driver_vehicle_assignment (driver_id, vehicle_id, start_time)
+SELECT 4, v.vehicle_id, NOW()
+FROM vehicle v WHERE v.registration_no = 'TS09AB0001'
+ON CONFLICT DO NOTHING;
+
+-- 5) Start driver shift (must be tenant-aligned)
+INSERT INTO driver_shift (driver_id, tenant_id, status, started_at, last_latitude, last_longitude)
+VALUES (4, 1, 'ACTIVE', NOW(), 12.9700, 77.9800)
+ON CONFLICT (driver_id, tenant_id, started_at) DO NOTHING;
+
+-- Allow only one active (ended_at IS NULL) shift per driver
+CREATE UNIQUE INDEX IF NOT EXISTS uniq_driver_shift_active
+  ON driver_shift(driver_id)
+  WHERE ended_at IS NULL;
+
+  -- 1) Create the unique partial index (if not already)
+CREATE UNIQUE INDEX IF NOT EXISTS uniq_driver_shift_active_idx
+  ON driver_shift(driver_id)
+  WHERE ended_at IS NULL;
+
+-- 2) Attach it as a constraint (run once)
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'uniq_driver_shift_active'
+  ) THEN
+    ALTER TABLE driver_shift
+      ADD CONSTRAINT uniq_driver_shift_active UNIQUE
+      USING INDEX uniq_driver_shift_active_idx;
+  END IF;
+END$$;
+
+ --Insert only if no active shift exists
+INSERT INTO driver_shift (driver_id, tenant_id, status, started_at, last_latitude, last_longitude)
+SELECT 4, 1, 'ACTIVE', NOW(), 12.9700, 77.9800
+WHERE NOT EXISTS (
+  SELECT 1 FROM driver_shift WHERE driver_id = 4 AND ended_at IS NULL
+);
+
+-- Insert an active shift (skip if one already exists)
+INSERT INTO driver_shift (driver_id, tenant_id, status, started_at, last_latitude, last_longitude)
+VALUES (4, 1, 'ACTIVE', NOW(), 12.9700, 77.9800)
+ON CONFLICT ON CONSTRAINT uniq_driver_shift_active DO NOTHING;
+
+-- 6) Set driver live location
+INSERT INTO driver_location (driver_id, latitude, longitude, last_updated)
+VALUES (4, 12.9700, 77.9800, NOW())
+ON CONFLICT (driver_id) DO UPDATE
+  SET latitude = EXCLUDED.latitude,
+      longitude = EXCLUDED.longitude,
+      last_updated = EXCLUDED.last_updated;
+
+-- 7) Fare config for tenant 1, city 1, vehicle AUTO (needed for confirm/pricing)
+INSERT INTO fare_config (tenant_id, city_id, vehicle_category, base_fare, per_km, per_minute, minimum_fare)
+VALUES (1, 1, 'AUTO', 30, 10, 2, 50)
+ON CONFLICT (tenant_id, city_id, vehicle_category) DO NOTHING;
+
+update app_user set status = 'ACTIVE' where user_id in(7,8);
