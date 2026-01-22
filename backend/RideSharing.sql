@@ -143,7 +143,18 @@ CREATE TABLE country (
     updated_by BIGINT,
     updated_on TIMESTAMPTZ
 );
+ALTER TABLE tenant
+ADD COLUMN tenant_code VARCHAR(50);
+UPDATE tenant
+SET tenant_code = 'TENANT_' || tenant_id
+WHERE tenant_code IS NULL;
+ALTER TABLE tenant
+ALTER COLUMN tenant_code SET NOT NULL;
 
+ALTER TABLE tenant
+ADD CONSTRAINT uq_tenant_tenant_code UNIQUE (tenant_code);
+
+select * from tenant;
 CREATE TABLE city (
     city_id BIGSERIAL PRIMARY KEY,
     country_code CHAR(2) NOT NULL REFERENCES country(country_code),
@@ -267,6 +278,9 @@ CREATE TABLE tenant_admin (
 
     UNIQUE (tenant_id, user_id)
 );
+CREATE UNIQUE INDEX uq_tenant_primary_admin
+ON tenant_admin (tenant_id)
+WHERE is_primary = TRUE;
 
 CREATE TABLE tenant_country (
     tenant_id BIGINT NOT NULL REFERENCES tenant(tenant_id),
@@ -305,6 +319,26 @@ CREATE TABLE tenant_tax_rule (
     created_by BIGINT REFERENCES app_user(user_id),
     created_on TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+ALTER TABLE tenant_tax_rule
+ADD COLUMN is_active BOOLEAN DEFAULT TRUE;
+CREATE TABLE tenant_document (
+    tenant_document_id BIGSERIAL PRIMARY KEY,
+
+    tenant_id BIGINT NOT NULL REFERENCES tenant(tenant_id),
+
+    document_type VARCHAR(50) NOT NULL,
+    file_name TEXT NOT NULL,
+    file_url TEXT NOT NULL,
+    file_hash TEXT,
+
+    is_active BOOLEAN DEFAULT TRUE,
+
+    created_by BIGINT REFERENCES app_user(user_id),
+    created_on TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX idx_tenant_document_tenant_id
+ON tenant_document (tenant_id);
+
 
 --------------------------------------------------
 -- DRIVER & FLEET MANAGEMENT
@@ -325,9 +359,6 @@ CREATE TABLE driver_profile (
 );
 ALTER TABLE driver_profile
 ADD COLUMN allowed_vehicle_categories TEXT[] NULL;
-
-
-
 
 
 CREATE TABLE fleet (
@@ -1154,4 +1185,12 @@ VALUES
 
 
 select * from app_user;
-sel
+select * from country;
+select * from user_session;
+select * from app_user;
+select * from driver_profile;
+select * from user_kyc;
+select * from user_kyc;
+select * from user_kyc;
+select * from user_kyc;
+SELECT * FROM fleet;
