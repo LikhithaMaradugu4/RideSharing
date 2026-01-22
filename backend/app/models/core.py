@@ -6,6 +6,7 @@ class Tenant(Base, AuditMixin, StatusMixin):
     __tablename__ = "tenant"
 
     tenant_id = Column(BigInteger, primary_key=True)
+    tenant_code = Column(String(50), unique=True, nullable=False)
     name = Column(String(150), unique=True, nullable=False)
     default_currency = Column(String(3), nullable=False)
     default_timezone = Column(String(50), nullable=False)

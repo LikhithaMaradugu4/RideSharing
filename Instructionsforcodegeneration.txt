@@ -1,0 +1,152 @@
+Context:
+- This is Phase-2 of an existing FastAPI backend.
+- Phase-1 (v1) APIs and patterns MUST NOT be modified.
+- Follow the same API design style, folder structure, and dependency style used in v1.
+- Keep code minimal and readable.
+- Do NOT add new abstractions.
+- Do NOT refactor unrelated code.
+- Do NOT add new documentation files (max one short .md if absolutely needed).
+
+Authentication & Authorization (VERY IMPORTANT):
+There are TWO COMPLETELY DIFFERENT auth systems.
+
+1) User Auth (Rider / Driver / Fleet Owner):
+   - Applies ONLY to /api/v2/*
+   - Uses phone-based OTP + JWT
+   - current_user dependency already exists
+   - JWT auth identifies the user only (identity)
+
+2) Admin Auth (Platform Admin / Tenant Admin):
+   - Applies ONLY to /api/admin/*
+   - Uses email + password + server-side sessions
+   - MUST NOT use OTP, JWT, or Redis
+   - MUST NOT reuse user auth dependencies
+
+NEVER mix admin auth logic with user auth logic.
+Admins do NOT go through onboarding or role selection.
+
+----------------------------------------------------
+
+CORE IDENTITY & ROLE MODEL (LOCKED):
+
+- app_user = identity (created at OTP verification)
+- A user is ALWAYS allowed to be a Rider by default
+- Driver and Fleet Owner are NOT stored as roles in app_user
+- Driver capability = existence of driver_profile
+- Fleet owner capability = existence of fleet record
+- DO NOT create a user_roles table
+- DO NOT use app_user.role for DRIVER / RIDER / FLEET_OWNER
+
+app_user.role is used ONLY for:
+- PLATFORM_ADMIN
+- TENANT_ADMIN
+
+----------------------------------------------------
+
+OTP & USER CREATION RULE (IMPORTANT):
+
+- app_user row is created at OTP verification time
+- Driver/Fleet apply APIs MUST assume app_user already exists
+- Driver/Fleet apply APIs MUST NOT create users
+
+At OTP time, only minimal data is required:
+- phone (E.164 format)
+- country_code (derived from phone)
+- status
+
+User profile details (name, gender, city, etc.) are filled later via profile update APIs.
+
+----------------------------------------------------
+
+FILE & DOCUMENT HANDLING (LOCKED):
+
+- Backend does NOT handle file uploads
+- Backend APIs accept ONLY file URLs
+- File upload & URL generation is handled by frontend or object storage
+- Backend stores URLs and approval state only
+
+Documents:
+- Driver documents → user_kyc
+- Vehicle documents → vehicle_document
+- Fleet documents → fleet_document
+
+----------------------------------------------------
+
+DRIVER APPLY LOGIC (UPDATED & CORRECT):
+
+Task: Implement POST /api/v2/driver/apply
+
+Who can apply:
+- ANY authenticated user (Rider by default)
+- Do NOT check user.role == DRIVER
+- Driver capability is created by this API
+
+Validation rules:
+- If driver_profile already exists → return error
+- All mandatory fields must be present
+- No partial applications allowed
+
+Mandatory inputs:
+- driving_license_number
+- driving_license_url
+- aadhaar_number
+- aadhaar_url
+- passport_photo_url
+- alternate_phone_number
+
+What to do:
+1. Create driver_profile with:
+   - driver_id = current_user.user_id
+   - approval_status = PENDING
+   - alternate_phone_number saved
+   - created_by = current_user.user_id
+
+2. Create user_kyc records:
+   - DRIVING_LICENSE (number + file_url)
+   - AADHAAR (number + file_url)
+   - PHOTO (file_url only)
+   - verification_status = PENDING
+
+3. Commit transaction
+4. Return minimal success response
+
+Rules:
+- Do NOT auto-approve driver
+- Do NOT approve documents here
+- Do NOT expose tenant admin logic
+- Do NOT block dashboard access
+- Approval is handled later by tenant admin APIs
+
+----------------------------------------------------
+
+TENANT ADMIN VISIBILITY & APPROVAL (FOR CONTEXT ONLY):
+
+- Tenant admin will later:
+  - View driver_profile + related user_kyc
+  - Approve or reject driver
+- Approval updates:
+  - driver_profile.approval_status
+  - user_kyc.verification_status
+- Do NOT implement admin approval APIs in this step
+
+----------------------------------------------------
+
+WHAT NOT TO DO (STRICT):
+
+- ❌ Do NOT add user_roles table
+- ❌ Do NOT add DRIVER to app_user.role
+- ❌ Do NOT block dashboard navigation
+- ❌ Do NOT upload files in backend
+- ❌ Do NOT create new tables unless needed
+- ❌ Do NOT mix admin & user auth
+- ❌ Do NOT over-engineer workflows
+
+----------------------------------------------------
+
+GOAL:
+
+Implement a clean, minimal driver application flow that:
+- Matches Phase-2 design
+- Uses existing schema
+- Is easy to extend
+- Matches v1 API style

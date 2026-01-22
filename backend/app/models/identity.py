@@ -59,6 +59,7 @@ class UserKYC(Base, AuditMixin):
 
     document_type = Column(String(50), nullable=False)
     document_number = Column(String(100), nullable=False)
+    file_url = Column(String, nullable=True)
     verification_status = Column(String, ForeignKey("lu_approval_status.status_code"), nullable=False)
 
     verified_by = Column(BigInteger)

@@ -7,7 +7,7 @@ from app.models import AppUser, UserAuth, UserSession
 from app.schemas.auth import LoginRequest, LoginResponse, UserInfo
 from app.utils.security import verify_password, generate_session_id
 
-router = APIRouter(prefix="/auth", tags=["Auth"])
+router = APIRouter(prefix="/auth", tags=["Auth for Admin Login Based on Sessions"])
 
 def get_db():
     db = SessionLocal()

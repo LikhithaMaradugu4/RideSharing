@@ -1,0 +1,298 @@
+from sqlalchemy.orm import Session
+from fastapi import HTTPException, status
+from typing import List
+
+from app.models.vehicle import Vehicle, VehicleSpec, VehicleDocument
+from app.models.fleet import Fleet, DriverProfile
+from app.models.identity import AppUser
+from app.schemas.vehicle import (
+    VehicleCreateRequest,
+    VehicleSpecCreateRequest,
+    VehicleDocumentCreateRequest
+)
+
+
+class VehicleService:
+
+    @staticmethod
+    def create_vehicle(
+        db: Session,
+        user: AppUser,
+        data: VehicleCreateRequest
+    ):
+        # 1. Fetch fleet owned by current user
+        fleet = (
+            db.query(Fleet)
+            .filter(Fleet.owner_user_id == user.user_id)
+            .first()
+        )
+
+        if not fleet:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Fleet not found. Apply for fleet first."
+            )
+
+        # 2. Check if fleet is approved
+        if fleet.approval_status != "APPROVED":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Fleet is not approved yet"
+            )
+
+        # 3. INDIVIDUAL fleet type validation
+        if fleet.fleet_type == "INDIVIDUAL":
+            driver_profile = (
+                db.query(DriverProfile)
+                .filter(DriverProfile.driver_id == user.user_id)
+                .first()
+            )
+
+            if not driver_profile:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Driver profile not found"
+                )
+
+            if driver_profile.approval_status != "APPROVED":
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Driver profile is not approved yet"
+                )
+
+            if not driver_profile.allowed_vehicle_categories:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="No vehicle categories allowed for this driver"
+                )
+
+            if data.category not in driver_profile.allowed_vehicle_categories:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail=f"Category {data.category} not allowed for this driver"
+                )
+
+        # 4. Validate documents before creating vehicle
+        ALLOWED_DOCUMENT_TYPES = {"RC", "INSURANCE", "PERMIT", "FITNESS", "VEHICLE_PHOTO"}
+        
+        if not data.documents:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Vehicle documents are required"
+            )
+        
+        doc_types_provided = [doc.document_type for doc in data.documents]
+        
+        # Check for unknown document types
+        unknown_types = set(doc_types_provided) - ALLOWED_DOCUMENT_TYPES
+        if unknown_types:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Unknown document types: {', '.join(unknown_types)}"
+            )
+        
+        # Enforce mandatory documents
+        has_rc = "RC" in doc_types_provided
+        has_insurance = "INSURANCE" in doc_types_provided
+        has_photo = "VEHICLE_PHOTO" in doc_types_provided
+        
+        if not (has_rc and has_insurance and has_photo):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="RC, Insurance, and at least one vehicle photo are required"
+            )
+
+        # 5. Check registration_no uniqueness
+        existing = (
+            db.query(Vehicle)
+            .filter(Vehicle.registration_no == data.registration_no)
+            .first()
+        )
+
+        if existing:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Registration number already exists"
+            )
+
+        # 6. Create vehicle
+        vehicle = Vehicle(
+            tenant_id=fleet.tenant_id,
+            fleet_id=fleet.fleet_id,
+            category=data.category,
+            registration_no=data.registration_no,
+            status="ACTIVE",
+            created_by=user.user_id
+        )
+
+        db.add(vehicle)
+        db.flush()
+
+        # 7. Insert vehicle documents (only after validation)
+        vehicle_docs = [
+            VehicleDocument(
+                vehicle_id=vehicle.vehicle_id,
+                document_type=doc.document_type,
+                file_url=doc.file_url,
+                verification_status="PENDING",
+                created_by=user.user_id
+            )
+            for doc in data.documents
+        ]
+        
+        db.add_all(vehicle_docs)
+        db.commit()
+        db.refresh(vehicle)
+
+        return vehicle
+
+    @staticmethod
+    def get_my_vehicles(db: Session, user: AppUser):
+        # Fetch user's fleet
+        fleet = (
+            db.query(Fleet)
+            .filter(Fleet.owner_user_id == user.user_id)
+            .first()
+        )
+
+        if not fleet:
+            return []
+
+        # Return all vehicles in the fleet
+        vehicles = (
+            db.query(Vehicle)
+            .filter(Vehicle.fleet_id == fleet.fleet_id)
+            .all()
+        )
+
+        return vehicles
+
+    @staticmethod
+    def _verify_vehicle_ownership(db: Session, user: AppUser, vehicle_id: int) -> Vehicle:
+        """Helper method to verify vehicle belongs to user's fleet"""
+        # Get user's fleet
+        fleet = (
+            db.query(Fleet)
+            .filter(Fleet.owner_user_id == user.user_id)
+            .first()
+        )
+
+        if not fleet:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Fleet not found"
+            )
+
+        # Get vehicle
+        vehicle = (
+            db.query(Vehicle)
+            .filter(Vehicle.vehicle_id == vehicle_id)
+            .first()
+        )
+
+        if not vehicle:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Vehicle not found"
+            )
+
+        # Check ownership
+        if vehicle.fleet_id != fleet.fleet_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Vehicle does not belong to your fleet"
+            )
+
+        return vehicle
+
+    @staticmethod
+    def create_vehicle_spec(
+        db: Session,
+        user: AppUser,
+        vehicle_id: int,
+        data: VehicleSpecCreateRequest
+    ):
+        # Verify ownership
+        vehicle = VehicleService._verify_vehicle_ownership(db, user, vehicle_id)
+
+        # Check if spec already exists
+        existing_spec = (
+            db.query(VehicleSpec)
+            .filter(VehicleSpec.vehicle_id == vehicle_id)
+            .first()
+        )
+
+        if existing_spec:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Vehicle spec already exists"
+            )
+
+        # Create spec
+        spec = VehicleSpec(
+            vehicle_id=vehicle_id,
+            manufacturer=data.manufacturer,
+            model_name=data.model_name,
+            manufacture_year=data.manufacture_year,
+            fuel_type=data.fuel_type,
+            seating_capacity=data.seating_capacity,
+            created_by=user.user_id
+        )
+
+        db.add(spec)
+        db.commit()
+        db.refresh(spec)
+
+        return spec
+
+    @staticmethod
+    def create_vehicle_document(
+        db: Session,
+        user: AppUser,
+        vehicle_id: int,
+        data: VehicleDocumentCreateRequest
+    ):
+        # Verify ownership
+        vehicle = VehicleService._verify_vehicle_ownership(db, user, vehicle_id)
+
+        # Create document
+        document = VehicleDocument(
+            vehicle_id=vehicle_id,
+            document_type=data.document_type,
+            file_url=data.file_url,
+            verification_status="PENDING",
+            created_by=user.user_id
+        )
+
+        db.add(document)
+        db.commit()
+        db.refresh(document)
+
+        return document
+
+    @staticmethod
+    def upload_vehicle_photos(
+        db: Session,
+        user: AppUser,
+        vehicle_id: int,
+        photo_urls: List[str]
+    ):
+        # Verify ownership
+        vehicle = VehicleService._verify_vehicle_ownership(db, user, vehicle_id)
+
+        # Create document for each photo
+        documents = []
+        for photo_url in photo_urls:
+            document = VehicleDocument(
+                vehicle_id=vehicle_id,
+                document_type="VEHICLE_PHOTO",
+                file_url=photo_url,
+                verification_status="PENDING",
+                created_by=user.user_id
+            )
+            documents.append(document)
+
+        db.add_all(documents)
+        db.commit()
+
+        return documents

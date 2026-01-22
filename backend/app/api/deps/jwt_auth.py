@@ -38,7 +38,7 @@ async def get_current_user(
     jti = user_data.get("jti")
     if jti:
         jwt_store = JWTStore()
-        if jwt_store.is_token_blacklisted(jti):
+        if jwt_store.is_access_token_blacklisted(jti):
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Token has been revoked",

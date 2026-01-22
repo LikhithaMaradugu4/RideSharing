@@ -6,10 +6,10 @@ OTP-based login with access + refresh tokens
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 import random
-from datetime import datetime, timezone
+from typing import Optional
 
 from app.core.database import SessionLocal
-from app.models import AppUser
+from app.models import AppUser, Country
 from app.schemas.jwt_auth import (
     SendOTPRequest,
     SendOTPResponse,
@@ -41,11 +41,26 @@ def get_db():
         db.close()
 
 
+def _resolve_country_code(db: Session, phone: str) -> Optional[str]:
+    """Find a country_code whose phone_code prefixes the given phone number."""
+    digits = phone.lstrip("+")
+    countries = db.query(Country).all()
+    matches = [
+        country for country in countries 
+        if digits.startswith(country.phone_code.lstrip("+"))
+    ]
+
+    if not matches:
+        return None
+
+    # Prefer the longest phone_code match to handle overlapping prefixes
+    return max(matches, key=lambda c: len(c.phone_code.lstrip("+"))).country_code
+
+
 @router.post("/send-otp", response_model=SendOTPResponse)
 def send_otp(data: SendOTPRequest, db: Session = Depends(get_db)):
-    
     phone = data.phone_number
-    
+
     # Check if phone is locked out
     if OTPStore.is_locked_out(phone):
         remaining_time = OTPStore.get_remaining_lockout_time(phone)
@@ -53,31 +68,39 @@ def send_otp(data: SendOTPRequest, db: Session = Depends(get_db)):
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
             detail=f"Too many attempts. Try again in {remaining_time} seconds"
         )
-    
-    # Verify phone number exists
+
+    # Ensure app_user exists (first-time numbers get created here)
     user = db.query(AppUser).filter(AppUser.phone == phone).first()
     if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Phone number not registered"
+        country_code = _resolve_country_code(db, phone)
+        if not country_code:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Unable to derive country from phone number"
+            )
+
+        placeholder_name = f"User {phone[-4:]}" if len(phone) >= 4 else "User"
+        user = AppUser(
+            full_name=placeholder_name,
+            phone=phone,
+            country_code=country_code,
+            role="RIDER",
+            status="ACTIVE"
         )
-    
-    # Check user status
-    if user.status in ("SUSPENDED", "CLOSED"):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Account is not active"
-        )
-    
+
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+
     # Generate 6-digit OTP
     otp_code = f"{random.randint(100000, 999999)}"
-    
+
     # Store in Redis
     OTPStore.store_otp(phone, otp_code)
-    
+
     # In production: Send via SMS gateway
     print(f"[DEV MODE] OTP for {phone}: {otp_code}")
-    
+
     return SendOTPResponse(
         message="OTP sent successfully",
         phone_number=phone
@@ -88,7 +111,7 @@ def send_otp(data: SendOTPRequest, db: Session = Depends(get_db)):
 def verify_otp(data: VerifyOTPRequest, db: Session = Depends(get_db)):
     phone = data.phone_number
     otp_code = data.otp_code
-    
+
     # Check lockout
     if OTPStore.is_locked_out(phone):
         remaining_time = OTPStore.get_remaining_lockout_time(phone)
@@ -96,7 +119,7 @@ def verify_otp(data: VerifyOTPRequest, db: Session = Depends(get_db)):
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
             detail=f"Too many attempts. Try again in {remaining_time} seconds"
         )
-    
+
     # Fetch OTP from Redis
     stored_otp = OTPStore.get_otp(phone)
     if not stored_otp:
@@ -104,46 +127,67 @@ def verify_otp(data: VerifyOTPRequest, db: Session = Depends(get_db)):
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="OTP expired or not found. Request a new one"
         )
-    
+
     # Verify OTP
     if stored_otp != otp_code:
         attempts = OTPStore.increment_attempts(phone)
-        
+
         if attempts >= OTPStore.MAX_ATTEMPTS:
             OTPStore.set_lockout(phone)
             raise HTTPException(
                 status_code=status.HTTP_429_TOO_MANY_REQUESTS,
                 detail="Too many failed attempts. Account locked for 15 minutes"
             )
-        
+
         remaining = OTPStore.MAX_ATTEMPTS - attempts
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=f"Invalid OTP. {remaining} attempts remaining"
         )
-    
+
     # OTP verified successfully - delete it
     OTPStore.delete_otp(phone)
-    
-    # Get user details
-    user = db.query(AppUser).filter(AppUser.phone_number == phone).first()
-    if not user:
+
+    # Get or create user details
+    user = db.query(AppUser).filter(AppUser.phone == phone).first()
+    if user and user.status in ("SUSPENDED", "CLOSED"):
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found"
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Account is not active"
         )
-    
+
+    if not user:
+        country_code = _resolve_country_code(db, phone)
+        if not country_code:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Unable to derive country from phone number"
+            )
+
+        placeholder_name = f"User {phone[-4:]}" if len(phone) >= 4 else "User"
+        user = AppUser(
+            full_name=placeholder_name,
+            phone=phone,
+            country_code=country_code,
+            role="USER",
+            status="ACTIVE"
+        )
+
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+
     # Generate access token
     access_token_data = generate_access_token(
         user_id=user.user_id,
-        phone_number=user.phone_number,
+        phone_number=user.phone,
         role=user.role
     )
     
     # Generate refresh token
     refresh_token_data = generate_refresh_token(
         user_id=user.user_id,
-        phone_number=user.phone_number,
+        phone_number=user.phone,
         role=user.role
     )
     
@@ -151,7 +195,7 @@ def verify_otp(data: VerifyOTPRequest, db: Session = Depends(get_db)):
     JWTStore.store_refresh_token(
         jti=refresh_token_data["jti"],
         user_id=user.user_id,
-        phone_number=user.phone_number,
+        phone_number=user.phone,
         role=user.role,
         ttl=7 * 24 * 60 * 60  # 7 days
     )
@@ -162,7 +206,7 @@ def verify_otp(data: VerifyOTPRequest, db: Session = Depends(get_db)):
         expires_in=15 * 60,  # 15 minutes in seconds
         user={
             "user_id": user.user_id,
-            "phone_number": user.phone_number,
+            "phone_number": user.phone,
             "full_name": user.full_name,
             "role": user.role
         }
@@ -232,22 +276,22 @@ def logout(current_user: dict = Depends(get_current_user)):
     )
 @router.get("/get-otp-dev")
 def get_otp_dev(phone_number: str):
-    
+
     otp = OTPStore.get_otp(phone_number)
-    
+
     if not otp:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="OTP not found or expired"
         )
-    
+
     # Get Redis TTL for this OTP
     from app.core.redis.client import redis_client
     from app.core.redis.keys import OTP_KEY, format_key
-    
-    otp_key = format_key(OTP_KEY, phone=phone)
+
+    otp_key = format_key(OTP_KEY, phone=phone_number)
     remaining_ttl = redis_client.ttl(otp_key)
-    
+
     return {
         "phone_number": phone_number,
         "otp": otp,

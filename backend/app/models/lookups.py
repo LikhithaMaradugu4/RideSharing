@@ -21,6 +21,11 @@ class LuDriverType(Base):
     __tablename__ = "lu_driver_type"
     type_code = Column(String, primary_key=True)
 
+class LuFleetType(Base):
+    __tablename__ = "lu_fleet_type"
+    fleet_type_code = Column(String, primary_key=True)
+    description = Column(String(100), nullable=True)
+
 class LuVehicleCategory(Base):
     __tablename__ = "lu_vehicle_category"
     category_code = Column(String, primary_key=True)
@@ -48,3 +53,8 @@ class LuSettlementStatus(Base):
 class LuCouponType(Base):
     __tablename__ = "lu_coupon_type"
     type_code = Column(String, primary_key=True)
+
+class LuFuelType(Base):
+    __tablename__ = "lu_fuel_type"
+    fuel_code = Column(String(20), primary_key=True)
+    description = Column(String(100), nullable=False)

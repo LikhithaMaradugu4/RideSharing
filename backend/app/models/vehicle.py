@@ -28,6 +28,17 @@ class VehicleDocument(Base, AuditMixin):
     verified_on = Column(TIMESTAMP(timezone=True))
 
 
+class VehicleSpec(Base, AuditMixin):
+    __tablename__ = "vehicle_spec"
+
+    vehicle_id = Column(BigInteger, ForeignKey("vehicle.vehicle_id", ondelete="CASCADE"), primary_key=True)
+    manufacturer = Column(String(100), nullable=False)
+    model_name = Column(String(100), nullable=False)
+    manufacture_year = Column(BigInteger, nullable=False)
+    fuel_type = Column(String(20), ForeignKey("lu_fuel_type.fuel_code"), nullable=False)
+    seating_capacity = Column(BigInteger, nullable=False)
+
+
 class DriverVehicleAssignment(Base, AuditMixin):
     __tablename__ = "driver_vehicle_assignment"
 

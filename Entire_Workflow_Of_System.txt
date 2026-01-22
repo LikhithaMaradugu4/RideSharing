@@ -1,0 +1,323 @@
+COMPLETE SYSTEM WORKFLOW (LOCKED)
+
+This is the final mental model of your platform.
+
+1️⃣ ACTORS IN THE SYSTEM
+👤 Users (OTP-based)
+
+Rider
+
+Driver
+
+Fleet Owner (Business)
+
+🧑‍💼 Admins (Email + Password)
+
+Platform Admin
+
+Tenant Admin
+
+Admins and Users are completely separate flows.
+
+2️⃣ AUTHENTICATION & IDENTITY
+Users
+
+Login via Phone + OTP
+
+On first OTP verification:
+
+app_user row is created (minimal data)
+
+JWT is issued
+
+User is always a Rider by default
+
+Admins
+
+Login via email/password
+
+Session-based auth
+
+No OTP, no JWT, no onboarding
+
+3️⃣ CORE DATA PRINCIPLES (VERY IMPORTANT)
+
+app_user = identity
+
+Roles like Driver / Fleet Owner are capabilities, not flags
+
+Capabilities are inferred by existence of related records
+
+No user_roles table
+
+4️⃣ DRIVER WORKFLOW
+Step 1: Driver Apply
+
+Any logged-in user can apply as driver
+
+driver_profile is created with:
+
+approval_status = PENDING
+
+Driver uploads documents:
+
+Driving License
+
+Aadhaar
+
+Photo
+
+Documents stored in user_kyc
+
+No vehicle categories set yet
+
+Step 2: Tenant Admin Reviews Driver
+
+Tenant admin views:
+
+Driver profile
+
+Uploaded documents
+
+Admin decides:
+
+Approve or Reject driver
+
+On approval:
+
+driver_profile.approval_status = APPROVED
+
+Admin sets allowed_vehicle_categories
+
+e.g. ['BIKE', 'AUTO']
+
+👉 Driver cannot self-declare allowed vehicles
+
+5️⃣ FLEET CONCEPT (CRITICAL DECISION)
+Fleet = Vehicle Ownership Unit
+
+Not necessarily a company.
+
+There are two fleet types:
+
+🚗 INDIVIDUAL Fleet
+
+Represents a single driver’s ownership
+
+Auto-created when driver is approved
+
+fleet_type = INDIVIDUAL
+
+approval_status = APPROVED
+
+No company documents
+
+Used only for that driver’s vehicles
+
+Driver never manually applies for this fleet.
+
+🏢 BUSINESS Fleet
+
+Explicitly created by fleet owners
+
+fleet_type = BUSINESS
+
+Requires company documents (fleet_document)
+
+Approved by tenant admin
+
+Can manage multiple vehicles and drivers
+
+6️⃣ VEHICLE OWNERSHIP (VERY IMPORTANT)
+
+Every vehicle belongs to a fleet
+
+Vehicles NEVER belong directly to drivers
+
+Driver adds vehicles under their INDIVIDUAL fleet
+
+Fleet owners add vehicles under their BUSINESS fleet
+
+This keeps schema clean and scalable.
+
+7️⃣ VEHICLE ADDING RULES
+Common rules
+
+Fleet must exist
+
+Fleet must be APPROVED
+
+Backend resolves fleet automatically (frontend does not pass fleet_id)
+
+🚗 Individual Fleet (Driver)
+
+Driver must be APPROVED
+
+allowed_vehicle_categories must be set
+
+Vehicle category must be allowed by license
+
+❌ Bike license → cannot add Car
+✅ Auto license → can add Auto only
+
+🏢 Business Fleet
+
+No license-category restriction
+
+Vehicle assignment handled later
+
+8️⃣ VEHICLE ONBOARDING FLOW
+
+Vehicle onboarding happens in steps:
+
+Create Vehicle (basic record)
+
+Add Vehicle Specs
+
+Upload Vehicle Documents (RC, Insurance)
+
+Upload Vehicle Photos
+
+All files:
+
+Uploaded by frontend
+
+Backend stores URLs only
+
+9️⃣ DASHBOARD & ACCESS BEHAVIOR
+
+Dashboards are always visible
+
+Actions are gated at API level
+
+Driver Dashboard
+
+Not applied → show “Apply”
+
+Pending → show “Under Review”
+
+Approved → full access
+
+Same pattern for fleet owners.
+
+10️⃣ PROFILE MANAGEMENT
+
+app_user is created at OTP time with minimal data
+
+User completes profile later:
+
+Name
+
+Gender
+
+City
+
+Profile can be updated
+
+Profile cannot be deleted
+
+11️⃣ WHAT ADMINS DO
+Platform Admin
+
+Create tenants
+
+Create tenant admins
+
+View everything
+
+Tenant Admin
+
+Approve drivers
+
+Set allowed vehicle categories
+
+Approve fleets (business)
+
+Review vehicle documents
+
+Admins do not go through user onboarding.
+
+12️⃣ KEY LOCKED DESIGN DECISIONS (READ THIS)
+
+Fleet is an ownership unit, not always a company
+
+Individual drivers get auto-created fleets
+
+Vehicle ownership is always via fleet
+
+Allowed vehicle categories are set by admin, not driver
+
+No role flags for driver/fleet owner in app_user
+
+No user_roles table
+
+Backend never handles file uploads
+
+🧠 ONE-LINE SYSTEM SUMMARY (VERY USEFUL)
+
+Users authenticate via OTP, apply for capabilities, admins approve them, fleetsfleets
+
+IMPORTANT CLARIFICATION – ENTITY CREATION RULES
+
+1. Driver Apply Flow
+- When a user applies as a driver:
+  - ONLY a row is created in `driver_profile`
+  - approval_status = PENDING
+  - NO fleet is created at this stage
+  - allowed_vehicle_categories MUST be NULL
+
+- Driver apply is ONLY an application, not approval.
+
+- Fleet for driver MUST NOT be created during driver apply.
+
+- Fleet creation for driver happens ONLY AFTER tenant admin approval.
+
+
+
+2. Fleet Owner Apply Flow (BUSINESS)
+
+- When a user applies as a fleet owner (business):
+  - ONLY a row is created in the fleet application context
+    (i.e., an unapproved fleet record with approval_status = PENDING)
+  - This represents a fleet owner application, NOT an approved fleet.
+
+- Vehicles MUST NOT be allowed at this stage.
+
+- This row is considered "pending fleet application".
+
+
+
+3. Tenant Admin Approval (VERY IMPORTANT)
+
+- ONLY TENANT ADMIN can approve applications
+- Platform admin MUST NOT approve drivers or fleets
+
+Approval behavior:
+
+A) Driver Approval:
+- Tenant admin approves driver_profile
+- Tenant admin sets allowed_vehicle_categories
+- AFTER approval:
+    → Create a row in `fleet` with:
+       - owner_user_id = driver_id
+       - fleet_type = INDIVIDUAL
+       - approval_status = APPROVED
+- This fleet represents the driver's individual fleet
+
+B) Fleet Owner (Business) Approval:
+- Tenant admin approves the pending fleet
+- Update approval_status = APPROVED
+- fleet_type = BUSINESS
+
+
+
+4. HARD RULES (DO NOT VIOLATE)
+
+- Fleet rows MUST NOT be created at apply time for drivers
+- Fleet rows MUST NOT be auto-created by users
+- Fleet rows MUST be created/approved ONLY by tenant admin action
+- Vehicles can be added ONLY AFTER:
+    - Fleet exists
+    - Fleet.approval_status = APPROVED
+
+Tenant lifecycle is managed OFFLINE and created ONLY by Platform Admin

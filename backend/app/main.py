@@ -6,7 +6,7 @@ from app.api.routers import auth
 from app.api.routers import test_protected
 from app.api.v1 import drivers,tenant_admin,riders,ride_requests,pricing,driver_trips,trips
 from app.api.v1 import payments
-from app.api import v2
+from app.api import v2, admin
 from fastapi.middleware.cors import CORSMiddleware
 
 
@@ -26,10 +26,9 @@ app.add_middleware(
     allow_headers=["*"],  # allows X-Session-ID
 )
 
-
-# 👇 AFTER app is created
+""" # 👇 AFTER app is created
 # Phase-1 routes (session-based auth)
-""" app.include_router(auth.router)
+app.include_router(auth.router)
 app.include_router(test_protected.router)
 app.include_router(drivers.router)
 app.include_router(tenant_admin.router)
@@ -40,8 +39,14 @@ app.include_router(driver_trips.router)
 app.include_router(trips.router)
 app.include_router(payments.router) """
 
+# Phase-1 routes (session-based auth)
+app.include_router(auth.router)
+
 # Phase-2 routes (JWT-based auth)
 app.include_router(v2.router, prefix="/api/v2")
+
+# Admin routes (session-based auth)
+app.include_router(admin.router, prefix="/api/admin")
 
 
 @app.get("/")

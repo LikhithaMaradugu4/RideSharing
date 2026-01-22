@@ -36,3 +36,18 @@ class TenantTaxRule(Base):
     rate = Column(Numeric(5,2), nullable=False)
     effective_from = Column(TIMESTAMP(timezone=True), nullable=False)
     effective_to = Column(TIMESTAMP(timezone=True))
+    is_active = Column(Boolean, default=True)
+
+
+class TenantDocument(Base, AuditMixin):
+    __tablename__ = "tenant_document"
+
+    tenant_document_id = Column(BigInteger, primary_key=True)
+    tenant_id = Column(BigInteger, ForeignKey("tenant.tenant_id"), nullable=False)
+
+    document_type = Column(String(50), nullable=False)
+    file_name = Column(String, nullable=False)
+    file_url = Column(String, nullable=False)
+    file_hash = Column(String, nullable=True)
+
+    is_active = Column(Boolean, default=True)
