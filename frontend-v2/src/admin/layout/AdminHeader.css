@@ -1,0 +1,45 @@
+.admin-header {
+  background-color: white;
+  border-bottom: 1px solid #e0e0e0;
+  padding: 0 30px;
+  height: 70px;
+  display: flex;
+  align-items: center;
+}
+
+.admin-header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.admin-header-title {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.admin-header-user {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.admin-user-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.admin-user-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.admin-user-email {
+  font-size: 12px;
+  color: #7f8c8d;
+}

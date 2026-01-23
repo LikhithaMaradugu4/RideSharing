@@ -1,7 +1,125 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
 from typing import List, Optional
 from datetime import datetime
 
+
+# ============================================
+# ADMIN AUTHENTICATION SCHEMAS
+# ============================================
+
+class AdminLoginRequest(BaseModel):
+    email: EmailStr
+    password: str
+
+
+class AdminLoginResponse(BaseModel):
+    message: str
+    admin_type: str  # PLATFORM or TENANT
+    full_name: str
+    email: str
+    tenant_id: Optional[int] = None
+
+
+class AdminMeResponse(BaseModel):
+    user_id: int
+    full_name: str
+    email: str
+    admin_type: str  # PLATFORM or TENANT
+    tenant_id: Optional[int] = None
+
+
+# ============================================
+# TENANT MANAGEMENT SCHEMAS
+# ============================================
+
+class TenantCreateRequest(BaseModel):
+    tenant_name: str
+    default_currency: str
+    default_timezone: str
+
+
+class TenantResponse(BaseModel):
+    tenant_id: int
+    tenant_code: str
+    name: str
+    status: str
+    default_currency: str
+    default_timezone: str
+    created_on: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class TenantListResponse(BaseModel):
+    tenant_id: int
+    name: str
+    tenant_code: str
+    status: str
+    default_currency: str
+    default_timezone: str
+    created_on: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class TenantAdminResponse(BaseModel):
+    tenant_admin_id: int
+    user_id: int
+    email: str
+    full_name: str
+    is_primary: bool
+    created_on: datetime
+
+
+class TenantDetailResponse(BaseModel):
+    tenant_id: int
+    tenant_code: str
+    name: str
+    status: str
+    default_currency: str
+    default_timezone: str
+    created_on: datetime
+    primary_admin: Optional[TenantAdminResponse] = None
+    document_count: int = 0
+
+    class Config:
+        from_attributes = True
+
+
+# ============================================
+# TENANT ADMIN MANAGEMENT SCHEMAS
+# ============================================
+
+class TenantAdminCreateRequest(BaseModel):
+    email: EmailStr
+    full_name: Optional[str] = None
+
+
+# ============================================
+# TENANT DOCUMENT SCHEMAS
+# ============================================
+
+class TenantDocumentResponse(BaseModel):
+    tenant_document_id: int
+    document_type: str
+    file_name: str
+    file_url: str
+    created_on: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class TenantDocumentUploadResponse(BaseModel):
+    tenant_document_id: int
+    message: str
+
+
+# ============================================
+# TENANT ADMIN - DRIVER/FLEET SCHEMAS (EXISTING)
+# ============================================
 
 class PendingDriverResponse(BaseModel):
     driver_id: int

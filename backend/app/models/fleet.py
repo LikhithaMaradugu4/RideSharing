@@ -51,3 +51,10 @@ class FleetDocument(Base, AuditMixin):
     verification_status = Column(String, ForeignKey("lu_approval_status.status_code"), nullable=False)
     verified_by = Column(BigInteger, ForeignKey("app_user.user_id"), nullable=True)
     verified_on = Column(TIMESTAMP(timezone=True), nullable=True)
+
+
+class FleetCity(Base, AuditMixin):
+    __tablename__ = "fleet_city"
+
+    fleet_id = Column(BigInteger, ForeignKey("fleet.fleet_id", ondelete="CASCADE"), primary_key=True)
+    city_id = Column(BigInteger, ForeignKey("city.city_id"), primary_key=True)

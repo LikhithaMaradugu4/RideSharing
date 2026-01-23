@@ -321,3 +321,164 @@ B) Fleet Owner (Business) Approval:
     - Fleet.approval_status = APPROVED
 
 Tenant lifecycle is managed OFFLINE and created ONLY by Platform Admin
+CREATE UNIQUE INDEX uq_driver_one_active_shift
+ON driver_shift (driver_id)
+WHERE ended_at IS NULL;
+
+SYSTEM CONTEXT:
+This module manages REAL-TIME DRIVER AVAILABILITY and SHIFT LIFECYCLE.
+It uses the existing `driver_shift` table.
+This is the final operational layer before dispatch.
+
+------------------------------------------------------------
+
+TABLE SEMANTICS (IMPORTANT):
+
+- driver_work_availability:
+    Planning-level availability (days/weeks)
+    NOT real-time
+    NOT shift
+
+- driver_vehicle_assignment:
+    Active vehicle usage
+    One active row = one vehicle in use
+
+- driver_shift:
+    One row = one ONLINE session
+    started_at = went ONLINE
+    ended_at = went OFFLINE
+    status = ONLINE | BUSY | OFFLINE
+
+- driver_location:
+    Last known GPS position
+
+------------------------------------------------------------
+
+GLOBAL ELIGIBILITY (MUST PASS ALL):
+
+Driver MUST:
+- be authenticated
+- have APPROVED driver_profile
+- have exactly ONE ACTIVE fleet association
+- have exactly ONE ACTIVE driver_vehicle_assignment
+- belong to an APPROVED fleet
+- have no ACTIVE shift
+
+If ANY check fails → reject availability actions.
+
+------------------------------------------------------------
+
+START SHIFT (GO ONLINE):
+
+POST /api/v2/driver/availability/online
+
+Preconditions:
+- No active driver_shift (ended_at IS NULL)
+- Active driver_vehicle_assignment exists
+- Vehicle belongs to driver's ACTIVE fleet
+- Vehicle documents are complete
+
+Actions:
+- INSERT into driver_shift:
+    - driver_id
+    - tenant_id (resolved from fleet)
+    - status = 'ONLINE'
+    - started_at = now()
+    - ended_at = NULL
+
+Effects:
+- Driver becomes ONLINE
+- Driver is now dispatchable
+
+Rejections:
+- Active shift already exists
+- Missing assignment
+- Fleet/vehicle mismatch
+
+------------------------------------------------------------
+
+GO OFFLINE (END SHIFT):
+
+POST /api/v2/driver/availability/offline
+
+Preconditions:
+- Active driver_shift exists
+- driver_shift.status != 'BUSY'
+
+Actions:
+- UPDATE driver_shift:
+    - status = 'OFFLINE'
+    - ended_at = now()
+
+Effects:
+- Driver becomes OFFLINE
+- Shift is closed
+- Vehicle assignment remains (until explicitly ended)
+
+------------------------------------------------------------
+
+TRIP STATE INTEGRATION (SYSTEM CONTROLLED):
+
+On TRIP ACCEPT:
+- UPDATE active driver_shift:
+    - status = 'BUSY'
+
+On TRIP COMPLETE or CANCEL:
+- UPDATE active driver_shift:
+    - status = 'ONLINE'
+
+Rules:
+- Driver CANNOT manually change status while BUSY
+- BUSY is system-controlled only
+
+------------------------------------------------------------
+
+END VEHICLE ASSIGNMENT (SHIFT MUST BE OFFLINE):
+
+POST /api/v2/driver/shift/end
+
+Eligibility:
+- Driver OR Fleet Owner
+- Driver must have:
+    - no active shift (OFFLINE)
+    - active driver_vehicle_assignment
+
+Actions:
+- UPDATE driver_vehicle_assignment:
+    - end_time = now()
+
+Effects:
+- Driver has NO active assignment
+- Driver must be reassigned before next shift
+
+------------------------------------------------------------
+
+LOCATION UPDATES:
+
+POST /api/v2/driver/location
+
+Eligibility:
+- Active driver_shift exists
+- status IN ('ONLINE', 'BUSY')
+
+Actions:
+- UPSERT into driver_location
+- INSERT into driver_location_history
+
+------------------------------------------------------------
+
+HARD GUARANTEES (NON-NEGOTIABLE):
+
+- One active shift per driver (DB enforced)
+- One active vehicle assignment per driver (DB enforced)
+- Driver can be ONLINE only with assignment
+- Driver can be BUSY only during trip
+- Backend is the single source of truth
+
+------------------------------------------------------------
+
+MENTAL MODEL (WRITE THIS IN COMMENTS):
+
+"Planning decides WHO can work.
+Assignment decides WHAT they drive.
+Shift decides WHEN they are online."

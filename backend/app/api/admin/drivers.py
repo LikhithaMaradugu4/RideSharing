@@ -14,7 +14,7 @@ from app.schemas.admin import (
 )
 
 
-router = APIRouter(prefix="/drivers", tags=["Admin - Drivers"])
+router = APIRouter(prefix="/drivers", tags=[" Tenant Admin - Drivers"])
 
 
 def get_db():

@@ -1,4 +1,4 @@
-from sqlalchemy import Column, BigInteger, String, ForeignKey, TIMESTAMP
+from sqlalchemy import Column, BigInteger, String, ForeignKey, TIMESTAMP, Date, Boolean, Text
 from .base import Base
 from .mixins import AuditMixin, StatusMixin
 
@@ -48,3 +48,20 @@ class DriverVehicleAssignment(Base, AuditMixin):
 
     start_time = Column(TIMESTAMP(timezone=True), nullable=False)
     end_time = Column(TIMESTAMP(timezone=True))
+
+
+class DriverWorkAvailability(Base, AuditMixin):
+    __tablename__ = "driver_work_availability"
+
+    availability_id = Column(BigInteger, primary_key=True)
+    driver_id = Column(BigInteger, ForeignKey("app_user.user_id", ondelete="CASCADE"), nullable=False)
+    fleet_id = Column(BigInteger, ForeignKey("fleet.fleet_id", ondelete="CASCADE"), nullable=False)
+
+    date = Column(Date, nullable=False)
+    is_available = Column(Boolean, default=True, nullable=False)
+    note = Column(Text, nullable=True)
+
+    created_by = Column(BigInteger, ForeignKey("app_user.user_id"))
+    created_on = Column(TIMESTAMP(timezone=True), nullable=False)
+    updated_by = Column(BigInteger, ForeignKey("app_user.user_id"))
+    updated_on = Column(TIMESTAMP(timezone=True))
