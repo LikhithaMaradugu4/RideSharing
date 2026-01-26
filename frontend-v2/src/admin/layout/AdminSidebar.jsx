@@ -2,7 +2,7 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import adminService from '../../services/admin.service';
 import './AdminSidebar.css';
 
-const AdminSidebar = ({ adminData }) => {
+const AdminSidebar = ({ adminData = {} }) => {
   const navigate = useNavigate();
 
   const handleLogout = async () => {
@@ -20,12 +20,12 @@ const AdminSidebar = ({ adminData }) => {
       <div className="admin-sidebar-header">
         <h2>RideShare Admin</h2>
         <p className="admin-type">
-          {adminData.admin_type === 'PLATFORM' ? 'Platform Admin' : 'Tenant Admin'}
+          {adminData?.admin_type === 'PLATFORM' ? 'Platform Admin' : adminData?.admin_type === 'TENANT' ? 'Tenant Admin' : 'Admin'}
         </p>
       </div>
 
       <nav className="admin-sidebar-nav">
-        {adminData.admin_type === 'PLATFORM' && (
+        {adminData?.admin_type === 'PLATFORM' && (
           <>
             <NavLink 
               to="/admin/platform/tenants" 
@@ -36,13 +36,25 @@ const AdminSidebar = ({ adminData }) => {
           </>
         )}
 
-        {adminData.admin_type === 'TENANT' && (
+        {adminData?.admin_type === 'TENANT' && (
           <>
             <NavLink 
               to="/admin/tenant/dashboard" 
               className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}
             >
               Dashboard
+            </NavLink>
+            <NavLink 
+              to="/admin/tenant/driver-approvals" 
+              className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}
+            >
+              Driver Approvals
+            </NavLink>
+            <NavLink 
+              to="/admin/tenant/fleet-approvals" 
+              className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}
+            >
+              Fleet Approvals
             </NavLink>
             <NavLink 
               to="/admin/tenant/drivers" 

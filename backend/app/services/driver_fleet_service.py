@@ -3,7 +3,7 @@ from typing import List, Optional
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
 
-from app.models.fleet import Fleet, FleetDriver, DriverProfile, FleetCity
+from app.models.fleet import Fleet, FleetDriver, DriverProfile, FleetCity, FleetDriverInvite
 from app.models.vehicle import DriverVehicleAssignment
 from app.models.identity import AppUser
 from app.models.core import City
@@ -97,16 +97,21 @@ class DriverFleetService:
     # ---------------------- Invitations ----------------------
     @staticmethod
     def list_invites(db: Session, user: AppUser):
+        """
+        List all pending invites for the driver.
+        
+        Returns: List of (FleetDriverInvite, Fleet, FleetCity, City) tuples
+        """
         DriverFleetService._get_driver_profile(db, user)
 
         rows = (
-            db.query(FleetDriver, Fleet, FleetCity, City)
-            .join(Fleet, Fleet.fleet_id == FleetDriver.fleet_id)
+            db.query(FleetDriverInvite, Fleet, FleetCity, City)
+            .join(Fleet, Fleet.fleet_id == FleetDriverInvite.fleet_id)
             .join(FleetCity, FleetCity.fleet_id == Fleet.fleet_id)
             .join(City, City.city_id == FleetCity.city_id)
             .filter(
-                FleetDriver.driver_id == user.user_id,
-                FleetDriver.end_date.is_(None),
+                FleetDriverInvite.driver_id == user.user_id,
+                FleetDriverInvite.status == "PENDING",
                 Fleet.fleet_type == "BUSINESS",
                 Fleet.approval_status == "APPROVED"
             )
@@ -116,22 +121,39 @@ class DriverFleetService:
 
     @staticmethod
     def accept_invite(db: Session, user: AppUser, fleet_id: int) -> FleetDriver:
+        """
+        Accept a fleet invite and create active fleet_driver association.
+        
+        Preconditions:
+        - Driver must be APPROVED
+        - Driver must be OFFLINE (no active shift)
+        - Driver must have no active trip (checked via fleet_driver and active shift)
+        - Pending invite exists from this fleet
+        
+        Actions:
+        1. End current fleet_driver row (driver's current INDIVIDUAL fleet)
+        2. End any active vehicle assignment
+        3. Create new fleet_driver row for BUSINESS fleet
+        4. Update invite status to ACCEPTED
+        
+        Returns: FleetDriver (new active association)
+        """
         DriverFleetService._get_driver_profile(db, user)
 
         # Validate invitation exists
         invite = (
-            db.query(FleetDriver)
+            db.query(FleetDriverInvite)
             .filter(
-                FleetDriver.fleet_id == fleet_id,
-                FleetDriver.driver_id == user.user_id,
-                FleetDriver.end_date.is_(None)
+                FleetDriverInvite.fleet_id == fleet_id,
+                FleetDriverInvite.driver_id == user.user_id,
+                FleetDriverInvite.status == "PENDING"
             )
             .first()
         )
         if not invite:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="No active invite found"
+                detail="No pending invite found for this fleet"
             )
 
         # Validate fleet
@@ -142,53 +164,99 @@ class DriverFleetService:
                 detail="Fleet is not eligible"
             )
 
-        # Ensure no other active fleet or vehicle assignment
-        DriverFleetService._ensure_no_active_fleet(db, user.user_id, exclude_fleet_id=fleet_id)
-        DriverFleetService._ensure_no_active_vehicle(db, user.user_id)
+        # Check: Driver is OFFLINE (no active shift)
+        # This assumes driver uses DriverShift model; adapt if using different tracking
+        from app.models.operations import DriverShift
+        active_shift = (
+            db.query(DriverShift)
+            .filter(
+                DriverShift.driver_id == user.user_id,
+                DriverShift.ended_at.is_(None)
+            )
+            .first()
+        )
+        if active_shift:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Driver must be offline to join a fleet. End your shift first."
+            )
 
-        # Accept: ensure start_date set to now (overwrite invite time)
-        invite.start_date = datetime.now(timezone.utc)
-        invite.updated_by = user.user_id
-
-        # End any other associations (safety)
-        other = (
+        # End current active fleet_driver association (INDIVIDUAL fleet)
+        current_fleet_assoc = (
             db.query(FleetDriver)
             .filter(
                 FleetDriver.driver_id == user.user_id,
-                FleetDriver.fleet_id != fleet_id,
                 FleetDriver.end_date.is_(None)
             )
-            .all()
+            .first()
         )
-        now = invite.start_date
-        for assoc in other:
-            assoc.end_date = now
-            assoc.updated_by = user.user_id
+        now = datetime.now(timezone.utc)
+        if current_fleet_assoc:
+            current_fleet_assoc.end_date = now
+            current_fleet_assoc.updated_by = user.user_id
+            current_fleet_assoc.updated_on = now
+
+        # End any active vehicle assignment
+        active_assignment = (
+            db.query(DriverVehicleAssignment)
+            .filter(
+                DriverVehicleAssignment.driver_id == user.user_id,
+                DriverVehicleAssignment.end_time.is_(None)
+            )
+            .first()
+        )
+        if active_assignment:
+            active_assignment.end_time = now
+            active_assignment.updated_by = user.user_id
+            active_assignment.updated_on = now
+
+        # Create new fleet_driver row for BUSINESS fleet
+        new_association = FleetDriver(
+            fleet_id=fleet_id,
+            driver_id=user.user_id,
+            start_date=now,
+            end_date=None,
+            created_by=user.user_id
+        )
+        db.add(new_association)
+
+        # Update invite status
+        invite.status = "ACCEPTED"
+        invite.responded_at = now
+        invite.updated_by = user.user_id
+        invite.updated_on = now
 
         db.commit()
-        db.refresh(invite)
-        return invite
+        db.refresh(new_association)
+
+        return new_association
 
     @staticmethod
     def reject_invite(db: Session, user: AppUser, fleet_id: int):
+        """Reject a fleet invite (soft delete)."""
         DriverFleetService._get_driver_profile(db, user)
 
         invite = (
-            db.query(FleetDriver)
+            db.query(FleetDriverInvite)
             .filter(
-                FleetDriver.fleet_id == fleet_id,
-                FleetDriver.driver_id == user.user_id,
-                FleetDriver.end_date.is_(None)
+                FleetDriverInvite.fleet_id == fleet_id,
+                FleetDriverInvite.driver_id == user.user_id,
+                FleetDriverInvite.status == "PENDING"
             )
             .first()
         )
         if not invite:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="No active invite found"
+                detail="No pending invite found for this fleet"
             )
 
-        # Soft rejection: delete invite to avoid active association
-        db.delete(invite)
+        now = datetime.now(timezone.utc)
+        invite.status = "REJECTED"
+        invite.responded_at = now
+        invite.updated_by = user.user_id
+        invite.updated_on = now
+
         db.commit()
+
         return {"message": "Invite rejected"}

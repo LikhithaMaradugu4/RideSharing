@@ -1,8 +1,9 @@
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
 from typing import List, Optional
+from datetime import datetime, timezone
 
-from app.models.fleet import DriverProfile, Fleet
+from app.models.fleet import DriverProfile, Fleet, FleetDriver
 from app.models.identity import UserKYC
 from app.models.vehicle import Vehicle, VehicleDocument
 from app.models.tenant import TenantAdmin
@@ -57,7 +58,31 @@ class TenantAdminService:
                 detail="Driver is not in pending state"
             )
 
+        # Approve driver profile
         driver.approval_status = "APPROVED"
+        
+        # Auto-create INDIVIDUAL fleet
+        fleet = Fleet(
+            owner_user_id=driver_id,
+            tenant_id=tenant_id,
+            fleet_name=f"Driver {driver_id} Fleet",
+            fleet_type="INDIVIDUAL",
+            approval_status="APPROVED",
+            status="ACTIVE",
+            created_by=user.user_id
+        )
+        db.add(fleet)
+        db.flush()  # Get fleet_id
+        
+        # Create active fleet_driver association
+        fleet_driver = FleetDriver(
+            fleet_id=fleet.fleet_id,
+            driver_id=driver_id,
+            start_date=datetime.now(timezone.utc),
+            end_date=None,
+            created_by=user.user_id
+        )
+        db.add(fleet_driver)
         db.commit()
 
     @staticmethod
@@ -105,6 +130,25 @@ class TenantAdminService:
                 DriverProfile.tenant_id == tenant_id,
                 DriverProfile.approval_status == "PENDING"
             )
+            .all()
+        )
+
+        return drivers
+
+    @staticmethod
+    def get_all_drivers(db: Session, user: AppUser):
+        if user.role != "TENANT_ADMIN":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only tenant admins can view drivers"
+            )
+
+        tenant_id = TenantAdminService._get_admin_tenant(db, user)
+
+        drivers = (
+            db.query(DriverProfile, AppUser)
+            .join(AppUser, DriverProfile.driver_id == AppUser.user_id)
+            .filter(DriverProfile.tenant_id == tenant_id)
             .all()
         )
 
@@ -168,6 +212,17 @@ class TenantAdminService:
         )
 
         db.add(fleet)
+        db.flush()  # Get fleet_id
+        
+        # Create active fleet_driver association
+        fleet_driver = FleetDriver(
+            fleet_id=fleet.fleet_id,
+            driver_id=driver_id,
+            start_date=datetime.now(timezone.utc),
+            end_date=None,
+            created_by=user.user_id
+        )
+        db.add(fleet_driver)
         db.commit()
 
         return driver
@@ -301,6 +356,24 @@ class TenantAdminService:
         return result
 
     @staticmethod
+    def get_all_fleets(db: Session, user: AppUser):
+        if user.role != "TENANT_ADMIN":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only tenant admins can view fleets"
+            )
+
+        tenant_id = TenantAdminService._get_admin_tenant(db, user)
+
+        fleets = (
+            db.query(Fleet)
+            .filter(Fleet.tenant_id == tenant_id)
+            .all()
+        )
+
+        return fleets
+
+    @staticmethod
     def get_driver_documents(db: Session, user: AppUser, driver_id: int):
         if user.role != "TENANT_ADMIN":
             raise HTTPException(
@@ -366,3 +439,74 @@ class TenantAdminService:
         )
 
         return documents
+
+    @staticmethod
+    def get_pending_vehicles(db: Session, user: AppUser):
+        """Get all vehicles pending approval for admin's tenant."""
+        if user.role != "TENANT_ADMIN":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only tenant admins can view pending vehicles"
+            )
+
+        tenant_id = TenantAdminService._get_admin_tenant(db, user)
+
+        vehicles = (
+            db.query(Vehicle)
+            .join(Fleet, Vehicle.fleet_id == Fleet.fleet_id)
+            .filter(
+                Fleet.tenant_id == tenant_id,
+                Vehicle.approval_status == "PENDING"
+            )
+            .order_by(Vehicle.created_on.desc())
+            .all()
+        )
+
+        return vehicles
+
+    @staticmethod
+    def approve_vehicle(
+        db: Session, 
+        user: AppUser, 
+        vehicle_id: int, 
+        approval_status: str,
+        rejection_reason: Optional[str] = None
+    ):
+        """Approve or reject a vehicle."""
+        if user.role != "TENANT_ADMIN":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only tenant admins can approve vehicles"
+            )
+
+        if approval_status not in ["APPROVED", "REJECTED"]:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="approval_status must be APPROVED or REJECTED"
+            )
+
+        tenant_id = TenantAdminService._get_admin_tenant(db, user)
+
+        vehicle = (
+            db.query(Vehicle)
+            .join(Fleet, Vehicle.fleet_id == Fleet.fleet_id)
+            .filter(
+                Vehicle.vehicle_id == vehicle_id,
+                Fleet.tenant_id == tenant_id
+            )
+            .first()
+        )
+
+        if not vehicle:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Vehicle not found for this tenant"
+            )
+
+        vehicle.approval_status = approval_status
+        vehicle.updated_by = user.user_id
+
+        db.commit()
+        db.refresh(vehicle)
+
+        return vehicle

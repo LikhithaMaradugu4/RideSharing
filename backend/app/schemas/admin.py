@@ -129,6 +129,18 @@ class PendingDriverResponse(BaseModel):
     driver_type: str
 
 
+class DriverListResponse(BaseModel):
+    driver_id: int
+    full_name: Optional[str] = None
+    phone: Optional[str] = None
+    approval_status: str
+    allowed_vehicle_categories: Optional[List[str]] = None
+    driver_type: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+
 class DriverApproveRequest(BaseModel):
     allowed_vehicle_categories: List[str]
 
@@ -161,6 +173,17 @@ class PendingFleetResponse(BaseModel):
     documents: List[FleetPendingDocument]
 
 
+class FleetListResponse(BaseModel):
+    fleet_id: int
+    fleet_name: str
+    fleet_type: str
+    approval_status: str
+    status: str
+
+    class Config:
+        from_attributes = True
+
+
 class DriverDocumentResponse(BaseModel):
     document_id: int
     document_type: str
@@ -180,3 +203,29 @@ class VehicleDocumentAdminResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+# ============================================
+# VEHICLE APPROVAL SCHEMAS
+# ============================================
+
+class VehiclePendingApprovalResponse(BaseModel):
+    vehicle_id: int
+    fleet_id: Optional[int]
+    category: str
+    registration_no: str
+    status: str
+    approval_status: str
+    created_on: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class VehicleApprovalRequest(BaseModel):
+    approval_status: str  # APPROVED or REJECTED
+    rejection_reason: Optional[str] = None
+
+
+class VehicleRejectionRequest(BaseModel):
+    rejection_reason: str  # Required for rejection

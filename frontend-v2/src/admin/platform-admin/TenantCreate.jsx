@@ -18,7 +18,8 @@ const TIMEZONES = [
 
 const TenantCreate = () => {
   const [formData, setFormData] = useState({
-    tenant_name: '',
+    name: '',
+    tenant_code: '',
     default_currency: 'USD',
     default_timezone: 'America/New_York'
   });
@@ -39,7 +40,7 @@ const TenantCreate = () => {
     setLoading(true);
 
     try {
-      const response = await adminService.createTenant(formData);
+      const response = await adminService.platformCreateTenant(formData);
       navigate(`/admin/platform/tenants/${response.tenant_id}`);
     } catch (err) {
       setError(err.message || 'Failed to create tenant');
@@ -66,18 +67,33 @@ const TenantCreate = () => {
       <div className="tenant-create-card">
         <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label htmlFor="tenant_name">Tenant Name *</label>
+            <label htmlFor="name">Tenant Name *</label>
             <input
               type="text"
-              id="tenant_name"
-              name="tenant_name"
-              value={formData.tenant_name}
+              id="name"
+              name="name"
+              value={formData.name}
               onChange={handleChange}
               required
               placeholder="Enter tenant name"
               disabled={loading}
             />
             <small className="form-help">This will be the organization name</small>
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="tenant_code">Tenant Code *</label>
+            <input
+              type="text"
+              id="tenant_code"
+              name="tenant_code"
+              value={formData.tenant_code}
+              onChange={handleChange}
+              required
+              placeholder="Unique code (e.g., UBER_IND)"
+              disabled={loading}
+            />
+            <small className="form-help">Unique identifier, uppercase recommended</small>
           </div>
 
           <div className="form-group">

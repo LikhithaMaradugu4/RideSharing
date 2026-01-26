@@ -16,7 +16,7 @@ const TenantsList = () => {
   const loadTenants = async () => {
     try {
       setLoading(true);
-      const data = await adminService.listTenants();
+      const data = await adminService.platformListTenants();
       setTenants(data);
       setError('');
     } catch (err) {
@@ -113,7 +113,7 @@ const TenantsList = () => {
                     </button>
                     <button
                       className="btn-action btn-delete"
-                      onClick={() => handleDelete(tenant.tenant_id, tenant.name)}
+                      onClick={() => navigate(`/admin/platform/tenants/${tenant.tenant_id}`)}
                     >
                       Delete
                     </button>

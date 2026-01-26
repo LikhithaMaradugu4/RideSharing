@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
 
-from app.models.fleet import Fleet, FleetDriver, DriverProfile, FleetCity
+from app.models.fleet import Fleet, FleetDriver, DriverProfile, FleetCity, FleetDriverInvite
 from app.models.vehicle import Vehicle, DriverVehicleAssignment
 from app.models.identity import AppUser
 from app.models.core import City
@@ -94,7 +94,21 @@ class FleetOwnerService:
 
     # ---------------------- Driver Management ----------------------
     @staticmethod
-    def invite_driver(db: Session, user: AppUser, driver_id: int) -> FleetDriver:
+    def invite_driver(db: Session, user: AppUser, driver_id: int) -> FleetDriverInvite:
+        """
+        Invite a driver to join the fleet.
+        
+        Creates a FleetDriverInvite record (invitation pending driver acceptance).
+        Does NOT immediately create fleet_driver association.
+        
+        Preconditions:
+        - Fleet owner must have approved BUSINESS fleet
+        - Driver must be APPROVED
+        - Driver must be in same tenant
+        - Driver must not have another pending invite from this fleet
+        
+        Returns: FleetDriverInvite object
+        """
         fleet = FleetOwnerService._get_owner_fleet(db, user)
 
         # Validate driver profile
@@ -107,24 +121,35 @@ class FleetOwnerService:
                 detail="Driver belongs to a different tenant"
             )
 
-        # Ensure no active fleet or vehicle assignment
-        FleetOwnerService._ensure_no_active_fleet(db, driver_id)
-        FleetOwnerService._ensure_no_active_vehicle_assignment(db, driver_id)
+        # Check for existing pending invite
+        existing = (
+            db.query(FleetDriverInvite)
+            .filter(
+                FleetDriverInvite.fleet_id == fleet.fleet_id,
+                FleetDriverInvite.driver_id == driver_id,
+                FleetDriverInvite.status == "PENDING"
+            )
+            .first()
+        )
+        if existing:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Pending invite already exists for this driver"
+            )
 
-        # Create association (invitation)
-        fleet_driver = FleetDriver(
+        # Create invite
+        invite = FleetDriverInvite(
             fleet_id=fleet.fleet_id,
             driver_id=driver_id,
-            start_date=datetime.now(timezone.utc),
-            end_date=None,
-            created_by=user.user_id
+            status="PENDING",
+            invited_at=datetime.now(timezone.utc)
         )
 
-        db.add(fleet_driver)
+        db.add(invite)
         db.commit()
-        db.refresh(fleet_driver)
+        db.refresh(invite)
 
-        return fleet_driver
+        return invite
 
     @staticmethod
     def list_drivers(db: Session, user: AppUser):

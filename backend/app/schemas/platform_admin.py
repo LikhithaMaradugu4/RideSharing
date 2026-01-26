@@ -38,6 +38,8 @@ class TenantResponse(BaseModel):
     name: str
     tenant_code: str
     status: str
+    default_currency: str
+    default_timezone: str
     created_on: datetime
     
     class Config:

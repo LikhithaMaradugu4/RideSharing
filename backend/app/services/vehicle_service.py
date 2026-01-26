@@ -122,6 +122,7 @@ class VehicleService:
             category=data.category,
             registration_no=data.registration_no,
             status="ACTIVE",
+            approval_status="PENDING",
             created_by=user.user_id
         )
 
@@ -169,20 +170,13 @@ class VehicleService:
 
     @staticmethod
     def _verify_vehicle_ownership(db: Session, user: AppUser, vehicle_id: int) -> Vehicle:
-        """Helper method to verify vehicle belongs to user's fleet"""
-        # Get user's fleet
-        fleet = (
-            db.query(Fleet)
-            .filter(Fleet.owner_user_id == user.user_id)
-            .first()
-        )
-
-        if not fleet:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Fleet not found"
-            )
-
+        """
+        Verify vehicle management permissions.
+        
+        Rules:
+        - Fleet owners can manage vehicles in BUSINESS fleets
+        - Drivers can manage vehicles in their INDIVIDUAL fleet only
+        """
         # Get vehicle
         vehicle = (
             db.query(Vehicle)
@@ -196,11 +190,34 @@ class VehicleService:
                 detail="Vehicle not found"
             )
 
-        # Check ownership
-        if vehicle.fleet_id != fleet.fleet_id:
+        # Get the fleet that owns this vehicle
+        fleet = (
+            db.query(Fleet)
+            .filter(Fleet.fleet_id == vehicle.fleet_id)
+            .first()
+        )
+
+        if not fleet:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Fleet not found"
+            )
+
+        # Check permissions:
+        # 1. User is fleet owner (can manage any vehicles in their fleet)
+        is_owner = fleet.owner_user_id == user.user_id
+        
+        # 2. User is managing their own INDIVIDUAL fleet
+        is_own_individual_fleet = (
+            fleet.fleet_type == "INDIVIDUAL" and 
+            fleet.owner_user_id == user.user_id
+        )
+
+        if not (is_owner or is_own_individual_fleet):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="Vehicle does not belong to your fleet"
+                detail="You can only manage vehicles in your own fleet. "
+                       "Drivers cannot add vehicles to BUSINESS fleets."
             )
 
         return vehicle

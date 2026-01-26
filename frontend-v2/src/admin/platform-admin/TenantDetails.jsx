@@ -17,7 +17,8 @@ const TenantDetails = () => {
   const loadTenantDetails = async () => {
     try {
       setLoading(true);
-      const data = await adminService.getTenantDetails(tenantId);
+      const data = await adminService.platformGetTenantDetails(tenantId);
+      console.log('Tenant Details Response:', data);
       setTenant(data);
       setError('');
     } catch (err) {
@@ -27,18 +28,7 @@ const TenantDetails = () => {
     }
   };
 
-  const handleDelete = async () => {
-    if (!window.confirm(`Are you sure you want to delete tenant "${tenant.name}"?`)) {
-      return;
-    }
-
-    try {
-      await adminService.deleteTenant(tenantId);
-      navigate('/admin/platform/tenants');
-    } catch (err) {
-      alert(err.message || 'Failed to delete tenant');
-    }
-  };
+  // Status updates and admin assignment handled via respective screens
 
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleString('en-US', {
@@ -97,11 +87,15 @@ const TenantDetails = () => {
             </div>
             <div className="info-item">
               <span className="info-label">Default Currency</span>
-              <span className="info-value">{tenant.default_currency}</span>
+              <span className="info-value" style={{color: '#2c3e50', fontWeight: '500'}}>
+                {tenant.default_currency || 'N/A'}
+              </span>
             </div>
             <div className="info-item">
               <span className="info-label">Default Timezone</span>
-              <span className="info-value">{tenant.default_timezone}</span>
+              <span className="info-value" style={{color: '#2c3e50', fontWeight: '500'}}>
+                {tenant.default_timezone || 'N/A'}
+              </span>
             </div>
             <div className="info-item">
               <span className="info-label">Created On</span>
@@ -183,18 +177,7 @@ const TenantDetails = () => {
         </div>
       </div>
 
-      {/* Actions Card */}
-      <div className="actions-card">
-        <h2>Actions</h2>
-        <div className="action-buttons">
-          <button
-            className="btn-danger"
-            onClick={handleDelete}
-          >
-            Delete Tenant
-          </button>
-        </div>
-      </div>
+
     </div>
   );
 };

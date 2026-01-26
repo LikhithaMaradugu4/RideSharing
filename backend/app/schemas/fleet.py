@@ -160,7 +160,7 @@ class DriverWorkAvailabilityRequest(BaseModel):
 
 
 class DriverWorkAvailabilityResponse(BaseModel):
-    availability_id: int
+    id: int
     driver_id: int
     fleet_id: int
     date: date

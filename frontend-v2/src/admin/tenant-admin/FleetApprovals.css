@@ -1,0 +1,166 @@
+.fleet-approvals {
+  padding: 2rem;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.fleet-approvals h1 {
+  color: #333;
+  margin-bottom: 2rem;
+}
+
+.error {
+  background-color: #fee;
+  color: #c33;
+  padding: 1rem;
+  border-radius: 4px;
+  margin-bottom: 2rem;
+}
+
+.no-data {
+  text-align: center;
+  color: #999;
+  padding: 2rem;
+  font-size: 1.1rem;
+}
+
+.loading {
+  text-align: center;
+  padding: 2rem;
+  color: #666;
+}
+
+.fleets-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.fleet-card {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  overflow: hidden;
+  transition: box-shadow 0.2s;
+}
+
+.fleet-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.fleet-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem;
+  background-color: #f9f9f9;
+  cursor: pointer;
+  user-select: none;
+}
+
+.fleet-info h3 {
+  margin: 0 0 0.5rem 0;
+  color: #333;
+  font-size: 1.1rem;
+}
+
+.fleet-info p {
+  margin: 0.25rem 0;
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.toggle-icon {
+  font-size: 1.2rem;
+  color: #999;
+}
+
+.fleet-details {
+  padding: 2rem;
+  border-top: 1px solid #eee;
+  background-color: #fafafa;
+}
+
+.documents-section h4 {
+  color: #333;
+  margin: 0 0 1rem 0;
+}
+
+.documents-section ul {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 2rem 0;
+}
+
+.documents-section li {
+  padding: 0.75rem;
+  background-color: #fff;
+  border: 1px solid #eee;
+  border-radius: 4px;
+  margin-bottom: 0.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.documents-section strong {
+  color: #333;
+}
+
+.status {
+  font-size: 0.85rem;
+  padding: 0.25rem 0.75rem;
+  background-color: #fff3cd;
+  color: #856404;
+  border-radius: 3px;
+  margin: 0 0.5rem;
+}
+
+.documents-section a {
+  color: #0084ff;
+  text-decoration: none;
+  font-size: 0.9rem;
+  margin-left: auto;
+}
+
+.documents-section a:hover {
+  text-decoration: underline;
+}
+
+.actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+  margin-top: 2rem;
+  padding-top: 2rem;
+  border-top: 1px solid #eee;
+}
+
+.btn-approve {
+  padding: 0.75rem 1.5rem;
+  background-color: #28a745;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+
+.btn-approve:hover {
+  background-color: #218838;
+}
+
+.btn-reject {
+  padding: 0.75rem 1.5rem;
+  background-color: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+
+.btn-reject:hover {
+  background-color: #c82333;
+}

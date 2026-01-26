@@ -1,0 +1,90 @@
+.drivers-list-view {
+  padding: 2rem;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.drivers-list-view h1 {
+  color: #333;
+  margin-bottom: 2rem;
+}
+
+.error {
+  background-color: #fee;
+  color: #c33;
+  padding: 1rem;
+  border-radius: 4px;
+  margin-bottom: 2rem;
+}
+
+.no-data {
+  text-align: center;
+  color: #999;
+  padding: 2rem;
+  font-size: 1.1rem;
+}
+
+.loading {
+  text-align: center;
+  padding: 2rem;
+  color: #666;
+}
+
+.drivers-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.driver-card {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  overflow: hidden;
+  transition: box-shadow 0.2s;
+}
+
+.driver-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.driver-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem;
+  background-color: #f9f9f9;
+  cursor: pointer;
+  user-select: none;
+}
+
+.driver-info h3 {
+  margin: 0 0 0.5rem 0;
+  color: #333;
+  font-size: 1.1rem;
+}
+
+.driver-info p {
+  margin: 0.25rem 0;
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.toggle-icon {
+  font-size: 1.2rem;
+  color: #999;
+}
+
+.driver-details {
+  padding: 2rem;
+  border-top: 1px solid #eee;
+  background-color: #fafafa;
+}
+
+.driver-details p {
+  margin: 0.5rem 0;
+  color: #333;
+}
+
+.driver-details strong {
+  color: #333;
+}

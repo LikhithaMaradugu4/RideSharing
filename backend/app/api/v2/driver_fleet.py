@@ -72,6 +72,7 @@ def list_fleet_invites(
     db: Session = Depends(get_db),
     current_user: dict = Depends(get_current_user)
 ):
+    """List all pending fleet invites for the driver."""
     user_id = current_user.get("user_id")
     user = db.query(AppUser).filter(AppUser.user_id == user_id).first()
     if not user:
@@ -81,7 +82,7 @@ def list_fleet_invites(
 
     invites = []
     seen = set()
-    for assoc, fleet, _, city in rows:
+    for invite, fleet, _, city in rows:
         if fleet.fleet_id in seen:
             continue
         seen.add(fleet.fleet_id)
@@ -91,7 +92,7 @@ def list_fleet_invites(
                 fleet_name=fleet.fleet_name,
                 city_id=city.city_id,
                 city_name=city.name,
-                invited_at=assoc.start_date,
+                invited_at=invite.invited_at,
                 contact_phone=None,
                 address=None
             )
@@ -152,7 +153,7 @@ def declare_work_availability(
         note=request.note
     )
 
-    return DriverWorkAvailabilityResponse.from_attributes(record)
+    return DriverWorkAvailabilityResponse.model_validate(record)
 
 
 @router.get("/driver/work-availability", response_model=DriverAvailabilityListResponse)

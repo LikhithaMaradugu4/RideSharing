@@ -3,7 +3,7 @@ Phase-2 API v2 router initialization
 """
 
 from fastapi import APIRouter
-from app.api.v2 import auth, test, me, driver, profile, fleet, vehicles, platform_admin, driver_fleet, driver_shift, dispatch
+from app.api.v2 import auth, test, me, driver, profile, fleet, vehicles, platform_admin, driver_fleet, driver_shift, dispatch, tenant_admin
 
 router = APIRouter()
 
@@ -19,4 +19,5 @@ router.include_router(profile.router)
 router.include_router(fleet.router)
 router.include_router(vehicles.router)
 router.include_router(platform_admin.router)
+router.include_router(tenant_admin.router)
 

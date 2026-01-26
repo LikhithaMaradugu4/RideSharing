@@ -3,14 +3,14 @@ from sqlalchemy.orm import Session
 from typing import List
 
 from app.core.database import SessionLocal
-from app.api.deps.auth import get_current_user
+from app.api.admin.auth import get_admin_session
 from app.services.tenant_admin_service import TenantAdminService
-from app.models.identity import AppUser
 from app.schemas.admin import (
     PendingDriverResponse,
     DriverApproveRequest,
     DriverRejectRequest,
-    DriverDocumentResponse
+    DriverDocumentResponse,
+    DriverListResponse
 )
 
 
@@ -28,8 +28,9 @@ def get_db():
 @router.get("/pending", response_model=List[PendingDriverResponse])
 def get_pending_drivers(
     db: Session = Depends(get_db),
-    current_user: AppUser = Depends(get_current_user)
+    admin_data: dict = Depends(get_admin_session)
 ):
+    current_user = admin_data["user"]
     drivers = TenantAdminService.get_pending_drivers(db, current_user)
 
     return [
@@ -49,8 +50,9 @@ def approve_driver(
     driver_id: int,
     data: DriverApproveRequest,
     db: Session = Depends(get_db),
-    current_user: AppUser = Depends(get_current_user)
+    admin_data: dict = Depends(get_admin_session)
 ):
+    current_user = admin_data["user"]
     TenantAdminService.approve_driver_with_fleet(
         db=db,
         user=current_user,
@@ -69,8 +71,9 @@ def reject_driver(
     driver_id: int,
     data: DriverRejectRequest,
     db: Session = Depends(get_db),
-    current_user: AppUser = Depends(get_current_user)
+    admin_data: dict = Depends(get_admin_session)
 ):
+    current_user = admin_data["user"]
     TenantAdminService.reject_driver_with_reason(
         db=db,
         user=current_user,
@@ -88,8 +91,9 @@ def reject_driver(
 def get_driver_documents(
     driver_id: int,
     db: Session = Depends(get_db),
-    current_user: AppUser = Depends(get_current_user)
+    admin_data: dict = Depends(get_admin_session)
 ):
+    current_user = admin_data["user"]
     documents = TenantAdminService.get_driver_documents(db, current_user, driver_id)
 
     return [
@@ -101,4 +105,25 @@ def get_driver_documents(
             verification_status=doc.verification_status
         )
         for doc in documents
+    ]
+
+
+@router.get("", response_model=List[DriverListResponse])
+def get_all_drivers(
+    db: Session = Depends(get_db),
+    admin_data: dict = Depends(get_admin_session)
+):
+    current_user = admin_data["user"]
+    drivers = TenantAdminService.get_all_drivers(db, current_user)
+
+    return [
+        DriverListResponse(
+            driver_id=driver.driver_id,
+            full_name=user.full_name,
+            phone=user.phone,
+            approval_status=driver.approval_status,
+            allowed_vehicle_categories=driver.allowed_vehicle_categories,
+            driver_type=driver.driver_type
+        )
+        for driver, user in drivers
     ]

@@ -58,3 +58,15 @@ class FleetCity(Base, AuditMixin):
 
     fleet_id = Column(BigInteger, ForeignKey("fleet.fleet_id", ondelete="CASCADE"), primary_key=True)
     city_id = Column(BigInteger, ForeignKey("city.city_id"), primary_key=True)
+
+
+class FleetDriverInvite(Base):
+    __tablename__ = "fleet_driver_invite"
+
+    invite_id = Column(BigInteger, primary_key=True)
+    fleet_id = Column(BigInteger, ForeignKey("fleet.fleet_id", ondelete="CASCADE"), nullable=False)
+    driver_id = Column(BigInteger, ForeignKey("app_user.user_id", ondelete="CASCADE"), nullable=False)
+
+    status = Column(String, nullable=False, default="PENDING")  # PENDING, ACCEPTED, REJECTED, EXPIRED
+    invited_at = Column(TIMESTAMP(timezone=True), nullable=False)
+    responded_at = Column(TIMESTAMP(timezone=True))

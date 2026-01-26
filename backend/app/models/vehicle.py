@@ -12,6 +12,7 @@ class Vehicle(Base, AuditMixin, StatusMixin):
 
     category = Column(String, ForeignKey("lu_vehicle_category.category_code"), nullable=False)
     registration_no = Column(String(50), unique=True, nullable=False)
+    approval_status = Column(String(20), nullable=False, default="PENDING")  # PENDING, APPROVED, REJECTED
 
 
 class VehicleDocument(Base, AuditMixin):
@@ -53,15 +54,10 @@ class DriverVehicleAssignment(Base, AuditMixin):
 class DriverWorkAvailability(Base, AuditMixin):
     __tablename__ = "driver_work_availability"
 
-    availability_id = Column(BigInteger, primary_key=True)
+    id = Column(BigInteger, primary_key=True)
     driver_id = Column(BigInteger, ForeignKey("app_user.user_id", ondelete="CASCADE"), nullable=False)
     fleet_id = Column(BigInteger, ForeignKey("fleet.fleet_id", ondelete="CASCADE"), nullable=False)
 
     date = Column(Date, nullable=False)
     is_available = Column(Boolean, default=True, nullable=False)
     note = Column(Text, nullable=True)
-
-    created_by = Column(BigInteger, ForeignKey("app_user.user_id"))
-    created_on = Column(TIMESTAMP(timezone=True), nullable=False)
-    updated_by = Column(BigInteger, ForeignKey("app_user.user_id"))
-    updated_on = Column(TIMESTAMP(timezone=True))

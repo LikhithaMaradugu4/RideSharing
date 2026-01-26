@@ -1,5 +1,7 @@
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 from contextlib import asynccontextmanager
+import os
 
 from app.core.database import engine, Base
 from app.api.routers import auth
@@ -18,9 +20,10 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
+# Add CORS middleware FIRST, before any routes
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],  # React app
+    allow_origins=["http://localhost:3000", "http://localhost:5173"],  # React app (old port) and Vite (new port)
     allow_credentials=True,
     allow_methods=["*"],  # allows POST, GET, OPTIONS, etc.
     allow_headers=["*"],  # allows X-Session-ID
@@ -47,6 +50,11 @@ app.include_router(v2.router, prefix="/api/v2")
 
 # Admin routes (session-based auth)
 app.include_router(admin.router, prefix="/api/admin")
+
+# Static files for uploaded documents (secured by JWT in production)
+upload_dir = os.path.join(os.path.dirname(__file__), "..", "uploads")
+os.makedirs(upload_dir, exist_ok=True)
+app.mount("/uploads", StaticFiles(directory=upload_dir), name="uploads")
 
 
 @app.get("/")

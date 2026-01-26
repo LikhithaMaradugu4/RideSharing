@@ -86,12 +86,13 @@ def get_my_fleet(
 
 # ==================== Fleet Owner Driver Management ====================
 
-@router.post("/drivers/invite", response_model=FleetDriverResponse)
+@router.post("/drivers/invite")
 def invite_driver(
     data: FleetDriverInviteRequest,
     db: Session = Depends(get_db),
     current_user: dict = Depends(get_current_user)
 ):
+    """Create a pending invite for a driver to join the fleet."""
     user_id = current_user.get("user_id")
     user = db.query(AppUser).filter(AppUser.user_id == user_id).first()
     if not user:
@@ -100,17 +101,20 @@ def invite_driver(
             detail="User not found"
         )
 
-    association = FleetOwnerService.invite_driver(db=db, user=user, driver_id=data.driver_id)
+    invite = FleetOwnerService.invite_driver(db=db, user=user, driver_id=data.driver_id)
 
     driver_user = db.query(AppUser).filter(AppUser.user_id == data.driver_id).first()
 
-    return FleetDriverResponse(
-        driver_id=association.driver_id,
-        full_name=driver_user.full_name if driver_user else "",
-        phone=driver_user.phone if driver_user else "",
-        start_date=association.start_date,
-        end_date=association.end_date
-    )
+    return {
+        "invite_id": invite.invite_id,
+        "fleet_id": invite.fleet_id,
+        "driver_id": invite.driver_id,
+        "driver_name": driver_user.full_name if driver_user else "",
+        "driver_phone": driver_user.phone if driver_user else "",
+        "status": invite.status,
+        "invited_at": invite.invited_at,
+        "responded_at": invite.responded_at
+    }
 
 
 @router.get("/drivers", response_model=FleetDriverListResponse)
@@ -337,9 +341,9 @@ def view_drivers_availability(
 
     items = [
         FleetDriverAvailabilityItem(
-            availability_id=avail.availability_id,
             driver_id=app_user.user_id,
-            driver_phone=app_user.phone_number,
+            full_name=app_user.full_name,
+            phone=app_user.phone,
             date=avail.date,
             is_available=avail.is_available,
             note=avail.note
@@ -347,5 +351,5 @@ def view_drivers_availability(
         for avail, app_user in rows
     ]
 
-    return FleetDriverAvailabilityListResponse(items=items, total=len(items))
+    return FleetDriverAvailabilityListResponse(records=items, total=len(items))
 
