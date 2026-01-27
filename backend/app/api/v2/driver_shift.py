@@ -49,7 +49,7 @@ def start_shift(
         raise HTTPException(status_code=404, detail="User not found")
 
     shift = DriverShiftServiceV2.start_shift(db=db, user=user)
-    return DriverShiftResponse.from_attributes(shift)
+    return DriverShiftResponse.model_validate(shift)
 
 
 # ---------------------- End Shift (Go Offline) ----------------------
@@ -76,7 +76,7 @@ def end_shift(
         raise HTTPException(status_code=404, detail="User not found")
 
     shift = DriverShiftServiceV2.end_shift(db=db, user=user)
-    return DriverShiftResponse.from_attributes(shift)
+    return DriverShiftResponse.model_validate(shift)
 
 
 # ---------------------- End Assignment ----------------------
@@ -154,3 +154,143 @@ def get_shift_status(
         assignment_start=assignment.start_time if assignment else None,
         started_at=shift.started_at if shift else None
     )
+
+
+# ---------------------- Shift Readiness Check ----------------------
+
+@router.get("/driver/shift/readiness")
+def check_shift_readiness(
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Check if driver meets all prerequisites to go online.
+    
+    Returns detailed checklist of requirements with status.
+    Useful for diagnosing why a driver cannot start a shift.
+    """
+    from app.models.fleet import DriverProfile, Fleet, FleetDriver
+    from app.models.vehicle import Vehicle, DriverVehicleAssignment, VehicleDocument
+    from app.models.operations import DriverShift
+    
+    user_id = current_user.get("user_id")
+    user = db.query(AppUser).filter(AppUser.user_id == user_id).first()
+    
+    result = {
+        "can_go_online": False,
+        "checks": {}
+    }
+    
+    # Check 1: Driver profile exists and is APPROVED
+    driver_profile = db.query(DriverProfile).filter(DriverProfile.driver_id == user_id).first()
+    result["checks"]["driver_profile"] = {
+        "exists": driver_profile is not None,
+        "approval_status": driver_profile.approval_status if driver_profile else None,
+        "is_approved": driver_profile.approval_status == "APPROVED" if driver_profile else False
+    }
+    
+    # Check 2: Has active fleet association
+    fleet_assoc = (
+        db.query(FleetDriver, Fleet)
+        .join(Fleet, Fleet.fleet_id == FleetDriver.fleet_id)
+        .filter(
+            FleetDriver.driver_id == user_id,
+            FleetDriver.end_date.is_(None)
+        )
+        .first()
+    )
+    if fleet_assoc:
+        fleet_driver, fleet = fleet_assoc
+        result["checks"]["fleet_association"] = {
+            "exists": True,
+            "fleet_id": fleet.fleet_id,
+            "fleet_name": fleet.fleet_name,
+            "fleet_type": fleet.fleet_type,
+            "fleet_approval_status": fleet.approval_status,
+            "is_fleet_approved": fleet.approval_status == "APPROVED"
+        }
+    else:
+        result["checks"]["fleet_association"] = {
+            "exists": False,
+            "fleet_id": None,
+            "fleet_name": None,
+            "fleet_type": None,
+            "fleet_approval_status": None,
+            "is_fleet_approved": False
+        }
+    
+    # Check 3: Has active vehicle assignment
+    vehicle_assoc = (
+        db.query(DriverVehicleAssignment, Vehicle)
+        .join(Vehicle, Vehicle.vehicle_id == DriverVehicleAssignment.vehicle_id)
+        .filter(
+            DriverVehicleAssignment.driver_id == user_id,
+            DriverVehicleAssignment.end_time.is_(None)
+        )
+        .first()
+    )
+    if vehicle_assoc:
+        assignment, vehicle = vehicle_assoc
+        # Check vehicle documents
+        required_docs = {"RC", "INSURANCE", "VEHICLE_PHOTO"}
+        actual_docs = set(
+            doc[0] for doc in db.query(VehicleDocument.document_type)
+            .filter(VehicleDocument.vehicle_id == vehicle.vehicle_id)
+            .all()
+        )
+        missing_docs = required_docs - actual_docs
+        
+        result["checks"]["vehicle_assignment"] = {
+            "exists": True,
+            "assignment_id": assignment.assignment_id,
+            "vehicle_id": vehicle.vehicle_id,
+            "registration_no": vehicle.registration_no,
+            "vehicle_approval_status": vehicle.approval_status,
+            "is_vehicle_approved": vehicle.approval_status == "APPROVED",
+            "required_documents": list(required_docs),
+            "present_documents": list(actual_docs),
+            "missing_documents": list(missing_docs),
+            "documents_complete": len(missing_docs) == 0
+        }
+        
+        # Check if vehicle belongs to driver's fleet
+        if fleet_assoc:
+            result["checks"]["vehicle_assignment"]["belongs_to_fleet"] = vehicle.fleet_id == fleet_assoc[1].fleet_id
+        else:
+            result["checks"]["vehicle_assignment"]["belongs_to_fleet"] = False
+    else:
+        result["checks"]["vehicle_assignment"] = {
+            "exists": False,
+            "assignment_id": None,
+            "vehicle_id": None,
+            "registration_no": None,
+            "vehicle_approval_status": None,
+            "is_vehicle_approved": False,
+            "documents_complete": False
+        }
+    
+    # Check 4: No active shift already
+    active_shift = db.query(DriverShift).filter(
+        DriverShift.driver_id == user_id,
+        DriverShift.ended_at.is_(None)
+    ).first()
+    result["checks"]["no_active_shift"] = {
+        "has_active_shift": active_shift is not None,
+        "shift_id": active_shift.shift_id if active_shift else None,
+        "shift_status": active_shift.status if active_shift else None
+    }
+    
+    # Determine overall readiness
+    checks = result["checks"]
+    result["can_go_online"] = (
+        checks["driver_profile"]["is_approved"] and
+        checks["fleet_association"]["exists"] and
+        checks["fleet_association"]["is_fleet_approved"] and
+        checks["vehicle_assignment"]["exists"] and
+        checks["vehicle_assignment"]["is_vehicle_approved"] and
+        checks["vehicle_assignment"].get("documents_complete", False) and
+        checks["vehicle_assignment"].get("belongs_to_fleet", False) and
+        not checks["no_active_shift"]["has_active_shift"]
+    )
+    
+    return result

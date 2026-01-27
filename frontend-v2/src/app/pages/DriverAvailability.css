@@ -471,3 +471,69 @@
     margin-top: 8px;
   }
 }
+
+/* Info Banner - For feature unavailable messages */
+.info-banner {
+  display: flex;
+  gap: 16px;
+  background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
+  border: 1px solid #90caf9;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 24px;
+}
+
+.info-icon {
+  font-size: 32px;
+  flex-shrink: 0;
+}
+
+.info-content {
+  flex: 1;
+}
+
+.info-content h3 {
+  margin: 0 0 12px 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #1565c0;
+}
+
+.info-content p {
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  color: #333;
+  line-height: 1.6;
+}
+
+.info-content p:last-of-type {
+  margin-bottom: 16px;
+}
+
+.info-content .btn-secondary {
+  background: white;
+  border: 1px solid #1565c0;
+  color: #1565c0;
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.info-content .btn-secondary:hover {
+  background: #1565c0;
+  color: white;
+}
+
+@media (max-width: 600px) {
+  .info-banner {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .info-icon {
+    font-size: 40px;
+  }
+}

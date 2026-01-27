@@ -46,6 +46,7 @@ class VehicleResponse(BaseModel):
     category: str
     registration_no: str
     status: str
+    approval_status: str
 
     class Config:
         from_attributes = True
@@ -89,3 +90,21 @@ class VehicleDocumentResponse(BaseModel):
 
 class VehiclePhotoUploadRequest(BaseModel):
     photo_urls: List[str]
+
+
+class DriverVehicleResponse(BaseModel):
+    """Response for driver's approved vehicles with assignment status."""
+    vehicle_id: int
+    registration_no: str
+    category: str
+    approval_status: str
+    is_currently_assigned: bool  # True if this vehicle has active assignment to this driver
+
+    class Config:
+        from_attributes = True
+
+
+class SelectVehicleRequest(BaseModel):
+    """Request to select a vehicle for shift."""
+    vehicle_id: int
+    end_shift_if_active: bool = False  # If True, auto-end any active shift before switching

@@ -13,6 +13,7 @@ class DriverShiftResponse(BaseModel):
     shift_id: int
     driver_id: int
     tenant_id: int
+    vehicle_id: Optional[int]
     status: str  # ONLINE | BUSY | OFFLINE
     started_at: datetime
     ended_at: Optional[datetime]

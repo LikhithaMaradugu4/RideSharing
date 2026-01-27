@@ -7,11 +7,14 @@ import './DriverAvailability.css';
 export default function DriverAvailability() {
   const navigate = useNavigate();
   const token = localStorage.getItem('jwt_token');
+  const [driverProfile, setDriverProfile] = useState(null);
+  const [profileLoading, setProfileLoading] = useState(true);
   const [availabilityEntries, setAvailabilityEntries] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [notEligible, setNotEligible] = useState(false);
 
   const [formData, setFormData] = useState({
     date: '',
@@ -26,17 +29,58 @@ export default function DriverAvailability() {
       navigate('/login');
       return;
     }
-    fetchAvailability();
+    fetchDriverProfile();
   }, [token, navigate]);
+
+  const fetchDriverProfile = async () => {
+    try {
+      setProfileLoading(true);
+      const profile = await driverService.getMyProfile(token);
+      
+      if (!profile) {
+        navigate('/app/home');
+        return;
+      }
+
+      if (profile.approval_status !== 'APPROVED') {
+        navigate('/app/home');
+        return;
+      }
+
+      setDriverProfile(profile);
+      // Once profile is loaded, fetch availability
+      fetchAvailability();
+    } catch (err) {
+      console.error('Failed to fetch driver profile:', err);
+      navigate('/app/home');
+    } finally {
+      setProfileLoading(false);
+    }
+  };
 
   const fetchAvailability = async () => {
     try {
       setLoading(true);
       setError('');
+      setNotEligible(false);
       const data = await driverService.getWorkAvailability(token);
       setAvailabilityEntries(data);
     } catch (err) {
-      setError(err.message || 'Failed to load availability');
+      // 403 means driver is not part of a BUSINESS fleet
+      // Check status code OR error message for fleet/approval issues
+      const is403 = err.status === 403;
+      const messageIndicatesNotEligible = err.message && (
+        err.message.includes('BUSINESS fleet') || 
+        err.message.includes('no active') ||
+        err.message.includes('not approved')
+      );
+      
+      if (is403 || messageIndicatesNotEligible) {
+        setNotEligible(true);
+        setError('');
+      } else {
+        setError(err.message || 'Failed to load availability');
+      }
       setAvailabilityEntries([]);
     } finally {
       setLoading(false);
@@ -129,8 +173,17 @@ export default function DriverAvailability() {
     unavailable: availabilityEntries.filter(e => !e.is_available)
   };
 
+  // Show loading while fetching driver profile
+  if (profileLoading) {
+    return (
+      <div className="page-loading">
+        <p>Loading...</p>
+      </div>
+    );
+  }
+
   return (
-    <DriverLayout>
+    <DriverLayout driverProfile={driverProfile}>
       <div className="driver-availability-container">
         <div className="availability-header">
           <div className="header-content">
@@ -139,7 +192,7 @@ export default function DriverAvailability() {
               Plan your availability for upcoming days to help accept requests efficiently
             </p>
           </div>
-          {!showAddForm && (
+          {!showAddForm && !notEligible && (
             <button
               className="btn-primary btn-add-availability"
               onClick={() => setShowAddForm(true)}
@@ -155,7 +208,29 @@ export default function DriverAvailability() {
           </div>
         )}
 
-        {showAddForm && (
+        {notEligible && (
+          <div className="info-banner">
+            <div className="info-icon">ℹ️</div>
+            <div className="info-content">
+              <h3>Feature Not Available</h3>
+              <p>
+                Work Availability scheduling is only available for drivers who are part of a <strong>Business Fleet</strong>.
+              </p>
+              <p>
+                As an independent driver, you can go online/offline anytime using the shift controls on your dashboard.
+                If you want access to scheduled availability and other fleet benefits, consider joining a business fleet.
+              </p>
+              <button
+                className="btn-secondary"
+                onClick={() => navigate('/app/driver/fleets')}
+              >
+                Explore Fleets
+              </button>
+            </div>
+          </div>
+        )}
+
+        {!notEligible && showAddForm && (
           <div className="add-availability-card">
             <h2>Add Availability Entry</h2>
 
@@ -221,11 +296,11 @@ export default function DriverAvailability() {
           </div>
         )}
 
-        {loading ? (
+        {!notEligible && loading ? (
           <div className="loading-state">
             <p>Loading availability...</p>
           </div>
-        ) : availabilityEntries.length === 0 ? (
+        ) : !notEligible && availabilityEntries.length === 0 && !showAddForm ? (
           <div className="empty-state">
             <p>No availability entries yet</p>
             <p className="empty-note">
@@ -238,7 +313,7 @@ export default function DriverAvailability() {
               Add First Entry
             </button>
           </div>
-        ) : (
+        ) : !notEligible && availabilityEntries.length > 0 ? (
           <div className="availability-content">
             <div className="availability-section">
               <h2 className="section-title">
@@ -328,7 +403,7 @@ export default function DriverAvailability() {
               )}
             </div>
           </div>
-        )}
+        ) : null}
 
         <div className="availability-info-box">
           <h3>How Availability Works</h3>

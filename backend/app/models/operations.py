@@ -8,6 +8,7 @@ class DriverShift(Base, AuditMixin):
     shift_id = Column(BigInteger, primary_key=True)
     driver_id = Column(BigInteger, ForeignKey("app_user.user_id", ondelete="CASCADE"), nullable=False)
     tenant_id = Column(BigInteger, ForeignKey("tenant.tenant_id"), nullable=False)
+    vehicle_id = Column(BigInteger, ForeignKey("vehicle.vehicle_id"), nullable=True)
 
     status = Column(String, nullable=False)
 

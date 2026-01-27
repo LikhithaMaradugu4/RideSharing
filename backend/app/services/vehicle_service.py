@@ -1,9 +1,11 @@
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
 from typing import List
+from datetime import datetime, timezone
 
-from app.models.vehicle import Vehicle, VehicleSpec, VehicleDocument
-from app.models.fleet import Fleet, DriverProfile
+from app.models.vehicle import Vehicle, VehicleSpec, VehicleDocument, DriverVehicleAssignment
+from app.models.fleet import Fleet, DriverProfile, FleetDriver
+from app.models.operations import DriverShift
 from app.models.identity import AppUser
 from app.schemas.vehicle import (
     VehicleCreateRequest,
@@ -313,3 +315,173 @@ class VehicleService:
         db.commit()
 
         return documents
+
+    @staticmethod
+    def get_driver_approved_vehicles(db: Session, user: AppUser) -> List[dict]:
+        """
+        Get all APPROVED vehicles for an independent driver.
+        Only works for drivers with INDIVIDUAL fleet.
+        """
+        # Check if driver has an INDIVIDUAL fleet (is independent)
+        fleet = (
+            db.query(Fleet)
+            .filter(
+                Fleet.owner_user_id == user.user_id,
+                Fleet.fleet_type == "INDIVIDUAL"
+            )
+            .first()
+        )
+
+        if not fleet:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="This feature is only available for independent drivers"
+            )
+
+        # Get all APPROVED vehicles in this fleet
+        vehicles = (
+            db.query(Vehicle)
+            .filter(
+                Vehicle.fleet_id == fleet.fleet_id,
+                Vehicle.approval_status == "APPROVED"
+            )
+            .all()
+        )
+
+        # Check current active assignment
+        active_assignment = (
+            db.query(DriverVehicleAssignment)
+            .filter(
+                DriverVehicleAssignment.driver_id == user.user_id,
+                DriverVehicleAssignment.end_time.is_(None)
+            )
+            .first()
+        )
+
+        active_vehicle_id = active_assignment.vehicle_id if active_assignment else None
+
+        return [
+            {
+                "vehicle_id": v.vehicle_id,
+                "registration_no": v.registration_no,
+                "category": v.category,
+                "approval_status": v.approval_status,
+                "is_currently_assigned": v.vehicle_id == active_vehicle_id
+            }
+            for v in vehicles
+        ]
+
+    @staticmethod
+    def select_vehicle_for_shift(db: Session, user: AppUser, vehicle_id: int, end_shift_if_active: bool = False) -> dict:
+        """
+        Select a vehicle for shift (independent drivers only).
+        
+        - Ends any existing active vehicle assignment
+        - Creates new assignment for the selected vehicle
+        - If end_shift_if_active=True, will auto-end any active shift first
+        - If end_shift_if_active=False (default), will reject if shift is active
+        """
+        # Check if driver has an INDIVIDUAL fleet (is independent)
+        fleet = (
+            db.query(Fleet)
+            .filter(
+                Fleet.owner_user_id == user.user_id,
+                Fleet.fleet_type == "INDIVIDUAL"
+            )
+            .first()
+        )
+
+        if not fleet:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="This feature is only available for independent drivers"
+            )
+
+        # Check if driver has active shift
+        active_shift = (
+            db.query(DriverShift)
+            .filter(
+                DriverShift.driver_id == user.user_id,
+                DriverShift.ended_at.is_(None)
+            )
+            .first()
+        )
+
+        if active_shift:
+            if active_shift.status == "BUSY":
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Cannot switch vehicles while on an active trip"
+                )
+            
+            if end_shift_if_active:
+                # Auto-end the shift
+                active_shift.status = "OFFLINE"
+                active_shift.ended_at = datetime.now(timezone.utc)
+                active_shift.updated_by = user.user_id
+            else:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Cannot switch vehicles while on an active shift. Go offline first or set end_shift_if_active=true."
+                )
+
+        # Verify vehicle exists, belongs to driver's fleet, and is APPROVED
+        vehicle = (
+            db.query(Vehicle)
+            .filter(
+                Vehicle.vehicle_id == vehicle_id,
+                Vehicle.fleet_id == fleet.fleet_id,
+                Vehicle.approval_status == "APPROVED"
+            )
+            .first()
+        )
+
+        if not vehicle:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Vehicle not found or not approved"
+            )
+
+        # End any existing active assignment
+        existing_assignment = (
+            db.query(DriverVehicleAssignment)
+            .filter(
+                DriverVehicleAssignment.driver_id == user.user_id,
+                DriverVehicleAssignment.end_time.is_(None)
+            )
+            .first()
+        )
+
+        if existing_assignment:
+            # If already assigned to this vehicle, just return
+            if existing_assignment.vehicle_id == vehicle_id:
+                return {
+                    "vehicle_id": vehicle.vehicle_id,
+                    "registration_no": vehicle.registration_no,
+                    "category": vehicle.category,
+                    "approval_status": vehicle.approval_status,
+                    "is_currently_assigned": True
+                }
+            
+            # End the existing assignment
+            existing_assignment.end_time = datetime.now(timezone.utc)
+            existing_assignment.updated_by = user.user_id
+
+        # Create new assignment
+        new_assignment = DriverVehicleAssignment(
+            driver_id=user.user_id,
+            vehicle_id=vehicle_id,
+            start_time=datetime.now(timezone.utc),
+            end_time=None,
+            created_by=user.user_id
+        )
+        db.add(new_assignment)
+        db.commit()
+
+        return {
+            "vehicle_id": vehicle.vehicle_id,
+            "registration_no": vehicle.registration_no,
+            "category": vehicle.category,
+            "approval_status": vehicle.approval_status,
+            "is_currently_assigned": True
+        }

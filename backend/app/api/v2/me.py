@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 
 from app.api.deps.jwt_auth import get_current_user
 from app.core.database import SessionLocal
-from app.models.fleet import DriverProfile, Fleet
+from app.models.fleet import DriverProfile, Fleet, FleetDriver
 from app.models.identity import AppUser
 
 
@@ -115,9 +115,31 @@ def get_capabilities(
         .first()
     )
     
+    # Check if driver is part of a BUSINESS fleet (joined a fleet)
+    business_fleet_association = None
+    if driver_profile:
+        fleet_assoc = (
+            db.query(FleetDriver, Fleet)
+            .join(Fleet, Fleet.fleet_id == FleetDriver.fleet_id)
+            .filter(
+                FleetDriver.driver_id == user.user_id,
+                FleetDriver.end_date.is_(None),  # Active association
+                Fleet.fleet_type == "BUSINESS"
+            )
+            .first()
+        )
+        if fleet_assoc:
+            business_fleet_association = {
+                "fleet_id": fleet_assoc[1].fleet_id,
+                "fleet_name": fleet_assoc[1].fleet_name,
+                "fleet_type": fleet_assoc[1].fleet_type
+            }
+    
     driver_capability = {
         "exists": driver_profile is not None,
-        "approval_status": driver_profile.approval_status if driver_profile else None
+        "approval_status": driver_profile.approval_status if driver_profile else None,
+        "is_independent": driver_profile is not None and business_fleet_association is None,
+        "business_fleet": business_fleet_association
     }
     
     # ========== FLEET OWNER CAPABILITY ==========

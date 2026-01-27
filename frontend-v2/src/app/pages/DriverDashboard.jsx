@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import driverService from '../../services/driver.service';
+import userService from '../../services/user.service';
 import DriverLayout from '../layout/DriverLayout';
 import './DriverDashboard.css';
 
@@ -13,6 +14,14 @@ function DriverDashboard() {
   const [activeFleet, setActiveFleet] = useState(null);
   const [activeVehicle, setActiveVehicle] = useState(null);
   const [shiftToggling, setShiftToggling] = useState(false);
+  const [shiftReadiness, setShiftReadiness] = useState(null);
+  
+  // Vehicle selection for independent drivers
+  const [isIndependent, setIsIndependent] = useState(false);
+  const [approvedVehicles, setApprovedVehicles] = useState([]);
+  const [selectedVehicleId, setSelectedVehicleId] = useState(null);
+  const [vehicleSelecting, setVehicleSelecting] = useState(false);
+  const [showVehicleSelector, setShowVehicleSelector] = useState(false);
 
   const token = localStorage.getItem('jwt_token');
 
@@ -44,6 +53,39 @@ function DriverDashboard() {
 
       setDriverProfile(profile);
 
+      // Fetch capabilities to check if independent driver
+      try {
+        const capabilities = await userService.getCapabilities(token);
+        const driverInfo = capabilities?.driver || {};
+        const independent = driverInfo.is_independent ?? false;
+        setIsIndependent(independent);
+        
+        // For independent drivers, fetch approved vehicles
+        if (independent) {
+          try {
+            const vehicles = await driverService.getApprovedVehicles(token);
+            setApprovedVehicles(vehicles || []);
+            
+            // Find currently assigned vehicle
+            const currentVehicle = vehicles?.find(v => v.is_currently_assigned);
+            if (currentVehicle) {
+              setSelectedVehicleId(currentVehicle.vehicle_id);
+              setActiveVehicle({
+                registration: currentVehicle.registration_no,
+                category: currentVehicle.category,
+                status: currentVehicle.approval_status
+              });
+            }
+          } catch (vehicleErr) {
+            console.error('Failed to fetch approved vehicles:', vehicleErr);
+            setApprovedVehicles([]);
+          }
+        }
+      } catch (capErr) {
+        console.error('Failed to fetch capabilities:', capErr);
+        setIsIndependent(false);
+      }
+
       // Fetch active shift
       try {
         const shift = await driverService.getActiveShift(token);
@@ -52,8 +94,14 @@ function DriverDashboard() {
         setShiftStatus(null);
       }
 
-      // TODO: Fetch active fleet and vehicle once backend APIs are ready
-      // For now, show placeholder context
+      // Fetch shift readiness to show missing requirements
+      try {
+        const readiness = await driverService.checkShiftReadiness(token);
+        setShiftReadiness(readiness);
+      } catch (err) {
+        console.error('Failed to fetch shift readiness:', err);
+        setShiftReadiness(null);
+      }
     } catch (err) {
       setError(err.message || 'Failed to load dashboard');
       console.error('Error:', err);
@@ -62,23 +110,97 @@ function DriverDashboard() {
     }
   };
 
+  const handleSelectVehicle = async (vehicleId, endShiftIfActive = false) => {
+    try {
+      setVehicleSelecting(true);
+      setError(null);
+      
+      // Check if driver is currently online
+      const isCurrentlyOnline = shiftStatus?.is_online || shiftStatus?.shift_status === 'ONLINE' || shiftStatus?.shift_status === 'BUSY';
+      
+      // If there's an active shift and user hasn't confirmed, ask for confirmation
+      if (isCurrentlyOnline && !endShiftIfActive) {
+        const confirmSwitch = window.confirm(
+          'You are currently online. Switching vehicles will end your current shift. Continue?'
+        );
+        if (!confirmSwitch) {
+          setVehicleSelecting(false);
+          return;
+        }
+        endShiftIfActive = true;
+      }
+      
+      const result = await driverService.selectVehicle(token, vehicleId, endShiftIfActive);
+      
+      setSelectedVehicleId(result.vehicle_id);
+      setActiveVehicle({
+        registration: result.registration_no,
+        category: result.category,
+        status: result.approval_status
+      });
+      
+      // Update the list to reflect new assignment
+      setApprovedVehicles(prev => prev.map(v => ({
+        ...v,
+        is_currently_assigned: v.vehicle_id === result.vehicle_id
+      })));
+      
+      // If we ended the shift, update shift status
+      if (endShiftIfActive && isCurrentlyOnline) {
+        setShiftStatus(null);
+      }
+      
+      setShowVehicleSelector(false);
+    } catch (err) {
+      setError(err.message || 'Failed to select vehicle');
+    } finally {
+      setVehicleSelecting(false);
+    }
+  };
+
   const handleShiftToggle = async () => {
     try {
       setShiftToggling(true);
       setError(null);
 
-      if (shiftStatus) {
+      const isCurrentlyOnline = shiftStatus?.is_online || shiftStatus?.shift_status === 'ONLINE' || shiftStatus?.shift_status === 'BUSY';
+
+      if (isCurrentlyOnline) {
         // End shift
         await driverService.endShift(token);
-        setShiftStatus(null);
       } else {
         // Start shift
-        const shift = await driverService.startShift(token);
-        setShiftStatus(shift);
+        await driverService.startShift(token);
+      }
+
+      // Always refresh shift status from server to ensure sync
+      try {
+        const newStatus = await driverService.getActiveShift(token);
+        setShiftStatus(newStatus);
+      } catch (refreshErr) {
+        // If no active shift, set to null (offline)
+        setShiftStatus(null);
       }
     } catch (err) {
-      setError(err.message || 'Failed to toggle shift');
+      // Provide helpful error messages
+      let errorMessage = err.message || 'Failed to toggle shift';
+      if (err.message?.includes('no active fleet association')) {
+        errorMessage = 'You are not associated with any fleet. Please contact your fleet manager or register as an independent driver.';
+      } else if (err.message?.includes('no active vehicle assignment')) {
+        errorMessage = 'No vehicle assigned. Please select a vehicle first.';
+      } else if (err.message?.includes('Vehicle missing documents')) {
+        errorMessage = err.message;
+      }
+      setError(errorMessage);
       console.error('Error:', err);
+      
+      // Refresh shift status to sync with server state
+      try {
+        const actualStatus = await driverService.getActiveShift(token);
+        setShiftStatus(actualStatus);
+      } catch (refreshErr) {
+        setShiftStatus(null);
+      }
     } finally {
       setShiftToggling(false);
     }
@@ -86,14 +208,27 @@ function DriverDashboard() {
 
   const getShiftStatusLabel = () => {
     if (!shiftStatus) return 'OFFLINE';
-    return shiftStatus.status || 'OFFLINE';
+    // Handle both DriverShiftResponse (status) and ShiftStatusResponse (shift_status)
+    return shiftStatus.shift_status || shiftStatus.status || 'OFFLINE';
   };
 
   const getShiftStatusColor = () => {
-    if (!shiftStatus) return '#f44336'; // Red for offline
-    if (shiftStatus.status === 'BUSY') return '#ff9800'; // Orange for busy
-    if (shiftStatus.status === 'ONLINE') return '#4caf50'; // Green for online
+    const status = shiftStatus?.shift_status || shiftStatus?.status;
+    if (!status || status === 'OFFLINE') return '#f44336'; // Red for offline
+    if (status === 'BUSY') return '#ff9800'; // Orange for busy
+    if (status === 'ONLINE') return '#4caf50'; // Green for online
     return '#f44336';
+  };
+
+  // Helper to check if driver is currently online
+  const isDriverOnline = () => {
+    return shiftStatus?.is_online || shiftStatus?.shift_status === 'ONLINE' || shiftStatus?.shift_status === 'BUSY';
+  };
+
+  // Helper to check if driver is busy (on a trip)
+  const isDriverBusy = () => {
+    const status = shiftStatus?.shift_status || shiftStatus?.status;
+    return status === 'BUSY';
   };
 
   if (loading) {
@@ -151,21 +286,55 @@ function DriverDashboard() {
             </div>
 
             <button 
-              className={`shift-toggle-btn ${shiftStatus ? 'go-offline' : 'go-online'}`}
+              className={`shift-toggle-btn ${isDriverOnline() ? 'go-offline' : 'go-online'}`}
               onClick={handleShiftToggle}
-              disabled={shiftToggling}
-              title={shiftStatus ? 'Go Offline' : 'Go Online'}
+              disabled={shiftToggling || isDriverBusy() || (!isDriverOnline() && shiftReadiness && !shiftReadiness.can_go_online)}
+              title={isDriverBusy() ? 'Cannot go offline during trip' : (isDriverOnline() ? 'Go Offline' : 'Go Online')}
             >
-              {shiftToggling ? 'Processing...' : (shiftStatus ? 'Go Offline' : 'Go Online')}
+              {shiftToggling ? 'Processing...' : (isDriverOnline() ? 'Go Offline' : 'Go Online')}
             </button>
 
-            {shiftStatus && shiftStatus.status === 'BUSY' && (
+            {isDriverBusy() && (
               <div className="shift-warning">
                 <span>You are currently on a trip</span>
               </div>
             )}
 
-            {!shiftStatus && (
+            {!isDriverOnline() && shiftReadiness && !shiftReadiness.can_go_online && (
+              <div className="shift-requirements">
+                <h4>⚠️ Cannot Go Online - Missing Requirements:</h4>
+                <ul>
+                  {!shiftReadiness.checks?.fleet_association?.exists && (
+                    <li className="requirement-missing">No fleet association. Please contact your fleet manager.</li>
+                  )}
+                  {shiftReadiness.checks?.fleet_association?.exists && !shiftReadiness.checks?.fleet_association?.is_fleet_approved && (
+                    <li className="requirement-missing">Fleet not approved. Please wait for tenant approval.</li>
+                  )}
+                  {!shiftReadiness.checks?.vehicle_assignment?.exists && (
+                    <li className="requirement-missing">No vehicle assigned. {isIndependent ? 'Please select a vehicle.' : 'Please contact your fleet manager.'}</li>
+                  )}
+                  {shiftReadiness.checks?.vehicle_assignment?.exists && !shiftReadiness.checks?.vehicle_assignment?.is_vehicle_approved && (
+                    <li className="requirement-missing">Vehicle not approved. Please wait for tenant approval.</li>
+                  )}
+                  {shiftReadiness.checks?.vehicle_assignment?.exists && !shiftReadiness.checks?.vehicle_assignment?.documents_complete && (
+                    <li className="requirement-missing">
+                      Missing vehicle documents: {shiftReadiness.checks?.vehicle_assignment?.missing_documents?.join(', ')}
+                    </li>
+                  )}
+                  {shiftReadiness.checks?.vehicle_assignment?.exists && !shiftReadiness.checks?.vehicle_assignment?.belongs_to_fleet && (
+                    <li className="requirement-missing">Vehicle does not belong to your active fleet.</li>
+                  )}
+                </ul>
+              </div>
+            )}
+
+            {!isDriverOnline() && shiftReadiness?.can_go_online && (
+              <div className="shift-info">
+                <span>✅ Ready! Click "Go Online" to start accepting trips</span>
+              </div>
+            )}
+
+            {!isDriverOnline() && !shiftReadiness && (
               <div className="shift-info">
                 <span>Click "Go Online" to start accepting trips</span>
               </div>
@@ -230,12 +399,80 @@ function DriverDashboard() {
                         {activeVehicle.status}
                       </span>
                     </div>
+                    {/* Vehicle change button for independent drivers - always show if multiple vehicles */}
+                    {isIndependent && approvedVehicles.length > 1 && (
+                      <button 
+                        className={`btn-change-vehicle ${isDriverOnline() ? 'warning' : ''}`}
+                        onClick={() => setShowVehicleSelector(true)}
+                        disabled={vehicleSelecting || isDriverBusy()}
+                        title={isDriverBusy() ? 'Cannot change vehicle during trip' : (isDriverOnline() ? 'This will end your current shift' : 'Switch to another vehicle')}
+                      >
+                        {isDriverOnline() ? 'Change Vehicle (Ends Shift)' : 'Change Vehicle'}
+                      </button>
+                    )}
                   </>
+                ) : isIndependent && approvedVehicles.length > 0 ? (
+                  <div className="vehicle-select-prompt">
+                    <p>Select a vehicle to start your shift</p>
+                    <button 
+                      className="btn-select-vehicle"
+                      onClick={() => setShowVehicleSelector(true)}
+                      disabled={vehicleSelecting}
+                    >
+                      Select Vehicle
+                    </button>
+                  </div>
+                ) : isIndependent && approvedVehicles.length === 0 ? (
+                  <div className="no-vehicles-prompt">
+                    <p className="empty-state">No approved vehicles</p>
+                    <a href="/app/driver/vehicles" className="btn-add-vehicle">
+                      Add Vehicle
+                    </a>
+                  </div>
                 ) : (
                   <p className="empty-state">No active vehicle</p>
                 )}
               </div>
             </div>
+
+            {/* Vehicle Selector Modal for Independent Drivers */}
+            {showVehicleSelector && isIndependent && (
+              <div className="vehicle-selector-modal">
+                <div className="vehicle-selector-content">
+                  <div className="vehicle-selector-header">
+                    <h3>Select Vehicle</h3>
+                    <button 
+                      className="close-btn"
+                      onClick={() => setShowVehicleSelector(false)}
+                    >
+                      ×
+                    </button>
+                  </div>
+                  <div className="vehicle-selector-list">
+                    {approvedVehicles.map(vehicle => (
+                      <div 
+                        key={vehicle.vehicle_id}
+                        className={`vehicle-option ${vehicle.is_currently_assigned ? 'current' : ''}`}
+                        onClick={() => !vehicleSelecting && handleSelectVehicle(vehicle.vehicle_id)}
+                      >
+                        <div className="vehicle-option-info">
+                          <span className="vehicle-reg">{vehicle.registration_no}</span>
+                          <span className="vehicle-cat">{vehicle.category}</span>
+                        </div>
+                        {vehicle.is_currently_assigned && (
+                          <span className="current-badge">Current</span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                  {vehicleSelecting && (
+                    <div className="vehicle-selector-loading">
+                      <span>Selecting vehicle...</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
 
             {/* Today's Availability Card */}
             <div className="context-card">

@@ -1,646 +1,348 @@
 /**
- * Driver Service - For driver-specific operations
+ * Driver Service - Driver-facing API helpers for the phase-2 backend.
  */
 
 const API_BASE_URL = 'http://localhost:8000/api/v2';
 
+const buildHeaders = (token, contentType = 'application/json') => {
+  const baseHeaders = {};
+  if (contentType) {
+    baseHeaders['Content-Type'] = contentType;
+  }
+  if (token) {
+    baseHeaders['Authorization'] = `Bearer ${token}`;
+  }
+  return baseHeaders;
+};
+
+const parseJson = async (response) => {
+  const text = await response.text();
+  if (!text) {
+    return null;
+  }
+  try {
+    return JSON.parse(text);
+  } catch (error) {
+    console.error('Failed to parse JSON response', error);
+    throw new Error('Invalid response from server');
+  }
+};
+
+const handleResponse = async (response, defaultMessage) => {
+  const data = await parseJson(response);
+  if (!response.ok) {
+    const message = data?.detail || defaultMessage || 'Request failed';
+    const error = new Error(message);
+    error.status = response.status;
+    error.body = data;
+    throw error;
+  }
+  return data;
+};
+
 const driverService = {
   /**
-   * Get all tenants (for tenant selection during application)
+   * Fetch active tenants for driver onboarding.
    */
   getTenants: async () => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/driver/tenants`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
+    const response = await fetch(`${API_BASE_URL}/driver/tenants`, {
+      method: 'GET',
+      headers: buildHeaders(null)
+    });
 
-      if (!response.ok) {
-        throw new Error('Failed to fetch tenants');
-      }
-
-      const data = await response.json();
-      return data.tenants || data;
-    } catch (error) {
-      console.error('Error fetching tenants:', error);
-      throw error;
-    }
+    const data = await handleResponse(response, 'Failed to fetch tenants');
+    return data?.tenants ?? [];
   },
 
   /**
-   * Get current driver profile
+   * Submit driver application with document uploads (multipart/form-data).
+   */
+  applyWithDocuments: async (token, formData) => {
+    const response = await fetch(`${API_BASE_URL}/driver/apply-with-documents`, {
+      method: 'POST',
+      headers: buildHeaders(token, null),
+      body: formData
+    });
+
+    return handleResponse(response, 'Failed to submit driver application');
+  },
+
+  /**
+   * Retrieve the authenticated driver's profile.
    */
   getMyProfile: async (token) => {
     try {
       const response = await fetch(`${API_BASE_URL}/driver/me`, {
         method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        }
+        headers: buildHeaders(token)
       });
 
-      if (!response.ok) {
-        if (response.status === 404) {
-          return null; // No driver profile
-        }
-        const error = await response.json();
-        throw new Error(error.detail || 'Failed to fetch driver profile');
-      }
-
-      return await response.json();
+      const data = await handleResponse(response, 'Failed to fetch driver profile');
+      return data;
     } catch (error) {
-      console.error('Error fetching driver profile:', error);
+      if (error.status === 404) {
+        return null;
+      }
       throw error;
     }
   },
 
   /**
-   * Apply for driver capability with documents
-   * multipart/form-data with files
-   */
-  applyWithDocuments: async (token, formData) => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/driver/apply-with-documents`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        },
-        body: formData
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.detail || 'Failed to submit driver application');
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error('Error submitting driver application:', error);
-      throw error;
-    }
-  },
-
-  /**
-   * Start shift (online)
+   * Shift management helpers.
    */
   startShift: async (token) => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/driver/availability/online`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        }
-      });
+    const response = await fetch(`${API_BASE_URL}/driver/availability/online`, {
+      method: 'POST',
+      headers: buildHeaders(token)
+    });
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.detail || 'Failed to start shift');
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error('Error starting shift:', error);
-      throw error;
-    }
+    return handleResponse(response, 'Failed to start shift');
   },
 
-  /**
-   * End shift (offline)
-   */
   endShift: async (token) => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/driver/availability/offline`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        }
-      });
+    const response = await fetch(`${API_BASE_URL}/driver/availability/offline`, {
+      method: 'POST',
+      headers: buildHeaders(token)
+    });
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.detail || 'Failed to end shift');
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error('Error ending shift:', error);
-      throw error;
-    }
+    return handleResponse(response, 'Failed to end shift');
   },
 
-  /**
-   * Get active shift status
-   */
   getActiveShift: async (token) => {
     try {
       const response = await fetch(`${API_BASE_URL}/driver/shift/active`, {
         method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        }
+        headers: buildHeaders(token)
       });
 
-      if (!response.ok) {
-        if (response.status === 404) {
-          return null; // No active shift
-        }
-        const error = await response.json();
-        throw new Error(error.detail || 'Failed to fetch shift status');
-      }
-
-      return await response.json();
+      return await handleResponse(response, 'Failed to fetch active shift');
     } catch (error) {
-      console.error('Error fetching shift status:', error);
+      if (error.status === 404) {
+        return null;
+      }
       throw error;
     }
   },
 
   /**
-   * Get pending dispatches
+   * Check if driver meets all prerequisites to go online.
+   * Returns detailed checklist useful for diagnosing issues.
+   */
+  checkShiftReadiness: async (token) => {
+    const response = await fetch(`${API_BASE_URL}/driver/shift/readiness`, {
+      method: 'GET',
+      headers: buildHeaders(token)
+    });
+
+    return handleResponse(response, 'Failed to check shift readiness');
+  },
+
+  /**
+   * Dispatch handling.
    */
   getPendingDispatches: async (token) => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/driver/dispatches/pending`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        }
-      });
+    const response = await fetch(`${API_BASE_URL}/driver/dispatches/pending`, {
+      method: 'GET',
+      headers: buildHeaders(token)
+    });
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.detail || 'Failed to fetch pending dispatches');
-      }
+    const data = await handleResponse(response, 'Failed to fetch pending dispatches');
+    return data?.pending_dispatches ?? [];
+  },
 
-      return await response.json();
-    } catch (error) {
-      console.error('Error fetching pending dispatches:', error);
-      throw error;
-    }
+  acceptDispatch: async (token, attemptId) => {
+    const response = await fetch(`${API_BASE_URL}/driver/dispatches/accept`, {
+      method: 'POST',
+      headers: buildHeaders(token),
+      body: JSON.stringify({ attempt_id: attemptId })
+    });
+
+    return handleResponse(response, 'Failed to accept dispatch');
+  },
+
+  rejectDispatch: async (token, attemptId) => {
+    const response = await fetch(`${API_BASE_URL}/driver/dispatches/reject`, {
+      method: 'POST',
+      headers: buildHeaders(token),
+      body: JSON.stringify({ attempt_id: attemptId })
+    });
+
+    return handleResponse(response, 'Failed to reject dispatch');
   },
 
   /**
-   * Accept a dispatch
-   */
-  acceptDispatch: async (token, dispatchId) => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/driver/dispatches/${dispatchId}/accept`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.detail || 'Failed to accept dispatch');
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error('Error accepting dispatch:', error);
-      throw error;
-    }
-  },
-
-  /**
-   * Reject a dispatch
-   */
-  rejectDispatch: async (token, dispatchId) => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/driver/dispatches/${dispatchId}/reject`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.detail || 'Failed to reject dispatch');
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error('Error rejecting dispatch:', error);
-      throw error;
-    }
-  },
-
-  /**
-   * Get driver vehicles
+   * Vehicle management.
    */
   getVehicles: async (token) => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/vehicles`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        }
-      });
+    const response = await fetch(`${API_BASE_URL}/vehicles`, {
+      method: 'GET',
+      headers: buildHeaders(token)
+    });
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.detail || 'Failed to fetch vehicles');
-      }
+    return handleResponse(response, 'Failed to fetch vehicles');
+  },
 
-      return await response.json();
-    } catch (error) {
-      console.error('Error fetching vehicles:', error);
-      throw error;
-    }
+  getMyVehicles: async (token) => driverService.getVehicles(token),
+
+  /**
+   * Get approved vehicles for independent drivers (for vehicle selection).
+   */
+  getApprovedVehicles: async (token) => {
+    const response = await fetch(`${API_BASE_URL}/vehicles/driver/approved`, {
+      method: 'GET',
+      headers: buildHeaders(token)
+    });
+
+    return handleResponse(response, 'Failed to fetch approved vehicles');
   },
 
   /**
-   * Add a vehicle
+   * Select a vehicle for shift (independent drivers only).
+   * @param {string} token - JWT token
+   * @param {number} vehicleId - Vehicle ID to select
+   * @param {boolean} endShiftIfActive - If true, auto-end any active shift before switching
    */
+  selectVehicle: async (token, vehicleId, endShiftIfActive = false) => {
+    const response = await fetch(`${API_BASE_URL}/vehicles/driver/select`, {
+      method: 'POST',
+      headers: buildHeaders(token),
+      body: JSON.stringify({ 
+        vehicle_id: vehicleId,
+        end_shift_if_active: endShiftIfActive
+      })
+    });
+
+    return handleResponse(response, 'Failed to select vehicle');
+  },
+
   createVehicle: async (token, vehicleData) => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/vehicles`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(vehicleData)
-      });
+    const response = await fetch(`${API_BASE_URL}/vehicles`, {
+      method: 'POST',
+      headers: buildHeaders(token),
+      body: JSON.stringify(vehicleData)
+    });
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.detail || 'Failed to create vehicle');
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error('Error creating vehicle:', error);
-      throw error;
-    }
+    return handleResponse(response, 'Failed to create vehicle');
   },
 
-  /**
-   * Add vehicle specs
-   */
   addVehicleSpec: async (token, vehicleId, specData) => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/vehicles/${vehicleId}/spec`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(specData)
-      });
+    const response = await fetch(`${API_BASE_URL}/vehicles/${vehicleId}/spec`, {
+      method: 'POST',
+      headers: buildHeaders(token),
+      body: JSON.stringify(specData)
+    });
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.detail || 'Failed to add vehicle spec');
-      }
+    return handleResponse(response, 'Failed to save vehicle specification');
+  },
 
-      return await response.json();
-    } catch (error) {
-      console.error('Error adding vehicle spec:', error);
-      throw error;
-    }
+  uploadVehicleDocument: async (token, vehicleId, documentData) => {
+    const response = await fetch(`${API_BASE_URL}/vehicles/${vehicleId}/documents`, {
+      method: 'POST',
+      headers: buildHeaders(token),
+      body: JSON.stringify(documentData)
+    });
+
+    return handleResponse(response, 'Failed to upload vehicle document');
+  },
+
+  uploadVehiclePhotos: async (token, vehicleId, photoUrls) => {
+    const payload = Array.isArray(photoUrls) ? photoUrls : [];
+    const response = await fetch(`${API_BASE_URL}/vehicles/${vehicleId}/photos`, {
+      method: 'POST',
+      headers: buildHeaders(token),
+      body: JSON.stringify({ photo_urls: payload })
+    });
+
+    return handleResponse(response, 'Failed to upload vehicle photos');
   },
 
   /**
-   * Upload vehicle documents
+   * Fleet discovery & invites.
    */
-  uploadVehicleDocuments: async (token, vehicleId, formData) => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/vehicles/${vehicleId}/documents`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        },
-        body: formData
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.detail || 'Failed to upload documents');
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error('Error uploading documents:', error);
-      throw error;
+  discoverFleets: async (token, params = {}) => {
+    const query = new URLSearchParams();
+    if (params.cityId) {
+      query.append('city_id', String(params.cityId));
     }
+    if (params.tenantId) {
+      query.append('tenant_id', String(params.tenantId));
+    }
+
+    const url = query.toString() ? `${API_BASE_URL}/fleets/discover?${query.toString()}` : `${API_BASE_URL}/fleets/discover`;
+
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: buildHeaders(token)
+    });
+
+    const data = await handleResponse(response, 'Failed to discover fleets');
+    return data?.fleets ?? [];
   },
 
-  /**
-   * Upload vehicle photos
-   */
-  uploadVehiclePhotos: async (token, vehicleId, formData) => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/vehicles/${vehicleId}/photos`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        },
-        body: formData
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.detail || 'Failed to upload photos');
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error('Error uploading photos:', error);
-      throw error;
-    }
-  },
-
-  /**
-   * Discover fleets
-   */
-  discoverFleets: async (token, params) => {
-    try {
-      const qs = params ? new URLSearchParams({
-        city_id: params.cityId ? String(params.cityId) : undefined,
-        tenant_id: params.tenantId ? String(params.tenantId) : undefined
-      }) : null;
-      const url = qs ? `${API_BASE_URL}/fleets/discover?${qs.toString()}` : `${API_BASE_URL}/fleets/discover`;
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.detail || 'Failed to discover fleets');
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error('Error discovering fleets:', error);
-      throw error;
-    }
-  },
-
-  /**
-   * Get fleet invites
-   */
   getFleetInvites: async (token) => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/driver/fleet-invites`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        }
-      });
+    const response = await fetch(`${API_BASE_URL}/driver/fleet-invites`, {
+      method: 'GET',
+      headers: buildHeaders(token)
+    });
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.detail || 'Failed to fetch fleet invites');
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error('Error fetching fleet invites:', error);
-      throw error;
-    }
+    const data = await handleResponse(response, 'Failed to fetch fleet invites');
+    return data?.invites ?? [];
   },
 
-  /**
-   * Accept fleet invite
-   */
   acceptFleetInvite: async (token, fleetId) => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/driver/fleet-invites/${fleetId}/accept`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        }
-      });
+    const response = await fetch(`${API_BASE_URL}/driver/fleet-invites/${fleetId}/accept`, {
+      method: 'POST',
+      headers: buildHeaders(token)
+    });
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.detail || 'Failed to accept fleet invite');
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error('Error accepting fleet invite:', error);
-      throw error;
-    }
+    return handleResponse(response, 'Failed to accept fleet invite');
   },
 
-  /**
-   * Reject fleet invite
-   */
   rejectFleetInvite: async (token, fleetId) => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/driver/fleet-invites/${fleetId}/reject`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        }
-      });
+    const response = await fetch(`${API_BASE_URL}/driver/fleet-invites/${fleetId}/reject`, {
+      method: 'POST',
+      headers: buildHeaders(token)
+    });
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.detail || 'Failed to reject fleet invite');
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error('Error rejecting fleet invite:', error);
-      throw error;
-    }
+    return handleResponse(response, 'Failed to reject fleet invite');
   },
 
   /**
-   * Set work availability
-   */
-  setWorkAvailability: async (token, availabilityData) => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/driver/work-availability`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(availabilityData)
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.detail || 'Failed to set work availability');
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error('Error setting work availability:', error);
-      throw error;
-    }
-  },
-
-  /**
-   * Get work availability
+   * Driver work availability.
    */
   getWorkAvailability: async (token) => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/driver/work-availability`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        }
-      });
+    const response = await fetch(`${API_BASE_URL}/driver/work-availability`, {
+      method: 'GET',
+      headers: buildHeaders(token)
+    });
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.detail || 'Failed to fetch work availability');
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error('Error fetching work availability:', error);
-      throw error;
-    }
+    const data = await handleResponse(response, 'Failed to fetch work availability');
+    return data?.records ?? [];
   },
 
-  /**
-   * Update work availability
-   */
   updateWorkAvailability: async (token, availabilityData) => {
-    try {
-      // Map to backend schema: { date, is_available, note }
-      const payload = {
-        date: availabilityData.date,
-        is_available: availabilityData.is_available,
-        note: availabilityData.note ?? availabilityData.notes ?? null
-      };
-      const response = await fetch(`${API_BASE_URL}/driver/work-availability`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(payload)
-      });
+    const payload = {
+      date: availabilityData.date,
+      is_available: availabilityData.is_available,
+      note: availabilityData.note ?? null
+    };
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.detail || 'Failed to update work availability');
-      }
+    const response = await fetch(`${API_BASE_URL}/driver/work-availability`, {
+      method: 'POST',
+      headers: buildHeaders(token),
+      body: JSON.stringify(payload)
+    });
 
-      return await response.json();
-    } catch (error) {
-      console.error('Error updating work availability:', error);
-      throw error;
-    }
+    return handleResponse(response, 'Failed to update work availability');
   },
 
-  /**
-   * Delete work availability for a date
-   */
-  deleteWorkAvailability: async (token, date) => {
-    // Backend doesn't support DELETE; mark as unavailable instead
-    return driverService.updateWorkAvailability(token, { date, is_available: false, note: null });
-  },
+  setWorkAvailability: async (token, availabilityData) => driverService.updateWorkAvailability(token, availabilityData),
 
-  /**
-   * Get my vehicles (wrapper for getVehicles)
-   */
-  getMyVehicles: async (token) => {
-    return driverService.getVehicles(token);
-  },
-
-  /**
-   * Add vehicle (wrapper that supports multipart FormData)
-   */
-  addVehicle: async (token, formData) => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/vehicles`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        },
-        body: formData
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.detail || 'Failed to add vehicle');
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error('Error adding vehicle:', error);
-      throw error;
-    }
-  },
-
-  /**
-   * Update vehicle
-   */
-  updateVehicle: async (token, vehicleId, updateData) => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/vehicles/${vehicleId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(updateData)
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.detail || 'Failed to update vehicle');
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error('Error updating vehicle:', error);
-      throw error;
-    }
-  },
-
-  /**
-   * Remove vehicle
-   */
-  removeVehicle: async (token, vehicleId) => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/vehicles/${vehicleId}`, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.detail || 'Failed to remove vehicle');
-      }
-
-      return { success: true };
-    } catch (error) {
-      console.error('Error removing vehicle:', error);
-      throw error;
-    }
-  }
+  deleteWorkAvailability: async (token, date) => driverService.updateWorkAvailability(token, {
+    date,
+    is_available: false,
+    note: null
+  })
 };
 
 export default driverService;

@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 
 from app.models.fleet import DriverProfile, Fleet, FleetDriver
 from app.models.identity import UserKYC
-from app.models.vehicle import Vehicle, VehicleDocument
+from app.models.vehicle import Vehicle, VehicleDocument, DriverVehicleAssignment
 from app.models.tenant import TenantAdmin
 from app.models.identity import AppUser
 
@@ -505,6 +505,36 @@ class TenantAdminService:
 
         vehicle.approval_status = approval_status
         vehicle.updated_by = user.user_id
+
+        # If vehicle is APPROVED, auto-assign to driver for INDIVIDUAL fleets
+        if approval_status == "APPROVED":
+            fleet = db.query(Fleet).filter(Fleet.fleet_id == vehicle.fleet_id).first()
+            
+            if fleet and fleet.fleet_type == "INDIVIDUAL":
+                # For INDIVIDUAL fleets, the owner is the driver
+                driver_id = fleet.owner_user_id
+                
+                # Check if there's already an active assignment for this driver-vehicle pair
+                existing_assignment = (
+                    db.query(DriverVehicleAssignment)
+                    .filter(
+                        DriverVehicleAssignment.driver_id == driver_id,
+                        DriverVehicleAssignment.vehicle_id == vehicle_id,
+                        DriverVehicleAssignment.end_time.is_(None)
+                    )
+                    .first()
+                )
+                
+                if not existing_assignment:
+                    # Create new vehicle assignment
+                    assignment = DriverVehicleAssignment(
+                        driver_id=driver_id,
+                        vehicle_id=vehicle_id,
+                        start_time=datetime.now(timezone.utc),
+                        end_time=None,
+                        created_by=user.user_id
+                    )
+                    db.add(assignment)
 
         db.commit()
         db.refresh(vehicle)

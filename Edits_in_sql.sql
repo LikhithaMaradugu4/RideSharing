@@ -78,3 +78,21 @@ CREATE INDEX idx_vehicle_approval_status ON vehicle(approval_status);
 
 -- Add index for tenant + approval status queries
 CREATE INDEX idx_vehicle_tenant_approval ON vehicle(tenant_id, approval_status);
+select * from vehicle
+select * from app_user
+select * from fleet_driver;
+select * from driver_profile;
+select * from user_session;
+select * from fleet
+select * from driver_vehicle_assignment;
+select * from driver_shift;
+select * from driver_shift;
+ALTER TABLE vehicle
+ADD CONSTRAINT vehicle_pkey PRIMARY KEY (vehicle_id);
+
+-- Add vehicle_id column to driver_shift table
+ALTER TABLE driver_shift 
+ADD COLUMN vehicle_id BIGINT REFERENCES vehicle(vehicle_id);
+
+-- Optional: Add an index for faster queries
+CREATE INDEX idx_driver_shift_vehicle_id ON driver_shift(vehicle_id

@@ -153,6 +153,7 @@ class DriverShiftServiceV2:
         shift = DriverShift(
             driver_id=user.user_id,
             tenant_id=tenant_id,
+            vehicle_id=vehicle.vehicle_id,
             status="ONLINE",
             started_at=datetime.now(timezone.utc),
             created_by=user.user_id
