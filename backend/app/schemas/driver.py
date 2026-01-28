@@ -1,5 +1,15 @@
 from pydantic import BaseModel
 from typing import Optional
+from app.schemas.common import LatLng
+
+
+class UpdateDriverLocationRequest(LatLng):
+    pass
+
+class DriverAcceptResponse(BaseModel):
+    trip_id: int
+    status: str
+    message: str
 
 
 class DriverApplyRequest(BaseModel):

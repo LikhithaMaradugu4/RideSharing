@@ -1,5 +1,6 @@
 from sqlalchemy import Column, TIMESTAMP,Numeric, BigInteger,String, func
 
+
 class AuditMixin:
     created_by = Column(BigInteger)
     created_on = Column(TIMESTAMP(timezone=True), server_default=func.now(), nullable=False)

@@ -21,7 +21,6 @@ class DispatcherAssignment(Base, AuditMixin):
     dispatcher_id = Column(BigInteger, ForeignKey("app_user.user_id"), nullable=False)
     tenant_id = Column(BigInteger, ForeignKey("tenant.tenant_id"), nullable=False)
     city_id = Column(BigInteger, ForeignKey("city.city_id"))
-    zone_id = Column(BigInteger, ForeignKey("zone.zone_id"))
 
     start_time = Column(TIMESTAMP(timezone=True), nullable=False)
     end_time = Column(TIMESTAMP(timezone=True))

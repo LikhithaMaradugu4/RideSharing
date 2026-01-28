@@ -125,11 +125,10 @@ class RideRequestService:
         if not tenant:
             raise HTTPException(status_code=400, detail="Invalid tenant")
 
-        # 3️⃣ Validate vehicle category for tenant
+        # 3️⃣ Validate vehicle category for city
         fare = (
             db.query(FareConfig)
             .filter(
-                FareConfig.tenant_id == data.tenant_id,
                 FareConfig.city_id == ride_request.city_id,
                 FareConfig.vehicle_category == data.vehicle_category
             )
@@ -139,7 +138,7 @@ class RideRequestService:
         if not fare:
             raise HTTPException(
                 status_code=400,
-                detail="Vehicle category not supported by tenant"
+                detail="Vehicle category not supported in this city"
             )
 
         # 4️⃣ Create trip (tenant-specific)

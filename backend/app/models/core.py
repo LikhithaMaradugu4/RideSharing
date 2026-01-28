@@ -1,6 +1,6 @@
-from sqlalchemy import Column, String, BigInteger, ForeignKey, Numeric
+from sqlalchemy import Column, String, BigInteger, ForeignKey, Numeric, Text, Boolean
 from .base import Base
-from .mixins import AuditMixin, StatusMixin, GeoMixin
+from .mixins import AuditMixin, StatusMixin
 
 class Tenant(Base, AuditMixin, StatusMixin):
     __tablename__ = "tenant"
@@ -30,15 +30,5 @@ class City(Base, AuditMixin):
     name = Column(String(120), nullable=False)
     timezone = Column(String(50), nullable=False)
     currency = Column(String(3), nullable=False)
-
-class Zone(Base, AuditMixin, GeoMixin):
-    __tablename__ = "zone"
-
-    zone_id = Column(BigInteger, primary_key=True)
-    city_id = Column(BigInteger, ForeignKey("city.city_id"), nullable=False)
-    name = Column(String(120), nullable=False)
-
-    latitude = Column("center_lat", Numeric(9, 6))
-    longitude = Column("center_lng", Numeric(9, 6))
-
-    boundary = Column(String)
+    boundary_geojson = Column(Text, nullable=False)
+    is_active = Column(Boolean, nullable=False, default=True)

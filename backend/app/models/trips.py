@@ -43,14 +43,14 @@ class Trip(Base, AuditMixin):
     __tablename__ = "trip"
 
     trip_id = Column(BigInteger, primary_key=True)
-    tenant_id = Column(BigInteger, ForeignKey("tenant.tenant_id"), nullable=False)
+    tenant_id = Column(BigInteger, ForeignKey("tenant.tenant_id"), nullable=True)  # Set when driver accepts
 
     rider_id = Column(BigInteger, ForeignKey("app_user.user_id"), nullable=False)
     driver_id = Column(BigInteger, ForeignKey("app_user.user_id"))
     vehicle_id = Column(BigInteger, ForeignKey("vehicle.vehicle_id"))
 
     city_id = Column(BigInteger, ForeignKey("city.city_id"), nullable=False)
-    zone_id = Column(BigInteger, ForeignKey("zone.zone_id"))
+    surge_zone_id = Column(BigInteger, ForeignKey("surge_zone.surge_zone_id"))
 
     pickup_lat = Column(Numeric(9,6), nullable=False)
     pickup_lng = Column(Numeric(9,6), nullable=False)
