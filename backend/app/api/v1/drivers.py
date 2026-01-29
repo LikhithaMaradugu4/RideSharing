@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, status
+""" from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 
 from app.core.database import SessionLocal
@@ -27,7 +27,7 @@ router = APIRouter(prefix="/drivers", tags=["Drivers"])
 def get_available_tenants(
     db: Session = Depends(get_db)
 ):
-    """Get all available (ACTIVE) tenants for driver application"""
+    #Get all available (ACTIVE) tenants for driver application
     return TenantService.get_active_tenants(db)
 
 @router.post(
@@ -89,4 +89,4 @@ def update_driver_location(
         longitude=data.longitude
     )
     return {"message": "Location updated successfully"}
-
+"""

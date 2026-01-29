@@ -2,8 +2,10 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.api.deps.jwt_auth import get_current_user
+from app.api.deps.authorization import require_approved_driver
 from app.core.database import SessionLocal
 from app.models.identity import AppUser
+from app.models.fleet import DriverProfile
 from app.schemas.driver_shift import (
     DriverShiftResponse,
     ShiftStatusResponse,
@@ -29,13 +31,14 @@ def get_db():
 @router.post("/driver/availability/online", response_model=DriverShiftResponse)
 def start_shift(
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    driver_profile: DriverProfile = Depends(require_approved_driver)
 ):
     """
     Start shift (GO ONLINE).
     
+    Requires: Approved driver profile
+    
     Preconditions:
-    - Driver has APPROVED profile
     - Driver has active fleet association
     - Driver has active vehicle assignment
     - Vehicle has all required documents (RC, INSURANCE, VEHICLE_PHOTO)
@@ -43,10 +46,8 @@ def start_shift(
     
     Response: DriverShift object with status=ONLINE
     """
-    user_id = current_user.get("user_id")
-    user = db.query(AppUser).filter(AppUser.user_id == user_id).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+    # Get the user object for service call (service still needs user object)
+    user = db.query(AppUser).filter(AppUser.user_id == driver_profile.driver_id).first()
 
     shift = DriverShiftServiceV2.start_shift(db=db, user=user)
     return DriverShiftResponse.model_validate(shift)
@@ -57,10 +58,12 @@ def start_shift(
 @router.post("/driver/availability/offline", response_model=DriverShiftResponse)
 def end_shift(
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    driver_profile: DriverProfile = Depends(require_approved_driver)
 ):
     """
     End shift (GO OFFLINE).
+    
+    Requires: Approved driver profile
     
     Preconditions:
     - Active shift exists
@@ -70,10 +73,8 @@ def end_shift(
     
     Note: Vehicle assignment remains active (use /driver/shift/end to terminate assignment)
     """
-    user_id = current_user.get("user_id")
-    user = db.query(AppUser).filter(AppUser.user_id == user_id).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+    # Get the user object for service call
+    user = db.query(AppUser).filter(AppUser.user_id == driver_profile.driver_id).first()
 
     shift = DriverShiftServiceV2.end_shift(db=db, user=user)
     return DriverShiftResponse.model_validate(shift)
@@ -85,10 +86,12 @@ def end_shift(
 def end_assignment(
     request: EndAssignmentRequest,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    driver_profile: DriverProfile = Depends(require_approved_driver)
 ):
     """
     End vehicle assignment (driver is done with this vehicle).
+    
+    Requires: Approved driver profile
     
     Preconditions:
     - No active shift (driver must be OFFLINE)
@@ -98,10 +101,8 @@ def end_assignment(
     
     Note: After ending assignment, driver must be reassigned before next shift
     """
-    user_id = current_user.get("user_id")
-    user = db.query(AppUser).filter(AppUser.user_id == user_id).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+    # Get the user object for service call
+    user = db.query(AppUser).filter(AppUser.user_id == driver_profile.driver_id).first()
 
     assignment = DriverShiftServiceV2.end_assignment(db=db, user=user)
     

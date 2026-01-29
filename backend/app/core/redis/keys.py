@@ -35,6 +35,9 @@ PENDING_RIDES_KEY = "rides:pending:{city_id}"  # Format: rides:pending:1
 # Rate Limiting Keys
 RATE_LIMIT_KEY = "ratelimit:{endpoint}:{user_id}"  # Format: ratelimit:/pricing/estimate:7
 
+# Driver GEO Key (for Redis GEO operations - GEOADD/GEORADIUS)
+DRIVERS_GEO_KEY = "drivers:geo"  # Single key for all driver locations
+
 
 def format_key(template: str, **kwargs) -> str:
     """

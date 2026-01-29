@@ -133,7 +133,7 @@ def create_trip(
         vehicle_category=request.vehicle_category
     )
     
-    # Initiate dispatch
+    # Initiate dispatch (Wave 1)
     dispatch_success = DispatchService.dispatch_trip(
         db=db,
         trip=trip,
@@ -144,10 +144,8 @@ def create_trip(
     # Refresh trip to get updated status
     db.refresh(trip)
     
-    if not dispatch_success:
-        # No drivers available, but trip is still created
-        trip.status = "NO_DRIVER_AVAILABLE"
-        db.commit()
+    # Note: dispatch_success=False just means no drivers in wave 1
+    # Trip stays in DISPATCHING status for advance_dispatch_wave to handle
     
     return CreateTripResponse(
         trip_id=trip.trip_id,

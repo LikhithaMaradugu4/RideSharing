@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+"""from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.core.database import SessionLocal
@@ -17,7 +17,7 @@ def get_db():
 @router.post("/trip/{trip_id}")
 def pay_for_trip(
     trip_id: int,
-    data: dict,  # {"payment_mode": "ONLINE", "amount": 120}
+    daGetta: dict,  # {"payment_mode": "ONLINE", "amount": 120}
     db: Session = Depends(get_db),
     current_user = Depends(get_current_user)
 ):
@@ -33,3 +33,4 @@ def pay_for_trip(
         "payment_id": payment.payment_id,
         "status": payment.status
     }
+"""

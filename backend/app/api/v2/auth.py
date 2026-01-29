@@ -203,7 +203,7 @@ def verify_otp(data: VerifyOTPRequest, db: Session = Depends(get_db)):
     return JWTTokenResponse(
         access_token=access_token_data["token"],
         refresh_token=refresh_token_data["token"],
-        expires_in=15 * 60,  # 15 minutes in seconds
+        expires_in=60 * 60,  # 60 minutes in seconds
         user={
             "user_id": user.user_id,
             "phone_number": user.phone,

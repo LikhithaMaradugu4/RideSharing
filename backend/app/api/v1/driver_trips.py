@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+""" from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.core.database import SessionLocal
@@ -75,4 +75,4 @@ def complete_trip(
         driver_id=current_user.user_id,
         trip_id=trip_id
 
-    )
+    ) """

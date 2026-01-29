@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+""" from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.core.database import SessionLocal
@@ -33,4 +33,4 @@ def get_trip_status(
         # If driver_id is set and not this driver, forbid
         raise HTTPException(status_code=403, detail="Not your trip")
 
-    return trip
+    return trip """ 

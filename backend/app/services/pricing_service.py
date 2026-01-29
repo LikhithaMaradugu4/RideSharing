@@ -100,7 +100,7 @@ class PricingService:
             HTTPException if fare config not found
         """
         # Get fare config
-        fare_config = PricingService.get_fare_config(db, city_id, vehicle_category)
+        fare_config =PricingService.get_fare_config(db, city_id, vehicle_category)
         if not fare_config:
             raise HTTPException(
                 status_code=400,
