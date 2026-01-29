@@ -228,3 +228,95 @@ VALUES (
     78.45,
     now()
 );
+
+
+INSERT INTO app_user (user_id, full_name,phone,country_code,role,status,created_on)
+VALUES
+(201, 'Ravi Kumar', +919705939721, 'IN', 'RIDER', 'ACTIVE',now()),
+(202, 'Suresh Reddy', +919705939722, 'IN', 'DRIVER', 'ACTIVE',now()),
+(203, 'Mahesh Rao',  +919705939723, 'IN', 'DRIVER','ACTIVE',now()),
+(204, 'Arjun Verma', +919705939726, 'IN', 'DRIVER', 'ACTIVE',now()),
+(205, 'Vikas Singh', +919705939725, 'IN', 'DRIVER','ACTIVE', now());
+select * from driver_profile;
+
+INSERT INTO driver_profile (
+    driver_id,
+	tenant_id,
+	driver_type,
+    approval_status,
+    allowed_vehicle_categories,
+    created_on
+)
+VALUES
+(201,1, 'INDEPENDENT','APPROVED',  ARRAY['BIKE'], now()),
+(202, 1,'INDEPENDENT','APPROVED', ARRAY['BIKE'],  now()),
+(203,1,'INDEPENDENT', 'APPROVED', ARRAY['BIKE'],  now()),
+(204, 1,'INDEPENDENT','APPROVED', ARRAY['BIKE'],  now()),
+(205, 1,'INDEPENDENT','APPROVED', ARRAY['BIKE'], now());
+
+INSERT INTO fleet (
+    tenant_id,
+    owner_user_id,
+    fleet_name,
+    fleet_type,
+    status,
+    approval_status,
+    created_by
+)
+VALUES
+(1, 201, 'Ravi Fleet',   'INDIVIDUAL', 'ACTIVE', 'APPROVED', 1),
+(1, 202, 'Suresh Fleet', 'INDIVIDUAL', 'ACTIVE', 'APPROVED', 1),
+(1, 203, 'Mahesh Fleet', 'INDIVIDUAL', 'ACTIVE', 'APPROVED', 1),
+(1, 204, 'Arjun Fleet',  'INDIVIDUAL', 'ACTIVE', 'APPROVED', 1),
+(1, 205, 'Vikas Fleet',  'INDIVIDUAL', 'ACTIVE', 'APPROVED', 1);
+select * from fleet;
+select * from vehicle;
+INSERT INTO vehicle (
+    vehicle_id,
+	tenant_id,
+    fleet_id,
+    category,
+   registration_no,
+    status,
+    created_on
+)
+VALUES
+(301,1, 11, 'BIKE','TS09AB1201', 'ACTIVE', now()),
+(302,1, 12, 'BIKE','TS09AB1202', 'ACTIVE', now()),
+(303,1,13, 'BIKE', 'TS09AB1203', 'ACTIVE', now()),
+(304,1,14, 'BIKE','TS09AB1204', 'ACTIVE', now()),
+(305,1,15, 'BIKE', 'TS09AB1205', 'ACTIVE', now());
+
+select * from driver_shift;
+INSERT INTO driver_location (driver_id, latitude, longitude, last_updated)
+VALUES
+(201, 17.3860, 78.4870, now()),  -- wave 1
+(202, 17.3920, 78.4920, now()),  -- wave 1
+(203, 17.4100, 78.5100, now()),  -- wave 2
+(204, 17.4300, 78.5300, now()),  -- wave 3
+(205, 17.4600, 78.5600, now());  -- excluded (beyond MAX_RADIUS)
+select * from city;
+select * from fare_config;
+INSERT INTO fare_config (
+    city_id,
+    vehicle_category,
+    base_fare,
+    per_km,
+    per_minute,
+    minimum_fare,
+    created_by,
+    created_on
+)
+VALUES (         -- tenant_id
+    2,          -- city_id
+    'BIKE',     -- vehicle_category
+    30.00,      -- base_fare (₹30)
+    10.00,      -- per_km (₹10 per km)
+    1.00,       -- per_minute (₹1 per minute)
+    40.00,      -- minimum_fare (₹40)
+    1,          -- created_by (platform admin)
+    now()
+);
+
+ALTER TABLE trip
+ALTER COLUMN tenant_id DROP NOT NULL;
