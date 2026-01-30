@@ -248,31 +248,12 @@ class DispatchService:
             Current wave number (0 if no attempts exist)
         """
         result = (
-            db.query(DispatchAttempt.response)
+            db.query(func.max(DispatchAttempt.wave_number))
             .filter(DispatchAttempt.trip_id == trip_id)
-            .all()
+            .scalar()
         )
         
-        max_wave = 0
-        for (response,) in result:
-            if response and response.startswith("PENDING_WAVE_"):
-                try:
-                    wave = int(response.replace("PENDING_WAVE_", ""))
-                    max_wave = max(max_wave, wave)
-                except ValueError:
-                    pass
-            elif response in ("ACCEPTED", "REJECTED", "CANCELLED", "TIMEOUT"):
-                # Check if there's wave info in the attempt - for simplicity, count all attempts
-                pass
-        
-        # Fallback: count distinct waves by counting attempts
-        if max_wave == 0:
-            count = db.query(DispatchAttempt).filter(DispatchAttempt.trip_id == trip_id).count()
-            if count > 0:
-                # Estimate wave based on batch size
-                max_wave = min((count - 1) // BATCH_SIZE + 1, MAX_WAVES)
-        
-        return max_wave
+        return result or 0
 
     @staticmethod
     def count_pending_attempts(db: Session, trip_id: int) -> int:
@@ -325,6 +306,7 @@ class DispatchService:
                 driver_id=driver_id,
                 sent_at=now,
                 response=f"PENDING_WAVE_{wave}",
+                wave_number=wave,  # Explicitly set wave number
                 created_by=created_by
             )
             db.add(attempt)

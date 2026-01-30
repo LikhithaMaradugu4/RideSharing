@@ -1,4 +1,4 @@
-from sqlalchemy import Column, BigInteger, String, ForeignKey, TIMESTAMP
+from sqlalchemy import Column, BigInteger, String, ForeignKey, TIMESTAMP, Integer
 from .base import Base
 from .mixins import AuditMixin
 
@@ -12,6 +12,7 @@ class DispatchAttempt(Base, AuditMixin):
     sent_at = Column(TIMESTAMP(timezone=True), nullable=False)
     responded_at = Column(TIMESTAMP(timezone=True))
     response = Column(String)
+    wave_number = Column(Integer, default=1)  # Dispatch wave (1, 2, 3, ...)
 
 
 class DispatcherAssignment(Base, AuditMixin):

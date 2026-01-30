@@ -54,3 +54,28 @@ class TripStatusResponse(BaseModel):
 class CancelTripResponse(BaseModel):
     trip_id: int
     status: str
+
+
+# ----- Pickup OTP Schemas -----
+
+class GeneratePickupOTPResponse(BaseModel):
+    """Response after generating pickup OTP."""
+    trip_id: int
+    otp: str  # The 6-digit OTP to show to rider
+    expires_at: str  # ISO timestamp when OTP expires
+
+    model_config = {"from_attributes": True}
+
+
+class VerifyPickupOTPRequest(BaseModel):
+    """Request to verify pickup OTP."""
+    otp: str  # The 6-digit OTP entered by driver
+
+
+class VerifyPickupOTPResponse(BaseModel):
+    """Response after verifying pickup OTP."""
+    trip_id: int
+    verified: bool
+    message: str
+
+    model_config = {"from_attributes": True}

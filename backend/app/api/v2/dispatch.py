@@ -23,6 +23,7 @@ from app.schemas.dispatch import (
     DriverDispatchNotification,
     DispatchAttemptResponse
 )
+from app.schemas.trip import VerifyPickupOTPRequest
 from app.schemas.driver import UpdateDriverLocationRequest
 from app.services.dispatch_service import DispatchService
 from app.services.driver_location_service import DriverLocationService
@@ -297,8 +298,17 @@ def pickup_rider(
     
     Requires: Approved driver profile
     
-    Transitions trip from ASSIGNED to PICKED_UP.
+    Transitions trip from ARRIVED to PICKED_UP.
+    Requires OTP verification before pickup.
+    
+    Flow:
+    1. Driver arrives (ASSIGNED -> ARRIVED)
+    2. Rider generates OTP
+    3. Driver verifies OTP
+    4. Driver confirms pickup (ARRIVED -> PICKED_UP)
     """
+    from app.services.pickup_otp_service import PickupOTPService
+    
     driver_id = driver_profile.driver_id
     
     trip = db.query(Trip).filter(Trip.trip_id == trip_id).first()
@@ -309,10 +319,17 @@ def pickup_rider(
     if trip.driver_id != driver_id:
         raise HTTPException(status_code=403, detail="Not authorized for this trip")
     
-    if trip.status != "ASSIGNED":
+    if trip.status != "ARRIVED":
         raise HTTPException(
             status_code=400,
-            detail=f"Cannot pickup rider for trip in '{trip.status}' status"
+            detail=f"Cannot pickup rider for trip in '{trip.status}' status. Driver must arrive first."
+        )
+    
+    # Check OTP verification
+    if not PickupOTPService.is_otp_verified(db=db, trip_id=trip_id):
+        raise HTTPException(
+            status_code=400,
+            detail="OTP verification required before pickup. Please verify the OTP from rider."
         )
     
     from datetime import datetime, timezone
@@ -465,3 +482,122 @@ def get_dispatch_status(
         "total_attempts": total_attempts,
         "assigned_at": trip.assigned_at
     }
+
+
+# ---------------------- Driver Arrival & OTP Endpoints ----------------------
+
+@router.post("/driver/trips/{trip_id}/arrive")
+def driver_arrive_at_pickup(
+    trip_id: int,
+    db: Session = Depends(get_db),
+    driver_profile: DriverProfile = Depends(require_approved_driver)
+):
+    """
+    Driver marks arrival at pickup location.
+    
+    Requires: Approved driver profile
+    
+    Transitions trip from ASSIGNED to ARRIVED.
+    After this, the rider can generate an OTP for pickup verification.
+    """
+    from datetime import datetime, timezone
+    
+    driver_id = driver_profile.driver_id
+    
+    trip = db.query(Trip).filter(Trip.trip_id == trip_id).first()
+    
+    if not trip:
+        raise HTTPException(status_code=404, detail="Trip not found")
+    
+    if trip.driver_id != driver_id:
+        raise HTTPException(status_code=403, detail="Not authorized for this trip")
+    
+    if trip.status != "ASSIGNED":
+        raise HTTPException(
+            status_code=400,
+            detail=f"Cannot mark arrival for trip in '{trip.status}' status"
+        )
+    
+    trip.status = "ARRIVED"
+    trip.updated_by = driver_id
+    
+    db.commit()
+    db.refresh(trip)
+    
+    return {
+        "message": "Driver arrived at pickup location. Waiting for rider OTP.",
+        "trip_id": trip.trip_id,
+        "status": trip.status
+    }
+
+
+@router.post("/rider/trips/{trip_id}/generate-otp")
+def generate_pickup_otp(
+    trip_id: int,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Rider generates pickup OTP.
+    
+    After driver arrives (ARRIVED status), rider generates an OTP.
+    The OTP is displayed to the rider who shares it with the driver.
+    
+    Returns:
+        OTP (6-digit code) and expiration time
+    """
+    from app.services.pickup_otp_service import PickupOTPService
+    from app.schemas.trip import GeneratePickupOTPResponse
+    
+    # Verify the trip belongs to this rider
+    trip = db.query(Trip).filter(Trip.trip_id == trip_id).first()
+    
+    if not trip:
+        raise HTTPException(status_code=404, detail="Trip not found")
+    
+    rider_id = current_user.get("user_id")
+    if trip.rider_id != rider_id:
+        raise HTTPException(status_code=403, detail="Not authorized for this trip")
+    
+    result = PickupOTPService.generate_pickup_otp(db=db, trip_id=trip_id)
+    
+    return GeneratePickupOTPResponse(**result)
+
+
+@router.post("/driver/trips/{trip_id}/verify-otp")
+def verify_pickup_otp(
+    trip_id: int,
+    request: "VerifyPickupOTPRequest",
+    db: Session = Depends(get_db),
+    driver_profile: DriverProfile = Depends(require_approved_driver)
+):
+    """
+    Driver verifies pickup OTP.
+    
+    Driver enters the OTP shared by the rider.
+    On successful verification, driver can proceed to pickup the rider.
+    
+    Returns:
+        Verification result (success/failure) and message
+    """
+    from app.services.pickup_otp_service import PickupOTPService
+    from app.schemas.trip import VerifyPickupOTPResponse
+    
+    driver_id = driver_profile.driver_id
+    
+    # Verify the trip belongs to this driver
+    trip = db.query(Trip).filter(Trip.trip_id == trip_id).first()
+    
+    if not trip:
+        raise HTTPException(status_code=404, detail="Trip not found")
+    
+    if trip.driver_id != driver_id:
+        raise HTTPException(status_code=403, detail="Not authorized for this trip")
+    
+    result = PickupOTPService.verify_pickup_otp(
+        db=db,
+        trip_id=trip_id,
+        entered_otp=request.otp
+    )
+    
+    return VerifyPickupOTPResponse(**result)

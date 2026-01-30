@@ -70,3 +70,9 @@ class Trip(Base, AuditMixin):
     platform_fee = Column(Numeric(10,2))
 
     payment_status = Column(String, ForeignKey("lu_payment_status.status_code"))
+
+    # Pickup OTP verification
+    pickup_otp = Column(String(6))  # 6-digit OTP
+    pickup_otp_expires_at = Column(TIMESTAMP(timezone=True))
+    pickup_otp_attempts = Column(BigInteger, default=0)  # Track failed attempts
+    pickup_otp_verified_at = Column(TIMESTAMP(timezone=True))  # When OTP was verified

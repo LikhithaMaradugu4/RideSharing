@@ -12,6 +12,7 @@ class DispatchAttemptResponse(BaseModel):
     sent_at: datetime
     responded_at: Optional[datetime]
     response: str  # PENDING_WAVE_1 | ACCEPTED | REJECTED | CANCELLED | TIMEOUT
+    wave_number: Optional[int] = None  # Dispatch wave (1, 2, 3, ...)
 
     model_config = ConfigDict(from_attributes=True)
 
