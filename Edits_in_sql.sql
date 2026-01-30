@@ -320,3 +320,111 @@ VALUES (         -- tenant_id
 
 ALTER TABLE trip
 ALTER COLUMN tenant_id DROP NOT NULL;
+
+
+
+
+INSERT INTO driver_location (
+    driver_id,
+    latitude,
+    longitude,
+    last_updated
+)
+VALUES (
+    21,
+    17.40,
+    78.45,
+    now()
+);
+INSERT INTO app_user (user_id, full_name,phon,,role, created_on)
+VALUES
+(201, 'Ravi Kumar',+919705939721,,'DRIVER', now()),
+(202, 'Suresh Reddy', 'DRIVER', now()),
+(203, 'Mahesh Rao',   'DRIVER', now()),
+(204, 'Arjun Verma',  'DRIVER', now()),
+(205, 'Vikas Singh',  'DRIVER', now());
+
+
+INSERT INTO driver_location (driver_id, latitude, longitude, last_updated)
+VALUES
+(201, 17.3860, 78.4870, now()),  -- wave 1
+(202, 17.3920, 78.4920, now()),  -- wave 1
+(203, 17.4100, 78.5100, now()),  -- wave 2
+(204, 17.4300, 78.5300, now()),  -- wave 3
+(205, 17.4600, 78.5600, now());  -- excluded (beyond MAX_RADIUS)
+INSERT INTO driver_shift (
+    driver_id,
+    tenant_id,
+    status,
+    started_at,
+    created_on
+)
+VALUES
+(201, 1, 'ONLINE', now(), now()),
+(202, 1, 'ONLINE', now(), now()),
+(203, 1, 'ONLINE', now(), now()),
+(204, 1, 'ONLINE', now(), now()),
+(205, 1, 'ONLINE', now(), now());
+
+
+INSERT INTO driver_location (
+    driver_id,
+    latitude,
+    longitude,
+    last_updated
+)
+VALUES
+-- Wave 1 (very close: < 3 km)
+(201, 17.3860, 78.4870, now()),
+(202, 17.3920, 78.4920, now()),
+
+-- Wave 2 (~4–5 km)
+(203, 17.4100, 78.5100, now()),
+-- Wave 3 (~6–8 km)
+(204, 17.4300, 78.5300, now()),
+
+-- Beyond MAX_RADIUS (should be excluded)
+(205, 17.4600, 78.5600, now());
+
+
+select * from driver_location;
+
+
+UPDATE app_user
+SET phone = CASE user_id
+    WHEN 201 THEN '+919876453211'
+    WHEN 202 THEN '+919876453212'
+    WHEN 203 THEN '+919876453213'
+    WHEN 204 THEN '+919876453214'
+END
+WHERE user_id BETWEEN 201 AND 205;
+
+select * from app_user;
+update app_user set phone= +918498858063 where user_id = 9;
+
+select * from fleet;
+UPDATE dispatch_attempt
+SET response = 'REJECTED', responded_at = now()
+WHERE trip_id = 8;
+select * from dispatch_attempt;
+select * from driver_profile;
+SELECT driver_id, city_id
+FROM driver_profile
+WHERE driver_id IN (201,202,203,204);
+SELECT
+  dp.driver_id,
+  dp.allowed_vehicle_categories,
+  ds.status,
+  ds.ended_at
+FROM driver_profile dp
+JOIN driver_shift ds ON ds.driver_id = dp.driver_id
+WHERE dp.driver_id = 204;
+SELECT *
+FROM driver_location
+WHERE driver_id = 204;
+-- Compare 203 vs 204 directly
+SELECT
+  dp.driver_id,
+  dp.allowed_vehicle_categories,
+}
+
