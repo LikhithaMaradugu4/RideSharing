@@ -63,6 +63,33 @@ class DriverShiftServiceV2:
             )
             .first()
         )
+        
+        # If no FleetDriver record, check if user owns an INDIVIDUAL fleet directly
+        # This handles cases where FleetDriver wasn't created but the driver owns a fleet
+        if not active_fleet_assoc:
+            owned_individual_fleet = (
+                db.query(Fleet)
+                .filter(
+                    Fleet.owner_user_id == user.user_id,
+                    Fleet.fleet_type == "INDIVIDUAL",
+                    Fleet.approval_status == "APPROVED"
+                )
+                .first()
+            )
+            if owned_individual_fleet:
+                # Create the missing FleetDriver association
+                missing_fleet_driver = FleetDriver(
+                    fleet_id=owned_individual_fleet.fleet_id,
+                    driver_id=user.user_id,
+                    start_date=datetime.now(timezone.utc),
+                    end_date=None,
+                    created_by=user.user_id
+                )
+                db.add(missing_fleet_driver)
+                db.flush()  # Get the ID without committing
+                
+                active_fleet_assoc = (missing_fleet_driver, owned_individual_fleet)
+        
         if not active_fleet_assoc:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,

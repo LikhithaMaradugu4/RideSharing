@@ -191,6 +191,7 @@ def check_shift_readiness(
     }
     
     # Check 2: Has active fleet association
+    # First check FleetDriver table (for business fleets and properly-created individual fleets)
     fleet_assoc = (
         db.query(FleetDriver, Fleet)
         .join(Fleet, Fleet.fleet_id == FleetDriver.fleet_id)
@@ -200,6 +201,35 @@ def check_shift_readiness(
         )
         .first()
     )
+    
+    # If no FleetDriver record, check if user owns an INDIVIDUAL fleet directly
+    # This handles cases where FleetDriver wasn't created but the driver owns a fleet
+    if not fleet_assoc:
+        owned_individual_fleet = (
+            db.query(Fleet)
+            .filter(
+                Fleet.owner_user_id == user_id,
+                Fleet.fleet_type == "INDIVIDUAL"
+            )
+            .first()
+        )
+        if owned_individual_fleet:
+            # Create the missing FleetDriver association
+            from datetime import datetime, timezone
+            missing_fleet_driver = FleetDriver(
+                fleet_id=owned_individual_fleet.fleet_id,
+                driver_id=user_id,
+                start_date=datetime.now(timezone.utc),
+                end_date=None,
+                created_by=user_id
+            )
+            db.add(missing_fleet_driver)
+            db.commit()
+            db.refresh(missing_fleet_driver)
+            
+            # Now use this association
+            fleet_assoc = (missing_fleet_driver, owned_individual_fleet)
+    
     if fleet_assoc:
         fleet_driver, fleet = fleet_assoc
         result["checks"]["fleet_association"] = {

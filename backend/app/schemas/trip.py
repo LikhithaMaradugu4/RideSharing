@@ -44,12 +44,36 @@ class CreateTripResponse(BaseModel):
     fare_amount: float
 
 
+class LocationInfo(BaseModel):
+    lat: float
+    lng: float
+
+
+class DriverInfo(BaseModel):
+    driver_id: int
+    full_name: Optional[str] = None
+    phone_number: Optional[str] = None
+
+
+class VehicleInfo(BaseModel):
+    vehicle_id: int
+    vehicle_category: Optional[str] = None
+    registration_number: Optional[str] = None
+
 
 class TripStatusResponse(BaseModel):
     trip_id: int
     status: str
-    driver_id: Optional[int]
+    driver_id: Optional[int] = None
     fare_amount: float
+    estimated_fare: Optional[float] = None
+    distance_km: Optional[float] = None
+    vehicle_category: Optional[str] = None
+    pickup_location: Optional[LocationInfo] = None
+    drop_location: Optional[LocationInfo] = None
+    driver: Optional[DriverInfo] = None
+    vehicle: Optional[VehicleInfo] = None
+    pickup_otp: Optional[str] = None
 
 class CancelTripResponse(BaseModel):
     trip_id: int

@@ -35,7 +35,7 @@ MAX_WAVES = 3
 INITIAL_RADIUS_KM = 3.0
 RADIUS_INCREMENT_KM = 2.0
 MAX_RADIUS_KM = 10.0
-OFFER_TIMEOUT_SECONDS = 15
+OFFER_TIMEOUT_SECONDS = 90  # 90 seconds for driver to respond
 
 
 def calculate_radius_for_wave(wave: int) -> float:

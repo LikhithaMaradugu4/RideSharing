@@ -24,7 +24,10 @@ from app.schemas.trip import (
     FareEstimateRequest,
     FareEstimateResponse,
     ValidateLocationRequest,
-    ValidateLocationResponse
+    ValidateLocationResponse,
+    LocationInfo,
+    DriverInfo,
+    VehicleInfo
 )
 from app.services.trip_service import TripService
 from app.services.dispatch_service import DispatchService
@@ -163,7 +166,7 @@ def get_trip(
     """
     Get trip details.
     
-    Returns current trip status and assigned driver (if any).
+    Returns current trip status, locations, fare, and assigned driver (if any).
     """
     user_id = current_user.get("user_id")
     
@@ -173,12 +176,45 @@ def get_trip(
         rider_id=user_id
     )
     
-    return TripStatusResponse(
+    # Build response with all trip details
+    response = TripStatusResponse(
         trip_id=trip.trip_id,
         status=trip.status,
         driver_id=trip.driver_id,
-        fare_amount=float(trip.fare_amount) if trip.fare_amount else 0.0
+        fare_amount=float(trip.fare_amount) if trip.fare_amount else 0.0,
+        pickup_location=LocationInfo(
+            lat=float(trip.pickup_lat),
+            lng=float(trip.pickup_lng)
+        ) if trip.pickup_lat and trip.pickup_lng else None,
+        drop_location=LocationInfo(
+            lat=float(trip.drop_lat),
+            lng=float(trip.drop_lng)
+        ) if trip.drop_lat and trip.drop_lng else None,
+        pickup_otp=trip.pickup_otp
     )
+    
+    # Add driver info if assigned
+    if trip.driver_id:
+        driver = db.query(AppUser).filter(AppUser.user_id == trip.driver_id).first()
+        if driver:
+            response.driver = DriverInfo(
+                driver_id=driver.user_id,
+                full_name=driver.full_name,
+                phone_number=driver.phone
+            )
+    
+    # Add vehicle info if available
+    if trip.vehicle_id:
+        from app.models.vehicle import Vehicle
+        vehicle = db.query(Vehicle).filter(Vehicle.vehicle_id == trip.vehicle_id).first()
+        if vehicle:
+            response.vehicle = VehicleInfo(
+                vehicle_id=vehicle.vehicle_id,
+                vehicle_category=vehicle.category,
+                registration_number=vehicle.registration_no
+            )
+    
+    return response
 
 
 @router.post("/{trip_id}/cancel", response_model=CancelTripResponse)

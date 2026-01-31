@@ -14,6 +14,9 @@ import DriverDispatches from './app/pages/DriverDispatches'
 import DriverVehicles from './app/pages/DriverVehicles'
 import DriverAvailability from './app/pages/DriverAvailability'
 import DriverFleets from './app/pages/DriverFleets'
+import RiderDashboard from './app/pages/RiderDashboard'
+import RiderTripStatus from './app/pages/RiderTripStatus'
+import TripPlanning from './app/pages/TripPlanning'
 import adminService from './services/admin.service'
 
 function App() {
@@ -202,6 +205,34 @@ function App() {
           element={
             isUserAuthenticated()
               ? (isUserAdmin() ? <Navigate to="/admin/login" /> : <DriverFleets />)
+              : <Navigate to="/login" />
+          }
+        />
+
+        {/* Rider Routes */}
+        <Route
+          path="/app/rider-dashboard"
+          element={
+            isUserAuthenticated()
+              ? (isUserAdmin() ? <Navigate to="/admin/login" /> : <RiderDashboard />)
+              : <Navigate to="/login" />
+          }
+        />
+
+        <Route
+          path="/app/rider/book"
+          element={
+            isUserAuthenticated()
+              ? (isUserAdmin() ? <Navigate to="/admin/login" /> : <TripPlanning />)
+              : <Navigate to="/login" />
+          }
+        />
+
+        <Route
+          path="/app/rider/trip/:tripId"
+          element={
+            isUserAuthenticated()
+              ? (isUserAdmin() ? <Navigate to="/admin/login" /> : <RiderTripStatus />)
               : <Navigate to="/login" />
           }
         />

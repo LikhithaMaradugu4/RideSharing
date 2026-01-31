@@ -1,6 +1,7 @@
 /**
  * Driver Service - Driver-facing API helpers for the phase-2 backend.
  */
+import authService from './auth.service';
 
 const API_BASE_URL = 'http://localhost:8000/api/v2';
 
@@ -13,6 +14,17 @@ const buildHeaders = (token, contentType = 'application/json') => {
     baseHeaders['Authorization'] = `Bearer ${token}`;
   }
   return baseHeaders;
+};
+
+/**
+ * Get a valid token, refreshing if needed
+ */
+const getValidToken = async (token) => {
+  // If token was passed, check if we need to refresh
+  if (token) {
+    return await authService.getValidToken();
+  }
+  return null;
 };
 
 const parseJson = async (response) => {
@@ -72,9 +84,10 @@ const driverService = {
    */
   getMyProfile: async (token) => {
     try {
+      const validToken = await getValidToken(token);
       const response = await fetch(`${API_BASE_URL}/driver/me`, {
         method: 'GET',
-        headers: buildHeaders(token)
+        headers: buildHeaders(validToken)
       });
 
       const data = await handleResponse(response, 'Failed to fetch driver profile');
@@ -91,18 +104,20 @@ const driverService = {
    * Shift management helpers.
    */
   startShift: async (token) => {
+    const validToken = await getValidToken(token);
     const response = await fetch(`${API_BASE_URL}/driver/availability/online`, {
       method: 'POST',
-      headers: buildHeaders(token)
+      headers: buildHeaders(validToken)
     });
 
     return handleResponse(response, 'Failed to start shift');
   },
 
   endShift: async (token) => {
+    const validToken = await getValidToken(token);
     const response = await fetch(`${API_BASE_URL}/driver/availability/offline`, {
       method: 'POST',
-      headers: buildHeaders(token)
+      headers: buildHeaders(validToken)
     });
 
     return handleResponse(response, 'Failed to end shift');
@@ -110,9 +125,10 @@ const driverService = {
 
   getActiveShift: async (token) => {
     try {
+      const validToken = await getValidToken(token);
       const response = await fetch(`${API_BASE_URL}/driver/shift/active`, {
         method: 'GET',
-        headers: buildHeaders(token)
+        headers: buildHeaders(validToken)
       });
 
       return await handleResponse(response, 'Failed to fetch active shift');
@@ -129,9 +145,10 @@ const driverService = {
    * Returns detailed checklist useful for diagnosing issues.
    */
   checkShiftReadiness: async (token) => {
+    const validToken = await getValidToken(token);
     const response = await fetch(`${API_BASE_URL}/driver/shift/readiness`, {
       method: 'GET',
-      headers: buildHeaders(token)
+      headers: buildHeaders(validToken)
     });
 
     return handleResponse(response, 'Failed to check shift readiness');
@@ -141,9 +158,10 @@ const driverService = {
    * Dispatch handling.
    */
   getPendingDispatches: async (token) => {
-    const response = await fetch(`${API_BASE_URL}/driver/dispatches/pending`, {
+    const validToken = await getValidToken(token);
+    const response = await fetch(`${API_BASE_URL}/dispatch/driver/dispatches/pending`, {
       method: 'GET',
-      headers: buildHeaders(token)
+      headers: buildHeaders(validToken)
     });
 
     const data = await handleResponse(response, 'Failed to fetch pending dispatches');
@@ -151,20 +169,20 @@ const driverService = {
   },
 
   acceptDispatch: async (token, attemptId) => {
-    const response = await fetch(`${API_BASE_URL}/driver/dispatches/accept`, {
+    const validToken = await getValidToken(token);
+    const response = await fetch(`${API_BASE_URL}/dispatch/${attemptId}/accept`, {
       method: 'POST',
-      headers: buildHeaders(token),
-      body: JSON.stringify({ attempt_id: attemptId })
+      headers: buildHeaders(validToken)
     });
 
     return handleResponse(response, 'Failed to accept dispatch');
   },
 
   rejectDispatch: async (token, attemptId) => {
-    const response = await fetch(`${API_BASE_URL}/driver/dispatches/reject`, {
+    const validToken = await getValidToken(token);
+    const response = await fetch(`${API_BASE_URL}/dispatch/${attemptId}/reject`, {
       method: 'POST',
-      headers: buildHeaders(token),
-      body: JSON.stringify({ attempt_id: attemptId })
+      headers: buildHeaders(validToken)
     });
 
     return handleResponse(response, 'Failed to reject dispatch');
@@ -174,9 +192,10 @@ const driverService = {
    * Vehicle management.
    */
   getVehicles: async (token) => {
+    const validToken = await getValidToken(token);
     const response = await fetch(`${API_BASE_URL}/vehicles`, {
       method: 'GET',
-      headers: buildHeaders(token)
+      headers: buildHeaders(validToken)
     });
 
     return handleResponse(response, 'Failed to fetch vehicles');
@@ -188,9 +207,10 @@ const driverService = {
    * Get approved vehicles for independent drivers (for vehicle selection).
    */
   getApprovedVehicles: async (token) => {
+    const validToken = await getValidToken(token);
     const response = await fetch(`${API_BASE_URL}/vehicles/driver/approved`, {
       method: 'GET',
-      headers: buildHeaders(token)
+      headers: buildHeaders(validToken)
     });
 
     return handleResponse(response, 'Failed to fetch approved vehicles');
@@ -203,9 +223,10 @@ const driverService = {
    * @param {boolean} endShiftIfActive - If true, auto-end any active shift before switching
    */
   selectVehicle: async (token, vehicleId, endShiftIfActive = false) => {
+    const validToken = await getValidToken(token);
     const response = await fetch(`${API_BASE_URL}/vehicles/driver/select`, {
       method: 'POST',
-      headers: buildHeaders(token),
+      headers: buildHeaders(validToken),
       body: JSON.stringify({ 
         vehicle_id: vehicleId,
         end_shift_if_active: endShiftIfActive
@@ -342,7 +363,85 @@ const driverService = {
     date,
     is_available: false,
     note: null
-  })
+  }),
+
+  // =====================================================
+  // Trip Lifecycle Methods (Driver-facing)
+  // =====================================================
+
+  /**
+   * Get driver's active trip (if any).
+   * Returns trip in ASSIGNED, ARRIVED, or PICKED_UP status.
+   */
+  getActiveTrip: async (token) => {
+    const validToken = await getValidToken(token);
+    const response = await fetch(`${API_BASE_URL}/dispatch/driver/trips/active`, {
+      method: 'GET',
+      headers: buildHeaders(validToken)
+    });
+
+    const data = await handleResponse(response, 'Failed to fetch active trip');
+    return data?.active_trip || null;
+  },
+
+  /**
+   * Mark driver as arrived at pickup location.
+   * Transitions trip from ASSIGNED to ARRIVED.
+   */
+  markArrived: async (token, tripId) => {
+    const validToken = await getValidToken(token);
+    const response = await fetch(`${API_BASE_URL}/dispatch/driver/trips/${tripId}/arrive`, {
+      method: 'POST',
+      headers: buildHeaders(validToken)
+    });
+
+    return handleResponse(response, 'Failed to mark arrival');
+  },
+
+  /**
+   * Verify pickup OTP entered by driver.
+   * OTP is shared by rider with driver verbally.
+   */
+  verifyPickupOTP: async (token, tripId, otp) => {
+    const validToken = await getValidToken(token);
+    const response = await fetch(`${API_BASE_URL}/dispatch/driver/trips/${tripId}/verify-otp`, {
+      method: 'POST',
+      headers: buildHeaders(validToken),
+      body: JSON.stringify({ otp })
+    });
+
+    return handleResponse(response, 'Failed to verify OTP');
+  },
+
+  /**
+   * Confirm rider pickup.
+   * Transitions trip from ARRIVED to PICKED_UP.
+   * Requires OTP verification first.
+   */
+  confirmPickup: async (token, tripId) => {
+    const validToken = await getValidToken(token);
+    const response = await fetch(`${API_BASE_URL}/dispatch/driver/trips/${tripId}/pickup`, {
+      method: 'POST',
+      headers: buildHeaders(validToken)
+    });
+
+    return handleResponse(response, 'Failed to confirm pickup');
+  },
+
+  /**
+   * Complete the trip.
+   * Transitions trip from PICKED_UP to COMPLETED.
+   * Sets driver shift back to ONLINE.
+   */
+  completeTrip: async (token, tripId) => {
+    const validToken = await getValidToken(token);
+    const response = await fetch(`${API_BASE_URL}/dispatch/driver/trips/${tripId}/complete`, {
+      method: 'POST',
+      headers: buildHeaders(validToken)
+    });
+
+    return handleResponse(response, 'Failed to complete trip');
+  }
 };
 
 export default driverService;

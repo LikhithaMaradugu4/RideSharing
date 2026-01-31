@@ -29,7 +29,7 @@ from app.services.dispatch_service import DispatchService
 from app.services.driver_location_service import DriverLocationService
 from app.utils.haversine import haversine
 
-router = APIRouter(tags=["Dispatch"])
+router = APIRouter(prefix="/dispatch", tags=["Dispatch"])
 
 
 def get_db():
@@ -130,14 +130,14 @@ def get_pending_dispatches(
                     rider_name=rider_name,
                     estimated_distance_km=distance_km,
                     sent_at=attempt.sent_at,
-                    expires_in_seconds=15
+                    expires_in_seconds=400
                 )
             )
 
     return {"pending_dispatches": notifications, "total": len(notifications)}
 
 
-@router.post("/dispatch/{attempt_id}/accept")
+@router.post("/{attempt_id}/accept")
 def accept_dispatch(
     attempt_id: int,
     db: Session = Depends(get_db),
@@ -195,7 +195,7 @@ def accept_dispatch(
     }
 
 
-@router.post("/dispatch/{attempt_id}/reject")
+@router.post("/{attempt_id}/reject")
 def reject_dispatch(
     attempt_id: int,
     db: Session = Depends(get_db),
@@ -249,7 +249,7 @@ def get_active_trip(
     
     Requires: Approved driver profile
     
-    Returns trip in ASSIGNED or PICKED_UP status.
+    Returns trip in ASSIGNED, ARRIVED, PICKED_UP, or IN_PROGRESS status.
     """
     driver_id = driver_profile.driver_id
     
@@ -257,7 +257,7 @@ def get_active_trip(
         db.query(Trip)
         .filter(
             Trip.driver_id == driver_id,
-            Trip.status.in_(["ASSIGNED", "PICKED_UP"])
+            Trip.status.in_(["ASSIGNED", "ARRIVED", "PICKED_UP", "IN_PROGRESS"])
         )
         .first()
     )
@@ -408,7 +408,7 @@ def complete_trip(
 
 # ---------------------- Dispatch Wave Management ----------------------
 
-@router.post("/dispatch/trip/{trip_id}/advance-wave")
+@router.post("/trip/{trip_id}/advance-wave")
 def advance_dispatch_wave(
     trip_id: int,
     vehicle_category: str = Query(..., description="Vehicle category for driver matching"),
@@ -445,7 +445,7 @@ def advance_dispatch_wave(
     return result
 
 
-@router.get("/dispatch/trip/{trip_id}/status")
+@router.get("/trip/{trip_id}/status")
 def get_dispatch_status(
     trip_id: int,
     db: Session = Depends(get_db),
@@ -601,3 +601,81 @@ def verify_pickup_otp(
     )
     
     return VerifyPickupOTPResponse(**result)
+
+
+# ---------------------- Rider Active Trip Endpoint ----------------------
+
+@router.get("/rider/active-trip")
+def get_rider_active_trip(
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Get rider's current active trip (if any).
+    
+    Returns trip in REQUESTED, DISPATCHING, ASSIGNED, ARRIVED, or PICKED_UP status.
+    """
+    rider_id = current_user.get("user_id")
+    
+    trip = (
+        db.query(Trip)
+        .filter(
+            Trip.rider_id == rider_id,
+            Trip.status.in_(["REQUESTED", "DISPATCHING", "ASSIGNED", "ARRIVED", "PICKED_UP", "IN_PROGRESS"])
+        )
+        .order_by(Trip.created_on.desc())
+        .first()
+    )
+    
+    if not trip:
+        return {"active_trip": None}
+    
+    # Get driver info if assigned
+    driver_info = None
+    vehicle_info = None
+    
+    if trip.driver_id:
+        driver = db.query(DriverProfile).filter(DriverProfile.driver_id == trip.driver_id).first()
+        if driver:
+            driver_user = db.query(AppUser).filter(AppUser.user_id == driver.user_id).first()
+            driver_info = {
+                "driver_id": driver.driver_id,
+                "full_name": driver_user.full_name if driver_user else None,
+                "phone_number": DispatchService.get_rider_display_name(driver_user.phone_number) if driver_user else None
+            }
+        
+        # Get vehicle info from driver's active assignment
+        from app.models.fleet import DriverVehicleAssignment, Vehicle
+        assignment = (
+            db.query(DriverVehicleAssignment)
+            .filter(
+                DriverVehicleAssignment.driver_id == trip.driver_id,
+                DriverVehicleAssignment.status == "ACTIVE"
+            )
+            .first()
+        )
+        if assignment:
+            vehicle = db.query(Vehicle).filter(Vehicle.vehicle_id == assignment.vehicle_id).first()
+            if vehicle:
+                vehicle_info = {
+                    "vehicle_id": vehicle.vehicle_id,
+                    "registration_number": vehicle.registration_number,
+                    "vehicle_category": vehicle.vehicle_category
+                }
+    
+    return {
+        "active_trip": {
+            "trip_id": trip.trip_id,
+            "status": trip.status,
+            "pickup_lat": float(trip.pickup_lat),
+            "pickup_lng": float(trip.pickup_lng),
+            "drop_lat": float(trip.drop_lat) if trip.drop_lat else None,
+            "drop_lng": float(trip.drop_lng) if trip.drop_lng else None,
+            "fare_amount": float(trip.fare_amount) if trip.fare_amount else None,
+            "created_at": trip.created_on,
+            "assigned_at": trip.assigned_at,
+            "picked_up_at": trip.picked_up_at,
+            "driver": driver_info,
+            "vehicle": vehicle_info
+        }
+    }

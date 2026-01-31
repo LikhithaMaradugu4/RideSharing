@@ -11,6 +11,7 @@ function DriverDispatches() {
   const [driverProfile, setDriverProfile] = useState(null);
   const [dispatches, setDispatches] = useState([]);
   const [shiftStatus, setShiftStatus] = useState(null);
+  const [shiftReadiness, setShiftReadiness] = useState(null);
   const [processingId, setProcessingId] = useState(null);
 
   const token = localStorage.getItem('jwt_token');
@@ -44,10 +45,18 @@ function DriverDispatches() {
         setShiftStatus(null);
       }
 
+      // Fetch shift readiness to validate vehicle assignment
+      try {
+        const readiness = await driverService.checkShiftReadiness(token);
+        setShiftReadiness(readiness);
+      } catch {
+        setShiftReadiness(null);
+      }
+
       // Fetch pending dispatches
       try {
         const result = await driverService.getPendingDispatches(token);
-        setDispatches(result.dispatches || []);
+        setDispatches(result.pending_dispatches || result || []);
       } catch (err) {
         setDispatches([]);
       }
@@ -102,6 +111,17 @@ function DriverDispatches() {
   }
 
   const isOffline = !shiftStatus;
+  const hasVehicleAssignment = shiftReadiness?.checks?.vehicle_assignment?.exists;
+  const isVehicleApproved = shiftReadiness?.checks?.vehicle_assignment?.is_vehicle_approved;
+  const canAcceptDispatch = !isOffline && hasVehicleAssignment && isVehicleApproved;
+
+  // Determine reason for not being able to accept
+  const getBlockedReason = () => {
+    if (isOffline) return 'You are offline. Go online in the Dashboard to accept dispatches.';
+    if (!hasVehicleAssignment) return 'No vehicle assigned. Please assign a vehicle from the Dashboard.';
+    if (!isVehicleApproved) return 'Your vehicle is not approved. Please wait for approval.';
+    return null;
+  };
 
   return (
     <DriverLayout driverProfile={driverProfile}>
@@ -119,10 +139,10 @@ function DriverDispatches() {
           </div>
         )}
 
-        {isOffline && (
+        {getBlockedReason() && (
           <div className="offline-warning">
             <span className="warning-icon">⏸</span>
-            <span>You are offline. Go online in the Dashboard to accept dispatches.</span>
+            <span>{getBlockedReason()}</span>
           </div>
         )}
 
@@ -170,8 +190,8 @@ function DriverDispatches() {
                   <button
                     className="btn btn-accept"
                     onClick={() => handleAcceptDispatch(dispatch.dispatch_id)}
-                    disabled={isOffline || processingId === dispatch.dispatch_id}
-                    title={isOffline ? 'Go online to accept' : 'Accept this dispatch'}
+                    disabled={!canAcceptDispatch || processingId === dispatch.dispatch_id}
+                    title={!canAcceptDispatch ? getBlockedReason() : 'Accept this dispatch'}
                   >
                     {processingId === dispatch.dispatch_id ? 'Processing...' : 'Accept'}
                   </button>

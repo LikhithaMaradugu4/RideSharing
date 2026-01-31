@@ -505,6 +505,26 @@ class TenantAdminService:
 
         vehicle.approval_status = approval_status
         vehicle.updated_by = user.user_id
+        
+        # Update status column based on approval
+        # APPROVED -> ACTIVE, REJECTED -> INACTIVE
+        if approval_status == "APPROVED":
+            vehicle.status = "ACTIVE"
+        elif approval_status == "REJECTED":
+            vehicle.status = "INACTIVE"
+
+        # Update all vehicle documents to match the vehicle approval status
+        # When vehicle is APPROVED/REJECTED, all documents get the same status
+        document_status = approval_status  # APPROVED or REJECTED
+        vehicle_documents = (
+            db.query(VehicleDocument)
+            .filter(VehicleDocument.vehicle_id == vehicle_id)
+            .all()
+        )
+        for doc in vehicle_documents:
+            doc.verification_status = document_status
+            doc.verified_by = user.user_id
+            doc.verified_on = datetime.now(timezone.utc)
 
         # If vehicle is APPROVED, auto-assign to driver for INDIVIDUAL fleets
         if approval_status == "APPROVED":

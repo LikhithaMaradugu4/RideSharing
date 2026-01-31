@@ -22,7 +22,7 @@ class TripService:
 
     # Valid trip statuses
     ACTIVE_STATUSES = ["REQUESTED", "DISPATCHING", "ASSIGNED", "PICKED_UP"]
-    CANCELLABLE_STATUSES = ["REQUESTED", "DISPATCHING"]
+    CANCELLABLE_STATUSES = ["REQUESTED", "DISPATCHING", "ASSIGNED", "DRIVER_EN_ROUTE"]
     
     @staticmethod
     def create_trip(

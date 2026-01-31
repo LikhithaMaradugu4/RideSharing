@@ -1,0 +1,340 @@
+/* Rider Dashboard Styles */
+.rider-dashboard {
+  min-height: 100vh;
+  background: linear-gradient(180deg, #f8fafc 0%, #e2e8f0 100%);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Loading State */
+.loading-state {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 15px;
+  color: #64748b;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid #e2e8f0;
+  border-top-color: #6366f1;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Header */
+.rider-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 20px;
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  color: white;
+  box-shadow: 0 2px 15px rgba(99, 102, 241, 0.3);
+}
+
+.header-left h1 {
+  margin: 0;
+  font-size: 1.4rem;
+  font-weight: 700;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.btn-profile {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-profile:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.btn-logout {
+  padding: 8px 16px;
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 0.9rem;
+  transition: background 0.2s;
+}
+
+.btn-logout:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Main Content */
+.dashboard-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 30px 20px;
+  gap: 25px;
+  overflow-y: auto;
+}
+
+/* Greeting Section */
+.greeting-section {
+  text-align: center;
+  margin-top: 10px;
+}
+
+.greeting-text {
+  margin: 0;
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.greeting-subtitle {
+  margin: 8px 0 0;
+  font-size: 1rem;
+  color: #64748b;
+}
+
+/* Primary CTA - Book a Ride */
+.cta-section {
+  width: 100%;
+  max-width: 380px;
+}
+
+.btn-book-ride {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 22px;
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  color: white;
+  border: none;
+  border-radius: 16px;
+  cursor: pointer;
+  box-shadow: 0 8px 25px rgba(99, 102, 241, 0.4);
+  transition: all 0.3s;
+}
+
+.btn-book-ride:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 35px rgba(99, 102, 241, 0.5);
+}
+
+.btn-book-ride:active {
+  transform: translateY(0);
+}
+
+.btn-content {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.btn-icon {
+  font-size: 2rem;
+}
+
+.btn-text-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+}
+
+.btn-title {
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+.btn-subtitle {
+  font-size: 0.85rem;
+  opacity: 0.9;
+  margin-top: 2px;
+}
+
+.btn-arrow {
+  font-size: 1.5rem;
+  font-weight: 300;
+  opacity: 0.8;
+}
+
+/* Info Cards */
+.info-cards {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.info-card {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: white;
+  border-radius: 25px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.info-icon {
+  font-size: 1rem;
+}
+
+.info-text {
+  font-size: 0.85rem;
+  color: #64748b;
+}
+
+/* Quick Actions */
+.quick-actions {
+  display: flex;
+  gap: 15px;
+  width: 100%;
+  max-width: 380px;
+  justify-content: center;
+}
+
+.action-card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 18px 12px;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.action-card:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.action-icon {
+  font-size: 1.5rem;
+}
+
+.action-text {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #475569;
+}
+
+/* Partner Section */
+.partner-section {
+  width: 100%;
+  max-width: 380px;
+  text-align: center;
+  margin-top: 10px;
+  padding-top: 20px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.partner-section h4 {
+  margin: 0 0 15px;
+  font-size: 0.9rem;
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+.partner-buttons {
+  display: flex;
+  gap: 12px;
+}
+
+.btn-partner {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 16px;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-partner:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+}
+
+.partner-icon {
+  font-size: 1.2rem;
+}
+
+.partner-text {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #475569;
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .greeting-text {
+    font-size: 1.5rem;
+  }
+  
+  .greeting-subtitle {
+    font-size: 0.95rem;
+  }
+  
+  .btn-book-ride {
+    padding: 16px 18px;
+  }
+  
+  .btn-title {
+    font-size: 1.1rem;
+  }
+  
+  .btn-subtitle {
+    font-size: 0.8rem;
+  }
+  
+  .dashboard-main {
+    padding: 25px 15px;
+    gap: 20px;
+  }
+  
+  .action-card {
+    padding: 14px 10px;
+  }
+  
+  .action-icon {
+    font-size: 1.3rem;
+  }
+  
+  .action-text {
+    font-size: 0.8rem;
+  }
+}

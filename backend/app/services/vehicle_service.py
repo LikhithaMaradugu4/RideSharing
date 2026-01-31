@@ -118,12 +118,14 @@ class VehicleService:
             )
 
         # 6. Create vehicle
+        # Vehicle starts as PENDING approval and INACTIVE status
+        # Status will be set to ACTIVE when tenant approves
         vehicle = Vehicle(
             tenant_id=fleet.tenant_id,
             fleet_id=fleet.fleet_id,
             category=data.category,
             registration_no=data.registration_no,
-            status="ACTIVE",
+            status="PENDING",
             approval_status="PENDING",
             created_by=user.user_id
         )

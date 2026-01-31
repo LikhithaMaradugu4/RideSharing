@@ -428,3 +428,17 @@ SELECT
   dp.allowed_vehicle_categories,
 }
 
+INSERT INTO driver_vehicle_assignment (
+    driver_id,
+    vehicle_id,
+    start_time,
+    end_time,
+    created_by,
+    created_on
+)
+VALUES
+(201, 301, now(), NULL, 1, now()),
+(202, 302, now(), NULL, 1, now()),
+(203, 303, now(), NULL, 1, now()),
+(204, 304, now(), NULL, 1, now()),
+(205, 305, now(), NULL, 1, now());
