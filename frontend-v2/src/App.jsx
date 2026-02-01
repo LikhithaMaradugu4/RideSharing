@@ -17,6 +17,11 @@ import DriverFleets from './app/pages/DriverFleets'
 import RiderDashboard from './app/pages/RiderDashboard'
 import RiderTripStatus from './app/pages/RiderTripStatus'
 import TripPlanning from './app/pages/TripPlanning'
+import FleetDashboard from './app/pages/FleetDashboard'
+import FleetVehicles from './app/pages/FleetVehicles'
+import FleetDrivers from './app/pages/FleetDrivers'
+import FleetAssignments from './app/pages/FleetAssignments'
+import FleetTrips from './app/pages/FleetTrips'
 import adminService from './services/admin.service'
 
 function App() {
@@ -235,6 +240,58 @@ function App() {
               ? (isUserAdmin() ? <Navigate to="/admin/login" /> : <RiderTripStatus />)
               : <Navigate to="/login" />
           }
+        />
+
+        {/* Fleet Owner Routes */}
+        <Route
+          path="/fleet-dashboard"
+          element={
+            isUserAuthenticated()
+              ? (isUserAdmin() ? <Navigate to="/admin/login" /> : <FleetDashboard />)
+              : <Navigate to="/login" />
+          }
+        />
+
+        <Route
+          path="/fleet-vehicles"
+          element={
+            isUserAuthenticated()
+              ? (isUserAdmin() ? <Navigate to="/admin/login" /> : <FleetVehicles />)
+              : <Navigate to="/login" />
+          }
+        />
+
+        <Route
+          path="/fleet-drivers"
+          element={
+            isUserAuthenticated()
+              ? (isUserAdmin() ? <Navigate to="/admin/login" /> : <FleetDrivers />)
+              : <Navigate to="/login" />
+          }
+        />
+
+        <Route
+          path="/fleet-assignments"
+          element={
+            isUserAuthenticated()
+              ? (isUserAdmin() ? <Navigate to="/admin/login" /> : <FleetAssignments />)
+              : <Navigate to="/login" />
+          }
+        />
+
+        <Route
+          path="/fleet-trips"
+          element={
+            isUserAuthenticated()
+              ? (isUserAdmin() ? <Navigate to="/admin/login" /> : <FleetTrips />)
+              : <Navigate to="/login" />
+          }
+        />
+
+        {/* Shorthand routes */}
+        <Route
+          path="/rider-dashboard"
+          element={<Navigate to="/app/rider-dashboard" />}
         />
       </Routes>
     </BrowserRouter>

@@ -1,36 +1,53 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import driverService from '../../services/driver.service';
+import fleetService from '../../services/fleet.service';
 import './FleetOwnerApply.css';
 
 function FleetOwnerApply() {
   const navigate = useNavigate();
   const { tenantId } = useParams();
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
   const [fileErrors, setFileErrors] = useState({});
 
   const [formData, setFormData] = useState({
     fleetName: '',
-    registrationCertificate: null,
-    insurance: null,
-    permit: null,
-    photo: null,
-    notes: ''
+    aadhaar: null,
+    pan: null,
+    gstCertificate: null,
+    companyRegistration: null
   });
 
   useEffect(() => {
     if (!tenantId) {
       setError('Tenant selection is required. Please go back and select a tenant.');
     }
+    
+    // Check if user already has a fleet
+    checkExistingFleet();
   }, [tenantId]);
+
+  const checkExistingFleet = async () => {
+    try {
+      const fleet = await fleetService.checkFleetExists();
+      if (fleet) {
+        // Fleet already exists - redirect based on status
+        if (fleet.approval_status === 'APPROVED') {
+          navigate('/fleet-dashboard');
+        } else {
+          setSubmitted(true);
+        }
+      }
+    } catch (err) {
+      // No fleet exists - continue with application
+    }
+  };
 
   const validateFile = (file, fieldName, maxSizeMB = 5) => {
     const errors = {};
 
     if (!file) {
-      errors[fieldName] = 'File is required';
       return errors;
     }
 
@@ -53,15 +70,17 @@ function FleetOwnerApply() {
     const { name, files } = e.target;
     const file = files[0];
 
-    const newErrors = validateFile(file, name);
-    if (Object.keys(newErrors).length > 0) {
-      setFileErrors(prev => ({ ...prev, ...newErrors }));
-      return;
+    if (file) {
+      const newErrors = validateFile(file, name);
+      if (Object.keys(newErrors).length > 0) {
+        setFileErrors(prev => ({ ...prev, ...newErrors }));
+        return;
+      }
     }
 
     setFormData(prev => ({
       ...prev,
-      [name]: file
+      [name]: file || null
     }));
 
     setFileErrors(prev => ({
@@ -80,6 +99,7 @@ function FleetOwnerApply() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError(null);
 
     if (!tenantId) {
       setError('Tenant selection is required. Please go back and select a tenant.');
@@ -91,87 +111,39 @@ function FleetOwnerApply() {
       return;
     }
 
-    if (!formData.registrationCertificate) {
-      setFileErrors(prev => ({ ...prev, registrationCertificate: 'Registration Certificate is required' }));
-      return;
-    }
-
-    if (!formData.insurance) {
-      setFileErrors(prev => ({ ...prev, insurance: 'Insurance is required' }));
-      return;
-    }
-
-    if (!formData.permit) {
-      setFileErrors(prev => ({ ...prev, permit: 'Permit is required' }));
-      return;
-    }
-
-    if (!formData.photo) {
-      setFileErrors(prev => ({ ...prev, photo: 'Fleet Photo is required' }));
+    // Validate at least one identity document
+    if (!formData.aadhaar && !formData.pan) {
+      setError('At least one of Aadhaar or PAN is required');
       return;
     }
 
     try {
       setSubmitting(true);
-      setError(null);
 
-      const token = localStorage.getItem('jwt_token');
-
-      // Convert files to data URLs for transmission
-      const registrationCertUrl = await fileToDataUrl(formData.registrationCertificate);
-      const insuranceUrl = await fileToDataUrl(formData.insurance);
-      const permitUrl = await fileToDataUrl(formData.permit);
-      const photoUrl = await fileToDataUrl(formData.photo);
-
-      // Build JSON request matching FleetApplyRequest schema
-      const requestData = {
-        tenant_id: parseInt(tenantId),
-        fleet_name: formData.fleetName,
-        fleet_type: 'BUSINESS',
-        documents: [
-          {
-            document_type: 'REGISTRATION_CERTIFICATE',
-            file_url: registrationCertUrl
-          },
-          {
-            document_type: 'INSURANCE',
-            file_url: insuranceUrl
-          },
-          {
-            document_type: 'PERMIT',
-            file_url: permitUrl
-          },
-          {
-            document_type: 'FLEET_PHOTO',
-            file_url: photoUrl
-          }
-        ]
-      };
-
-      const response = await fetch('http://localhost:8000/api/v2/fleet/apply', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify(requestData),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || 'Failed to apply for fleet owner');
+      // Build FormData for multipart upload
+      const uploadData = new FormData();
+      uploadData.append('tenant_id', tenantId);
+      uploadData.append('fleet_name', formData.fleetName.trim());
+      
+      if (formData.aadhaar) {
+        uploadData.append('aadhaar', formData.aadhaar);
+      }
+      if (formData.pan) {
+        uploadData.append('pan', formData.pan);
+      }
+      if (formData.gstCertificate) {
+        uploadData.append('gst_certificate', formData.gstCertificate);
+      }
+      if (formData.companyRegistration) {
+        uploadData.append('company_registration', formData.companyRegistration);
       }
 
-      const result = await response.json();
+      await fleetService.applyWithDocuments(uploadData);
       
-      // Success
-      navigate('/app/fleet-owner/dashboard', {
-        state: { 
-          message: 'Fleet application submitted successfully. It is now under review.',
-          fleetId: result.fleet_id
-        }
-      });
+      // Success - show confirmation
+      setSubmitted(true);
     } catch (err) {
+      // Show backend error as-is
       setError(err.message || 'An error occurred. Please try again.');
       console.error(err);
     } finally {
@@ -179,15 +151,25 @@ function FleetOwnerApply() {
     }
   };
 
-  // Helper function to convert File to data URL
-  const fileToDataUrl = (file) => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result);
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
-  };
+  // Show success/pending state
+  if (submitted) {
+    return (
+      <div className="fleet-apply-container">
+        <div className="fleet-apply-card success-card">
+          <span className="success-icon">⏳</span>
+          <h1>Application Under Review</h1>
+          <p>Your fleet application has been submitted and is currently under review.</p>
+          <p className="note">This usually takes 1-2 business days. We'll notify you once approved.</p>
+          <button 
+            className="btn-primary"
+            onClick={() => navigate('/rider-dashboard')}
+          >
+            Go to Dashboard
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="fleet-apply-container">
@@ -215,101 +197,89 @@ function FleetOwnerApply() {
           {/* File Upload Section */}
           <div className="file-upload-section">
             <h3>Required Documents</h3>
+            <p className="section-note">At least one of Aadhaar or PAN is required</p>
 
-            {/* Registration Certificate */}
+            {/* Aadhaar */}
             <div className="form-group file-group">
-              <label htmlFor="registrationCertificate">Registration Certificate *</label>
+              <label htmlFor="aadhaar">Aadhaar Card</label>
               <div className="file-input-wrapper">
                 <input
                   type="file"
-                  id="registrationCertificate"
-                  name="registrationCertificate"
+                  id="aadhaar"
+                  name="aadhaar"
                   onChange={handleFileChange}
                   accept=".pdf,.jpg,.jpeg,.png"
                 />
                 <span className="file-name">
-                  {formData.registrationCertificate
-                    ? formData.registrationCertificate.name
-                    : 'Choose file'}
+                  {formData.aadhaar ? formData.aadhaar.name : 'Choose file'}
                 </span>
               </div>
-              {fileErrors.registrationCertificate && (
-                <span className="error">{fileErrors.registrationCertificate}</span>
+              {fileErrors.aadhaar && (
+                <span className="error">{fileErrors.aadhaar}</span>
               )}
             </div>
 
-            {/* Insurance */}
+            {/* PAN */}
             <div className="form-group file-group">
-              <label htmlFor="insurance">Insurance Document *</label>
+              <label htmlFor="pan">PAN Card</label>
               <div className="file-input-wrapper">
                 <input
                   type="file"
-                  id="insurance"
-                  name="insurance"
+                  id="pan"
+                  name="pan"
                   onChange={handleFileChange}
                   accept=".pdf,.jpg,.jpeg,.png"
                 />
                 <span className="file-name">
-                  {formData.insurance ? formData.insurance.name : 'Choose file'}
+                  {formData.pan ? formData.pan.name : 'Choose file'}
                 </span>
               </div>
-              {fileErrors.insurance && (
-                <span className="error">{fileErrors.insurance}</span>
+              {fileErrors.pan && (
+                <span className="error">{fileErrors.pan}</span>
               )}
             </div>
 
-            {/* Permit */}
+            <h3>Optional Documents</h3>
+
+            {/* GST Certificate */}
             <div className="form-group file-group">
-              <label htmlFor="permit">Business Permit *</label>
+              <label htmlFor="gstCertificate">GST Certificate</label>
               <div className="file-input-wrapper">
                 <input
                   type="file"
-                  id="permit"
-                  name="permit"
+                  id="gstCertificate"
+                  name="gstCertificate"
                   onChange={handleFileChange}
                   accept=".pdf,.jpg,.jpeg,.png"
                 />
                 <span className="file-name">
-                  {formData.permit ? formData.permit.name : 'Choose file'}
+                  {formData.gstCertificate ? formData.gstCertificate.name : 'Choose file'}
                 </span>
               </div>
-              {fileErrors.permit && (
-                <span className="error">{fileErrors.permit}</span>
+              {fileErrors.gstCertificate && (
+                <span className="error">{fileErrors.gstCertificate}</span>
               )}
             </div>
 
-            {/* Fleet Photo */}
+            {/* Company Registration */}
             <div className="form-group file-group">
-              <label htmlFor="photo">Fleet Photo *</label>
+              <label htmlFor="companyRegistration">Company Registration</label>
               <div className="file-input-wrapper">
                 <input
                   type="file"
-                  id="photo"
-                  name="photo"
+                  id="companyRegistration"
+                  name="companyRegistration"
                   onChange={handleFileChange}
-                  accept=".jpg,.jpeg,.png"
+                  accept=".pdf,.jpg,.jpeg,.png"
                 />
                 <span className="file-name">
-                  {formData.photo ? formData.photo.name : 'Choose file'}
+                  {formData.companyRegistration ? formData.companyRegistration.name : 'Choose file'}
                 </span>
               </div>
-              {fileErrors.photo && (
-                <span className="error">{fileErrors.photo}</span>
+              {fileErrors.companyRegistration && (
+                <span className="error">{fileErrors.companyRegistration}</span>
               )}
             </div>
-          </div>
-
-          {/* Notes */}
-          <div className="form-group">
-            <label htmlFor="notes">Additional Notes</label>
-            <textarea
-              id="notes"
-              name="notes"
-              value={formData.notes}
-              onChange={handleInputChange}
-              placeholder="Any additional information about your fleet..."
-              rows="4"
-            />
           </div>
 
           {/* Form Actions */}
@@ -317,7 +287,7 @@ function FleetOwnerApply() {
             <button
               type="button"
               className="btn-cancel"
-              onClick={() => navigate('/')}
+              onClick={() => navigate('/rider-dashboard')}
               disabled={submitting}
             >
               Cancel

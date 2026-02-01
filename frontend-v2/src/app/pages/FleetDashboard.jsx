@@ -26,6 +26,11 @@ function FleetDashboard() {
       setFleet(data);
     } catch (err) {
       console.error('Failed to fetch fleet:', err);
+      // If 404 (no fleet exists), redirect to rider dashboard
+      if (err.status === 404) {
+        navigate('/app/rider-dashboard');
+        return;
+      }
       setError(err.message);
     } finally {
       setLoading(false);
@@ -139,19 +144,19 @@ function FleetDashboard() {
         <div className="stats-section">
           <h2>Fleet Overview</h2>
           <div className="stats-grid">
-            <div className="stat-card" onClick={() => navigate('/app/fleet/drivers')}>
+            <div className="stat-card" onClick={() => navigate('/fleet-drivers')}>
               <span className="stat-icon">👥</span>
               <span className="stat-label">Drivers</span>
             </div>
-            <div className="stat-card" onClick={() => navigate('/app/fleet/vehicles')}>
+            <div className="stat-card" onClick={() => navigate('/fleet-vehicles')}>
               <span className="stat-icon">🚗</span>
               <span className="stat-label">Vehicles</span>
             </div>
-            <div className="stat-card" onClick={() => navigate('/app/fleet/assignments')}>
+            <div className="stat-card" onClick={() => navigate('/fleet-assignments')}>
               <span className="stat-icon">🔗</span>
               <span className="stat-label">Assignments</span>
             </div>
-            <div className="stat-card" onClick={() => navigate('/app/fleet/trips')}>
+            <div className="stat-card" onClick={() => navigate('/fleet-trips')}>
               <span className="stat-icon">📋</span>
               <span className="stat-label">Trip History</span>
             </div>
@@ -162,7 +167,7 @@ function FleetDashboard() {
         <div className="actions-section">
           <h2>Quick Actions</h2>
           <div className="action-buttons">
-            <button className="action-btn" onClick={() => navigate('/app/fleet/drivers')}>
+            <button className="action-btn" onClick={() => navigate('/fleet-drivers')}>
               <span className="action-icon">➕</span>
               <div className="action-text">
                 <span className="action-title">Invite Driver</span>
@@ -170,7 +175,7 @@ function FleetDashboard() {
               </div>
             </button>
             
-            <button className="action-btn" onClick={() => navigate('/app/fleet/vehicles')}>
+            <button className="action-btn" onClick={() => navigate('/fleet-vehicles')}>
               <span className="action-icon">🚙</span>
               <div className="action-text">
                 <span className="action-title">Add Vehicle</span>
@@ -178,7 +183,7 @@ function FleetDashboard() {
               </div>
             </button>
             
-            <button className="action-btn" onClick={() => navigate('/app/fleet/assignments')}>
+            <button className="action-btn" onClick={() => navigate('/fleet-assignments')}>
               <span className="action-icon">🔗</span>
               <div className="action-text">
                 <span className="action-title">Assign Vehicle</span>
@@ -186,11 +191,11 @@ function FleetDashboard() {
               </div>
             </button>
             
-            <button className="action-btn" onClick={() => navigate('/app/fleet/shifts')}>
+            <button className="action-btn" onClick={() => navigate('/fleet-drivers')}>
               <span className="action-icon">⏰</span>
               <div className="action-text">
-                <span className="action-title">Manage Shifts</span>
-                <span className="action-desc">Start/end driver shifts</span>
+                <span className="action-title">Manage Drivers</span>
+                <span className="action-desc">View and manage drivers</span>
               </div>
             </button>
           </div>

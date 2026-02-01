@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import riderService from '../../services/rider.service';
-import userService from '../../services/user.service';
+import fleetService from '../../services/fleet.service';
 import './RiderDashboard.css';
 
 function RiderDashboard() {
@@ -10,7 +10,8 @@ function RiderDashboard() {
   
   // User state
   const [userInfo, setUserInfo] = useState(null);
-  const [capabilities, setCapabilities] = useState(null);
+  const [fleetData, setFleetData] = useState(null); // null = not checked, false = no fleet, object = fleet exists
+  const [fleetChecked, setFleetChecked] = useState(false);
   const [loading, setLoading] = useState(true);
   const [checkingTrip, setCheckingTrip] = useState(true);
 
@@ -21,7 +22,7 @@ function RiderDashboard() {
     }
     
     fetchUserInfo();
-    fetchCapabilities();
+    checkFleetExists();
     checkActiveTrip();
   }, [token, navigate]);
 
@@ -36,12 +37,15 @@ function RiderDashboard() {
     }
   };
 
-  const fetchCapabilities = async () => {
+  const checkFleetExists = async () => {
     try {
-      const caps = await userService.getCapabilities();
-      setCapabilities(caps);
+      const fleet = await fleetService.checkFleetExists();
+      setFleetData(fleet);
     } catch (err) {
-      console.error('Failed to get capabilities:', err);
+      console.error('Failed to check fleet:', err);
+      setFleetData(null);
+    } finally {
+      setFleetChecked(true);
     }
   };
 
@@ -170,18 +174,17 @@ function RiderDashboard() {
         <div className="partner-section">
           <h4>Want to earn with us?</h4>
           <div className="partner-buttons">
-            {/* Show Drive with us only if not already a driver */}
-            {(!capabilities?.driver?.exists || capabilities?.driver?.approval_status !== 'APPROVED') && (
-              <button 
-                className="btn-partner"
-                onClick={() => navigate('/driver-tenant-selection')}
-              >
-                <span className="partner-icon">🚘</span>
-                <span className="partner-text">Drive with us</span>
-              </button>
-            )}
-            {/* Show Fleet Partner only if NOT a driver (drivers cannot be fleet owners) */}
-            {!capabilities?.driver?.exists && (
+            {/* Show Drive with us - always available for riders */}
+            <button 
+              className="btn-partner"
+              onClick={() => navigate('/driver-tenant-selection')}
+            >
+              <span className="partner-icon">🚘</span>
+              <span className="partner-text">Drive with us</span>
+            </button>
+            
+            {/* Show Fleet Partner only if NO fleet exists (any status) */}
+            {fleetChecked && !fleetData && (
               <button 
                 className="btn-partner"
                 onClick={() => navigate('/fleet-owner-tenant-selection')}
@@ -190,36 +193,30 @@ function RiderDashboard() {
                 <span className="partner-text">Fleet Partner</span>
               </button>
             )}
-            {/* If user is approved driver, show link to driver dashboard */}
-            {capabilities?.driver?.exists && capabilities?.driver?.approval_status === 'APPROVED' && (
+            
+            {/* If user has approved fleet, show link to fleet dashboard */}
+            {fleetData && fleetData.approval_status === 'APPROVED' && (
               <button 
                 className="btn-partner"
-                onClick={() => navigate('/app/driver/dashboard')}
-              >
-                <span className="partner-icon">🚘</span>
-                <span className="partner-text">Go to Driver Dashboard</span>
-              </button>
-            )}
-            {/* If user is approved fleet owner, show link to fleet dashboard */}
-            {capabilities?.fleet_owner?.exists && capabilities?.fleet_owner?.approval_status === 'APPROVED' && (
-              <button 
-                className="btn-partner"
-                onClick={() => navigate('/app/fleet/dashboard')}
+                onClick={() => navigate('/fleet-dashboard')}
               >
                 <span className="partner-icon">🏢</span>
                 <span className="partner-text">Go to Fleet Dashboard</span>
               </button>
             )}
           </div>
-          {/* Show pending statuses */}
-          {capabilities?.driver?.exists && capabilities?.driver?.approval_status === 'PENDING' && (
-            <p style={{color: '#f59e0b', marginTop: '0.5rem', fontSize: '0.9rem'}}>
-              ⏳ Your driver application is under review
-            </p>
-          )}
-          {capabilities?.fleet_owner?.exists && capabilities?.fleet_owner?.approval_status === 'PENDING' && (
+          
+          {/* Show pending fleet status */}
+          {fleetData && fleetData.approval_status === 'PENDING' && (
             <p style={{color: '#f59e0b', marginTop: '0.5rem', fontSize: '0.9rem'}}>
               ⏳ Your fleet application is under review
+            </p>
+          )}
+          
+          {/* Show rejected fleet status */}
+          {fleetData && fleetData.approval_status === 'REJECTED' && (
+            <p style={{color: '#ef4444', marginTop: '0.5rem', fontSize: '0.9rem'}}>
+              ❌ Your fleet application was rejected
             </p>
           )}
         </div>

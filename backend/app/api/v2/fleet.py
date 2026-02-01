@@ -1,7 +1,10 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form
 from sqlalchemy.orm import Session
 from typing import Optional
-from datetime import date
+from datetime import date, datetime
+import os
+import shutil
+from pathlib import Path
 
 from app.api.deps.jwt_auth import get_current_user
 from app.core.database import SessionLocal
@@ -20,7 +23,8 @@ from app.schemas.fleet import (
     FleetCityAddRequest,
     FleetCityResponse,
     FleetCityListResponse,
-    FleetDriverAvailabilityListResponse
+    FleetDriverAvailabilityListResponse,
+    FleetDocumentInput
 )
 from app.services.fleet_service import FleetService
 from app.services.fleet_owner_service import FleetOwnerService
@@ -29,6 +33,10 @@ from app.services.driver_work_availability_service import DriverWorkAvailability
 
 router = APIRouter(prefix="/fleet", tags=["Phase-2 Fleet"])
 
+# Directory for fleet document uploads
+FLEET_UPLOAD_DIR = Path("uploads/fleet_documents")
+FLEET_UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+
 
 def get_db():
     db = SessionLocal()
@@ -36,6 +44,99 @@ def get_db():
         yield db
     finally:
         db.close()
+
+
+@router.post("/apply-with-documents", response_model=FleetApplyResponse)
+async def apply_fleet_with_documents(
+    tenant_id: int = Form(...),
+    fleet_name: str = Form(...),
+    aadhaar: UploadFile = File(None),
+    pan: UploadFile = File(None),
+    gst_certificate: UploadFile = File(None),
+    company_registration: UploadFile = File(None),
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Apply for fleet owner with document file uploads.
+    Files are stored locally in uploads/fleet_documents/{user_id}/
+    
+    Required:
+    - tenant_id
+    - fleet_name
+    - At least one of: aadhaar, pan
+    
+    Optional:
+    - gst_certificate
+    - company_registration
+    """
+    user_id = current_user.get("user_id")
+    user = db.query(AppUser).filter(AppUser.user_id == user_id).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+
+    # Validate at least one identity document
+    if not aadhaar and not pan:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="At least one of Aadhaar or PAN must be provided"
+        )
+
+    # Create user-specific directory
+    user_dir = FLEET_UPLOAD_DIR / str(user_id)
+    user_dir.mkdir(parents=True, exist_ok=True)
+
+    # Helper function to save file locally
+    async def save_file(upload_file: UploadFile, doc_type: str) -> str:
+        """Save uploaded file and return relative path"""
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        file_ext = os.path.splitext(upload_file.filename)[1]
+        filename = f"{doc_type}_{timestamp}{file_ext}"
+        file_path = user_dir / filename
+        
+        # Save file
+        with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(upload_file.file, buffer)
+        
+        # Return relative path for database storage
+        return f"uploads/fleet_documents/{user_id}/{filename}"
+
+    # Build documents list
+    documents = []
+    
+    if aadhaar:
+        aadhaar_path = await save_file(aadhaar, "AADHAAR")
+        documents.append(FleetDocumentInput(document_type="AADHAAR", file_url=aadhaar_path))
+    
+    if pan:
+        pan_path = await save_file(pan, "PAN")
+        documents.append(FleetDocumentInput(document_type="PAN", file_url=pan_path))
+    
+    if gst_certificate:
+        gst_path = await save_file(gst_certificate, "GST_CERTIFICATE")
+        documents.append(FleetDocumentInput(document_type="GST_CERTIFICATE", file_url=gst_path))
+    
+    if company_registration:
+        company_path = await save_file(company_registration, "COMPANY_REGISTRATION")
+        documents.append(FleetDocumentInput(document_type="COMPANY_REGISTRATION", file_url=company_path))
+
+    # Create application data
+    data = FleetApplyRequest(
+        tenant_id=tenant_id,
+        fleet_name=fleet_name,
+        fleet_type="BUSINESS",
+        documents=documents
+    )
+
+    fleet = FleetService.apply_fleet(db=db, user=user, data=data)
+
+    return FleetApplyResponse(
+        fleet_id=fleet.fleet_id,
+        approval_status=fleet.approval_status
+    )
 
 
 @router.post("/apply", response_model=FleetApplyResponse)

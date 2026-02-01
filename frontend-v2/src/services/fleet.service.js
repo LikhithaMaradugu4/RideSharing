@@ -45,7 +45,7 @@ const fleetService = {
   // ==================== Fleet Application ====================
   
   /**
-   * Apply for fleet owner status
+   * Apply for fleet owner status (JSON - deprecated, use applyWithDocuments)
    */
   applyFleet: async (data) => {
     const token = await getValidToken();
@@ -58,7 +58,23 @@ const fleetService = {
   },
 
   /**
-   * Get my fleet details
+   * Apply for fleet owner with file uploads (multipart/form-data)
+   */
+  applyWithDocuments: async (formData) => {
+    const token = await getValidToken();
+    const response = await fetch(`${API_BASE_URL}/fleet/apply-with-documents`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`
+        // Don't set Content-Type - browser will set it with boundary for FormData
+      },
+      body: formData
+    });
+    return handleResponse(response, 'Failed to apply for fleet');
+  },
+
+  /**
+   * Get my fleet details (returns fleet if exists, 404 if not)
    */
   getMyFleet: async () => {
     const token = await getValidToken();
@@ -67,6 +83,33 @@ const fleetService = {
       headers: buildHeaders(token)
     });
     return handleResponse(response, 'Failed to get fleet details');
+  },
+
+  /**
+   * Check if user has a fleet (returns fleet or null)
+   */
+  checkFleetExists: async () => {
+    try {
+      const token = await getValidToken();
+      const response = await fetch(`${API_BASE_URL}/fleet/my`, {
+        method: 'GET',
+        headers: buildHeaders(token)
+      });
+      
+      if (response.status === 404) {
+        return null; // No fleet exists
+      }
+      
+      const text = await response.text();
+      if (!text) return null;
+      
+      return JSON.parse(text);
+    } catch (error) {
+      // If 404 or any error, treat as no fleet
+      if (error.status === 404) return null;
+      console.error('Error checking fleet:', error);
+      return null;
+    }
   },
 
   // ==================== Driver Management ====================
