@@ -29,6 +29,7 @@ class FareEstimateResponse(BaseModel):
     surge_multiplier: float
     final_fare: float
     surge_zone_id: Optional[int]
+    nearby_drivers_count: int = 0  # Count of available drivers within dispatch radius
 
 class CreateTripRequest(BaseModel):
     pickup_lat: float

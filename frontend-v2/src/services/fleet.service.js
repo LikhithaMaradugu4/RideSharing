@@ -316,14 +316,29 @@ const fleetService = {
   },
 
   /**
-   * Add a city to fleet
+   * Get available cities that can be added
    */
-  addCity: async (cityId) => {
+  getAvailableCities: async () => {
     const token = await getValidToken();
+    const response = await fetch(`${API_BASE_URL}/fleet/cities/available`, {
+      method: 'GET',
+      headers: buildHeaders(token)
+    });
+    return handleResponse(response, 'Failed to get available cities');
+  },
+
+  /**
+   * Add a city to fleet with optional address
+   */
+  addCity: async (cityId, address = null) => {
+    const token = await getValidToken();
+    const body = { city_id: cityId };
+    if (address) body.address = address;
+    
     const response = await fetch(`${API_BASE_URL}/fleet/cities`, {
       method: 'POST',
       headers: buildHeaders(token),
-      body: JSON.stringify({ city_id: cityId })
+      body: JSON.stringify(body)
     });
     return handleResponse(response, 'Failed to add city');
   },

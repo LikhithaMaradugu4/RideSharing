@@ -1,0 +1,358 @@
+/* VehicleAddForm - Shared styles for driver and fleet vehicle forms */
+
+.vehicle-add-form {
+  background: white;
+  border-radius: 16px;
+  padding: 1.5rem;
+  margin: 1rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e2e8f0;
+}
+
+.vehicle-add-form h2 {
+  margin: 0 0 1.5rem;
+  font-size: 1.25rem;
+  color: #374151;
+  text-align: center;
+}
+
+/* Step Indicator */
+.vehicle-add-form .step-indicator {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  padding: 0 1rem;
+}
+
+.vehicle-add-form .step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  flex: 1;
+  max-width: 100px;
+  opacity: 0.5;
+  transition: all 0.2s;
+}
+
+.vehicle-add-form .step.active {
+  opacity: 1;
+}
+
+.vehicle-add-form .step.completed {
+  opacity: 0.8;
+}
+
+.vehicle-add-form .step-number {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #e2e8f0;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 0.85rem;
+  transition: all 0.2s;
+}
+
+.vehicle-add-form .step.active .step-number {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: white;
+}
+
+.vehicle-add-form .step.completed .step-number {
+  background: #10b981;
+  color: white;
+}
+
+.vehicle-add-form .step-label {
+  font-size: 0.7rem;
+  color: #64748b;
+  text-align: center;
+  font-weight: 500;
+}
+
+.vehicle-add-form .step.active .step-label {
+  color: #6366f1;
+  font-weight: 600;
+}
+
+/* Form Error */
+.vehicle-add-form .form-error {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #dc2626;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+}
+
+/* Step Content */
+.vehicle-add-form .step-content {
+  min-height: 300px;
+}
+
+.vehicle-add-form .form-section h3 {
+  margin: 0 0 0.5rem;
+  font-size: 1.1rem;
+  color: #374151;
+}
+
+.vehicle-add-form .form-section h4 {
+  margin: 1.5rem 0 0.75rem;
+  font-size: 0.95rem;
+  color: #64748b;
+  border-top: 1px solid #e2e8f0;
+  padding-top: 1rem;
+}
+
+.vehicle-add-form .section-info {
+  color: #64748b;
+  font-size: 0.85rem;
+  margin: 0 0 1.25rem;
+}
+
+/* Form Groups */
+.vehicle-add-form .form-group {
+  margin-bottom: 1rem;
+}
+
+.vehicle-add-form .form-group label {
+  display: block;
+  margin-bottom: 0.35rem;
+  font-size: 0.85rem;
+  color: #374151;
+  font-weight: 500;
+}
+
+.vehicle-add-form .form-group input[type="text"],
+.vehicle-add-form .form-group input[type="number"],
+.vehicle-add-form .form-group input[type="url"],
+.vehicle-add-form .form-group select {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  background: white;
+}
+
+.vehicle-add-form .form-group input:focus,
+.vehicle-add-form .form-group select:focus {
+  outline: none;
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.vehicle-add-form .form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+/* File Upload */
+.vehicle-add-form .file-group {
+  margin-bottom: 1rem;
+}
+
+.vehicle-add-form .file-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background: #f8fafc;
+  border: 2px dashed #d1d5db;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.vehicle-add-form .file-input-wrapper:hover {
+  border-color: #6366f1;
+  background: #f1f5f9;
+}
+
+.vehicle-add-form .file-input-wrapper input[type="file"] {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.vehicle-add-form .file-name {
+  color: #64748b;
+  font-size: 0.9rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.vehicle-add-form .file-input-wrapper input[type="file"]:focus + .file-name {
+  color: #6366f1;
+}
+
+.vehicle-add-form .file-error {
+  display: block;
+  color: #dc2626;
+  font-size: 0.8rem;
+  margin-top: 0.25rem;
+}
+
+/* Photo Input Row */
+.vehicle-add-form .photo-input-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.vehicle-add-form .photo-input-row .form-group {
+  flex: 1;
+  margin-bottom: 0;
+}
+
+.vehicle-add-form .btn-remove-photo {
+  padding: 0.75rem 1rem;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #dc2626;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: all 0.2s;
+}
+
+.vehicle-add-form .btn-remove-photo:hover {
+  background: #fee2e2;
+}
+
+.vehicle-add-form .btn-add-photo {
+  width: 100%;
+  padding: 0.75rem;
+  background: #f1f5f9;
+  border: 1px dashed #94a3b8;
+  color: #64748b;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  margin-top: 0.5rem;
+  transition: all 0.2s;
+}
+
+.vehicle-add-form .btn-add-photo:hover {
+  background: #e2e8f0;
+  color: #374151;
+}
+
+/* Step Actions */
+.vehicle-add-form .step-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid #e2e8f0;
+}
+
+.vehicle-add-form .btn-cancel {
+  padding: 0.75rem 1.25rem;
+  background: white;
+  border: 1px solid #d1d5db;
+  color: #374151;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.vehicle-add-form .btn-cancel:hover:not(:disabled) {
+  background: #f1f5f9;
+}
+
+.vehicle-add-form .btn-secondary {
+  padding: 0.75rem 1.25rem;
+  background: white;
+  border: 1px solid #6366f1;
+  color: #6366f1;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.vehicle-add-form .btn-secondary:hover:not(:disabled) {
+  background: #eef2ff;
+}
+
+.vehicle-add-form .btn-primary {
+  padding: 0.75rem 1.5rem;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  border: none;
+  color: white;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.vehicle-add-form .btn-primary:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}
+
+.vehicle-add-form .btn-primary:disabled,
+.vehicle-add-form .btn-secondary:disabled,
+.vehicle-add-form .btn-cancel:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.vehicle-add-form .btn-submit {
+  background: linear-gradient(135deg, #10b981, #059669);
+}
+
+.vehicle-add-form .btn-submit:hover:not(:disabled) {
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .vehicle-add-form {
+    margin: 0.5rem;
+    padding: 1rem;
+  }
+
+  .vehicle-add-form .form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .vehicle-add-form .step-indicator {
+    gap: 0.25rem;
+  }
+
+  .vehicle-add-form .step-label {
+    font-size: 0.6rem;
+  }
+
+  .vehicle-add-form .step-actions {
+    flex-wrap: wrap;
+  }
+
+  .vehicle-add-form .btn-cancel,
+  .vehicle-add-form .btn-secondary,
+  .vehicle-add-form .btn-primary {
+    flex: 1;
+    min-width: 100px;
+  }
+}

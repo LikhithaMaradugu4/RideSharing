@@ -325,7 +325,7 @@ class FleetOwnerService:
 
     # ---------------------- Fleet Cities ----------------------
     @staticmethod
-    def add_city(db: Session, user: AppUser, city_id: int) -> FleetCity:
+    def add_city(db: Session, user: AppUser, city_id: int, address: str = None) -> FleetCity:
         fleet = FleetOwnerService._get_owner_fleet(db, user)
 
         # Ensure city exists and belongs to tenant
@@ -353,11 +353,18 @@ class FleetOwnerService:
             .first()
         )
         if existing:
+            # Update address if provided
+            if address:
+                existing.address = address
+                existing.updated_by = user.user_id
+                db.commit()
+                db.refresh(existing)
             return existing
 
         record = FleetCity(
             fleet_id=fleet.fleet_id,
             city_id=city_id,
+            address=address,
             created_by=user.user_id
         )
 

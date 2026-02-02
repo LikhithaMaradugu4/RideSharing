@@ -38,21 +38,28 @@ function DriverFleets() {
       }
       setDriverProfile(profile);
 
-      // TODO: Fetch active fleet once backend API is ready
-      setActiveFleet(null);
+      // Fetch active fleet
+      try {
+        const currentFleet = await driverService.getCurrentFleet(token);
+        setActiveFleet(currentFleet);
+      } catch {
+        setActiveFleet(null);
+      }
 
       // Fetch invites
       try {
-        const result = await driverService.getFleetInvites(token);
-        setInvites(result.invites || []);
+        const invitesResult = await driverService.getFleetInvites(token);
+        // getFleetInvites returns array directly
+        setInvites(Array.isArray(invitesResult) ? invitesResult : invitesResult?.invites || []);
       } catch {
         setInvites([]);
       }
 
       // Discover available fleets (pass tenantId when available)
       try {
-        const result = await driverService.discoverFleets(token, { tenantId: profile.tenant_id });
-        setAvailableFleets(result.fleets || []);
+        const fleetsResult = await driverService.discoverFleets(token, { tenantId: profile.tenant_id });
+        // discoverFleets returns array directly
+        setAvailableFleets(Array.isArray(fleetsResult) ? fleetsResult : fleetsResult?.fleets || []);
       } catch {
         setAvailableFleets([]);
       }
@@ -149,24 +156,28 @@ function DriverFleets() {
             {activeFleet ? (
               <div className="fleet-card">
                 <div className="fleet-header">
-                  <h2>{activeFleet.name}</h2>
+                  <h2>{activeFleet.fleet_name}</h2>
                   <span className="fleet-type-badge" style={{
-                    backgroundColor: activeFleet.type === 'INDIVIDUAL' ? '#e3f2fd' : '#f3e5f5',
-                    color: activeFleet.type === 'INDIVIDUAL' ? '#1976d2' : '#7b1fa2'
+                    backgroundColor: activeFleet.fleet_type === 'INDIVIDUAL' ? '#e3f2fd' : '#f3e5f5',
+                    color: activeFleet.fleet_type === 'INDIVIDUAL' ? '#1976d2' : '#7b1fa2'
                   }}>
-                    {activeFleet.type}
+                    {activeFleet.fleet_type}
                   </span>
                 </div>
                 <div className="fleet-details">
                   <div className="detail-item">
                     <span className="label">Fleet ID</span>
-                    <span className="value">{activeFleet.id}</span>
+                    <span className="value">{activeFleet.fleet_id}</span>
                   </div>
-                  {activeFleet.type === 'BUSINESS' && (
+                  <div className="detail-item">
+                    <span className="label">Member Since</span>
+                    <span className="value">{new Date(activeFleet.start_date).toLocaleDateString()}</span>
+                  </div>
+                  {activeFleet.fleet_type === 'BUSINESS' && (
                     <>
                       <div className="detail-item">
                         <span className="label">Contact</span>
-                        <span className="value">{activeFleet.contact || 'N/A'}</span>
+                        <span className="value">{activeFleet.contact_phone || 'N/A'}</span>
                       </div>
                       <div className="detail-item">
                         <span className="label">Operating Cities</span>

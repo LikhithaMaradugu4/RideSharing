@@ -57,7 +57,7 @@ function UserHome() {
   };
 
   const handleContinueFleetOwner = () => {
-    navigate('/app/fleet-owner-dashboard');
+    navigate('/fleet-dashboard');
   };
 
   if (loading) {

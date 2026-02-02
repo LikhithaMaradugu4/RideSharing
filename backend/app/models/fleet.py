@@ -58,6 +58,7 @@ class FleetCity(Base, AuditMixin):
 
     fleet_id = Column(BigInteger, ForeignKey("fleet.fleet_id", ondelete="CASCADE"), primary_key=True)
     city_id = Column(BigInteger, ForeignKey("city.city_id"), primary_key=True)
+    address = Column(Text, nullable=True)  # Fleet office address in this city
 
 
 class FleetDriverInvite(Base):

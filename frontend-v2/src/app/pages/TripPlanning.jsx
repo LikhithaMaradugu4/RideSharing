@@ -568,30 +568,51 @@ function TripPlanning() {
             }}>
               <h3 style={{ margin: '0 0 16px 0', fontSize: '16px', color: '#374151' }}>🚗 Choose Your Ride</h3>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                {fareEstimates.map((estimate) => (
+                {fareEstimates.map((estimate) => {
+                  const hasNearbyDrivers = estimate.nearby_drivers_count > 0;
+                  const isDisabled = !hasNearbyDrivers;
+                  
+                  return (
                   <div 
                     key={estimate.category}
-                    onClick={() => handleSelectVehicle(estimate.category)}
+                    onClick={() => !isDisabled && handleSelectVehicle(estimate.category)}
                     style={{
                       display: 'flex',
                       alignItems: 'center',
                       padding: '14px',
-                      background: selectedVehicle === estimate.category ? '#eef2ff' : '#f9fafb',
+                      background: isDisabled 
+                        ? '#f3f4f6' 
+                        : (selectedVehicle === estimate.category ? '#eef2ff' : '#f9fafb'),
                       border: selectedVehicle === estimate.category ? '2px solid #667eea' : '2px solid transparent',
                       borderRadius: '12px',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s ease'
+                      cursor: isDisabled ? 'not-allowed' : 'pointer',
+                      transition: 'all 0.2s ease',
+                      opacity: isDisabled ? 0.6 : 1
                     }}
                   >
-                    <span style={{ fontSize: '32px', marginRight: '14px' }}>{vehicleIcons[estimate.category] || '🚗'}</span>
+                    <span style={{ fontSize: '32px', marginRight: '14px', opacity: isDisabled ? 0.5 : 1 }}>
+                      {vehicleIcons[estimate.category] || '🚗'}
+                    </span>
                     <div style={{ flex: 1 }}>
-                      <div style={{ fontWeight: '600', color: '#374151', fontSize: '15px' }}>{estimate.category}</div>
+                      <div style={{ fontWeight: '600', color: isDisabled ? '#9ca3af' : '#374151', fontSize: '15px' }}>
+                        {estimate.category}
+                      </div>
                       <div style={{ fontSize: '13px', color: '#6b7280' }}>
                         {estimate.distance_km?.toFixed(1)} km • {estimate.eta_minutes || '~10'} min
                       </div>
+                      {/* Nearby drivers indicator */}
+                      {hasNearbyDrivers ? (
+                        <div style={{ fontSize: '12px', color: '#22c55e', fontWeight: '600', marginTop: '4px' }}>
+                          🟢 {estimate.nearby_drivers_count} driver{estimate.nearby_drivers_count !== 1 ? 's' : ''} nearby
+                        </div>
+                      ) : (
+                        <div style={{ fontSize: '12px', color: '#9ca3af', fontWeight: '500', marginTop: '4px' }}>
+                          ⚪ No drivers nearby
+                        </div>
+                      )}
                     </div>
                     <div style={{ textAlign: 'right' }}>
-                      <div style={{ fontWeight: '700', fontSize: '18px', color: '#374151' }}>
+                      <div style={{ fontWeight: '700', fontSize: '18px', color: isDisabled ? '#9ca3af' : '#374151' }}>
                         ₹{estimate.final_fare?.toFixed(0)}
                       </div>
                       {estimate.surge_multiplier > 1 && (
@@ -601,7 +622,8 @@ function TripPlanning() {
                       )}
                     </div>
                   </div>
-                ))}
+                  );
+                })}
               </div>
               <button 
                 onClick={resetLocations}

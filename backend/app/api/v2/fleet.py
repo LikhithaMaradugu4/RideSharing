@@ -368,10 +368,14 @@ def add_fleet_city(
             detail="User not found"
         )
 
-    record = FleetOwnerService.add_city(db=db, user=user, city_id=data.city_id)
+    record = FleetOwnerService.add_city(db=db, user=user, city_id=data.city_id, address=data.address)
 
     city = db.query(City).filter(City.city_id == record.city_id).first()
-    return FleetCityResponse(city_id=record.city_id, city_name=city.name if city else "")
+    return FleetCityResponse(
+        city_id=record.city_id, 
+        city_name=city.name if city else "",
+        address=record.address
+    )
 
 
 @router.get("/cities", response_model=FleetCityListResponse)
@@ -389,10 +393,70 @@ def list_fleet_cities(
 
     rows = FleetOwnerService.list_cities(db=db, user=user)
     cities = [
-        FleetCityResponse(city_id=city.city_id, city_name=city.name)
-        for _, city in rows
+        FleetCityResponse(city_id=city.city_id, city_name=city.name, address=fc.address)
+        for fc, city in rows
     ]
     return FleetCityListResponse(cities=cities, total=len(cities))
+
+
+@router.get("/cities/available")
+def list_available_cities(
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Get cities available for this fleet owner to add.
+    Returns cities in the fleet's tenant that are not yet added to the fleet.
+    """
+    user_id = current_user.get("user_id")
+    user = db.query(AppUser).filter(AppUser.user_id == user_id).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+
+    from app.models.fleet import Fleet, FleetCity
+    from app.models.tenant import TenantCity
+    
+    # Get fleet for this owner
+    fleet = (
+        db.query(Fleet)
+        .filter(
+            Fleet.owner_user_id == user.user_id,
+            Fleet.fleet_type == "BUSINESS",
+            Fleet.approval_status == "APPROVED"
+        )
+        .first()
+    )
+    if not fleet:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only approved fleet owners can view available cities"
+        )
+    
+    # Get cities already added to fleet
+    existing_city_ids = (
+        db.query(FleetCity.city_id)
+        .filter(FleetCity.fleet_id == fleet.fleet_id)
+        .subquery()
+    )
+    
+    # Get tenant cities not yet added
+    available = (
+        db.query(City)
+        .join(TenantCity, TenantCity.city_id == City.city_id)
+        .filter(
+            TenantCity.tenant_id == fleet.tenant_id,
+            ~City.city_id.in_(existing_city_ids)
+        )
+        .all()
+    )
+    
+    return {
+        "cities": [{"city_id": c.city_id, "city_name": c.name} for c in available],
+        "total": len(available)
+    }
 
 
 @router.delete("/cities/{city_id}")

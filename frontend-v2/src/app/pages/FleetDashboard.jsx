@@ -130,10 +130,10 @@ function FleetDashboard() {
         </div>
         <div className="header-right">
           <button className="btn-profile" onClick={() => navigate('/app/profile')} title="Profile">
-            👤
+            👤<span className="btn-label">Profile</span>
           </button>
           <button className="btn-home" onClick={() => navigate('/app/rider-dashboard')} title="Rider Mode">
-            🏠
+            🏠<span className="btn-label">Rider</span>
           </button>
           <button className="btn-logout" onClick={handleLogout}>Logout</button>
         </div>
@@ -159,6 +159,10 @@ function FleetDashboard() {
             <div className="stat-card" onClick={() => navigate('/fleet-trips')}>
               <span className="stat-icon">📋</span>
               <span className="stat-label">Trip History</span>
+            </div>
+            <div className="stat-card" onClick={() => navigate('/fleet-cities')}>
+              <span className="stat-icon">🏙️</span>
+              <span className="stat-label">Cities</span>
             </div>
           </div>
         </div>

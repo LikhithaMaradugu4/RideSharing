@@ -280,6 +280,23 @@ const driverService = {
   /**
    * Fleet discovery & invites.
    */
+  getCurrentFleet: async (token) => {
+    try {
+      const validToken = await getValidToken(token);
+      const response = await fetch(`${API_BASE_URL}/driver/current-fleet`, {
+        method: 'GET',
+        headers: buildHeaders(validToken)
+      });
+
+      return await handleResponse(response, 'Failed to fetch current fleet');
+    } catch (error) {
+      if (error.status === 404) {
+        return null;
+      }
+      throw error;
+    }
+  },
+
   discoverFleets: async (token, params = {}) => {
     const query = new URLSearchParams();
     if (params.cityId) {

@@ -132,15 +132,33 @@ class DriverFleetInviteListResponse(BaseModel):
     total: int
 
 
+# ==================== Driver Current Fleet ====================
+
+class DriverCurrentFleetResponse(BaseModel):
+    """Response schema for driver's currently active fleet."""
+    fleet_id: int
+    fleet_name: str
+    fleet_type: str  # INDIVIDUAL or BUSINESS
+    tenant_id: int
+    start_date: datetime
+    cities: List[str] = []  # List of city names where fleet operates
+    contact_phone: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+
 # ==================== Fleet Cities (Fleet Owner) ====================
 
 class FleetCityAddRequest(BaseModel):
     city_id: int
+    address: Optional[str] = None
 
 
 class FleetCityResponse(BaseModel):
     city_id: int
     city_name: str
+    address: Optional[str] = None
 
     class Config:
         from_attributes = True

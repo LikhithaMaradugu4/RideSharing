@@ -12,6 +12,60 @@ from app.models.core import City
 class DriverFleetService:
     """Driver-side actions for BUSINESS fleet joining and discovery."""
 
+    # ---------------------- Current Fleet ----------------------
+    @staticmethod
+    def get_current_fleet(db: Session, user: AppUser) -> Optional[dict]:
+        """
+        Get the driver's currently active fleet association.
+        
+        Returns dict with fleet details including cities, or None if no active fleet.
+        """
+        profile = (
+            db.query(DriverProfile)
+            .filter(DriverProfile.driver_id == user.user_id)
+            .first()
+        )
+        if not profile:
+            return None
+        if profile.approval_status != "APPROVED":
+            return None
+
+        # Find active fleet association
+        fleet_driver = (
+            db.query(FleetDriver)
+            .filter(
+                FleetDriver.driver_id == user.user_id,
+                FleetDriver.end_date.is_(None)
+            )
+            .first()
+        )
+        if not fleet_driver:
+            return None
+
+        # Get fleet details
+        fleet = db.query(Fleet).filter(Fleet.fleet_id == fleet_driver.fleet_id).first()
+        if not fleet:
+            return None
+
+        # Get fleet cities
+        city_rows = (
+            db.query(City.name)
+            .join(FleetCity, FleetCity.city_id == City.city_id)
+            .filter(FleetCity.fleet_id == fleet.fleet_id)
+            .all()
+        )
+        city_names = [row[0] for row in city_rows]
+
+        return {
+            "fleet_id": fleet.fleet_id,
+            "fleet_name": fleet.fleet_name,
+            "fleet_type": fleet.fleet_type,
+            "tenant_id": fleet.tenant_id,
+            "start_date": fleet_driver.start_date,
+            "cities": city_names,
+            "contact_phone": None  # Could add owner contact if needed
+        }
+
     # ---------------------- Helpers ----------------------
     @staticmethod
     def _get_driver_profile(db: Session, user: AppUser) -> DriverProfile:

@@ -11,6 +11,7 @@ from app.schemas.fleet import (
     FleetDiscoveryItemResponse,
     DriverFleetInviteListResponse,
     DriverFleetInviteResponse,
+    DriverCurrentFleetResponse,
     DriverWorkAvailabilityRequest,
     DriverWorkAvailabilityResponse,
     DriverAvailabilityListResponse
@@ -27,6 +28,26 @@ def get_db():
         yield db
     finally:
         db.close()
+
+
+# ---------------------- Current Fleet ----------------------
+
+@router.get("/driver/current-fleet", response_model=DriverCurrentFleetResponse)
+def get_current_fleet(
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
+    """Get the driver's currently active fleet association."""
+    user_id = current_user.get("user_id")
+    user = db.query(AppUser).filter(AppUser.user_id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    fleet_data = DriverFleetService.get_current_fleet(db=db, user=user)
+    if not fleet_data:
+        raise HTTPException(status_code=404, detail="No active fleet association found")
+
+    return DriverCurrentFleetResponse(**fleet_data)
 
 
 # ---------------------- Fleet Discovery ----------------------

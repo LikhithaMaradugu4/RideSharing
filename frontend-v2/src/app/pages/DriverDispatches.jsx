@@ -155,9 +155,9 @@ function DriverDispatches() {
         ) : (
           <div className="dispatches-list">
             {dispatches.map((dispatch) => (
-              <div key={dispatch.dispatch_id} className="dispatch-card">
+              <div key={dispatch.attempt_id || dispatch.dispatch_id} className="dispatch-card">
                 <div className="dispatch-header">
-                  <span className="dispatch-id">#{dispatch.dispatch_id}</span>
+                  <span className="dispatch-id">#{dispatch.attempt_id || dispatch.dispatch_id}</span>
                   {dispatch.category && (
                     <span className="category-badge">{dispatch.category}</span>
                   )}
@@ -189,19 +189,19 @@ function DriverDispatches() {
                 <div className="dispatch-actions">
                   <button
                     className="btn btn-accept"
-                    onClick={() => handleAcceptDispatch(dispatch.dispatch_id)}
-                    disabled={!canAcceptDispatch || processingId === dispatch.dispatch_id}
+                    onClick={() => handleAcceptDispatch(dispatch.attempt_id || dispatch.dispatch_id)}
+                    disabled={!canAcceptDispatch || processingId === (dispatch.attempt_id || dispatch.dispatch_id)}
                     title={!canAcceptDispatch ? getBlockedReason() : 'Accept this dispatch'}
                   >
-                    {processingId === dispatch.dispatch_id ? 'Processing...' : 'Accept'}
+                    {processingId === (dispatch.attempt_id || dispatch.dispatch_id) ? 'Processing...' : 'Accept'}
                   </button>
 
                   <button
                     className="btn btn-reject"
-                    onClick={() => handleRejectDispatch(dispatch.dispatch_id)}
-                    disabled={processingId === dispatch.dispatch_id}
+                    onClick={() => handleRejectDispatch(dispatch.attempt_id || dispatch.dispatch_id)}
+                    disabled={processingId === (dispatch.attempt_id || dispatch.dispatch_id)}
                   >
-                    {processingId === dispatch.dispatch_id ? 'Processing...' : 'Reject'}
+                    {processingId === (dispatch.attempt_id || dispatch.dispatch_id) ? 'Processing...' : 'Reject'}
                   </button>
                 </div>
               </div>

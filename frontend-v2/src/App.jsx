@@ -22,6 +22,7 @@ import FleetVehicles from './app/pages/FleetVehicles'
 import FleetDrivers from './app/pages/FleetDrivers'
 import FleetAssignments from './app/pages/FleetAssignments'
 import FleetTrips from './app/pages/FleetTrips'
+import FleetCities from './app/pages/FleetCities'
 import adminService from './services/admin.service'
 
 function App() {
@@ -284,6 +285,15 @@ function App() {
           element={
             isUserAuthenticated()
               ? (isUserAdmin() ? <Navigate to="/admin/login" /> : <FleetTrips />)
+              : <Navigate to="/login" />
+          }
+        />
+
+        <Route
+          path="/fleet-cities"
+          element={
+            isUserAuthenticated()
+              ? (isUserAdmin() ? <Navigate to="/admin/login" /> : <FleetCities />)
               : <Navigate to="/login" />
           }
         />

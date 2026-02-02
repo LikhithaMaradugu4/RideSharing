@@ -81,9 +81,20 @@ def estimate_fare(
     """
     Get fare estimate for a potential trip.
     
-    Returns distance, base fare, surge multiplier, and final fare.
+    Returns distance, base fare, surge multiplier, final fare, and nearby driver count.
     Does not create a trip - use POST /trips for that.
     """
+    # First validate location to get city_id
+    city, error = GeoService.validate_location(
+        db=db,
+        pickup_lat=request.pickup_lat,
+        pickup_lng=request.pickup_lng,
+        drop_lat=request.drop_lat,
+        drop_lng=request.drop_lng
+    )
+    
+    city_id = city.city_id if city else None
+    
     result = PricingService.estimate_fare(
         db=db,
         pickup_lat=request.pickup_lat,
@@ -93,12 +104,32 @@ def estimate_fare(
         vehicle_category=request.vehicle_category
     )
     
+    # Get nearby driver count for this vehicle category using dispatch logic
+    nearby_drivers_count = 0
+    if city_id:
+        try:
+            from app.services.dispatch_service import MAX_RADIUS_KM
+            eligible_drivers = DispatchService.find_eligible_drivers(
+                db=db,
+                pickup_lat=request.pickup_lat,
+                pickup_lng=request.pickup_lng,
+                city_id=city_id,
+                vehicle_category=request.vehicle_category,
+                radius_km=MAX_RADIUS_KM
+            )
+            nearby_drivers_count = len(eligible_drivers)
+        except Exception as e:
+            # Log but don't fail - this is informational only
+            print(f"Warning: Could not get nearby driver count: {e}")
+            nearby_drivers_count = 0
+    
     return FareEstimateResponse(
         distance_km=result["distance_km"],
         base_fare=result["base_fare"],
         surge_multiplier=result["surge_multiplier"],
         final_fare=result["final_fare"],
-        surge_zone_id=result["surge_zone_id"]
+        surge_zone_id=result["surge_zone_id"],
+        nearby_drivers_count=nearby_drivers_count
     )
 
 
