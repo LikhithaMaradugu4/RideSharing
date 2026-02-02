@@ -442,3 +442,83 @@ VALUES
 (203, 303, now(), NULL, 1, now()),
 (204, 304, now(), NULL, 1, now()),
 (205, 305, now(), NULL, 1, now());
+
+
+
+
+
+
+
+---------------------------------------------------
+
+INSERT INTO driver_vehicle_assignment (
+    driver_id,
+    vehicle_id,
+    start_time,
+    end_time,
+    created_by,
+    created_on
+)
+VALUES
+(201, 301, now(), NULL, 1, now()),
+(202, 302, now(), NULL, 1, now()),
+(203, 303, now(), NULL, 1, now()),
+(204, 304, now(), NULL, 1, now()),
+(205, 305, now(), NULL, 1, now());
+
+UPDATE vehicle
+SET approval_status = 'APPROVED'
+WHERE vehicle_id BETWEEN 301 AND 305;
+INSERT INTO vehicle_document (
+    vehicle_id,
+    document_type,
+    file_url,
+    verification_status,
+    verified_by,
+    verified_on,
+    created_by,
+    created_on
+)
+VALUES
+-- Vehicle 301
+(301, 'RC',            'https://files.test/vehicle/301/rc.pdf',            'VERIFIED', 1, now(), 1, now()),
+(301, 'INSURANCE',     'https://files.test/vehicle/301/insurance.pdf',     'VERIFIED', 1, now(), 1, now()),
+(301, 'PERMIT',        'https://files.test/vehicle/301/permit.pdf',        'VERIFIED', 1, now(), 1, now()),
+(301, 'FITNESS',       'https://files.test/vehicle/301/fitness.pdf',       'VERIFIED', 1, now(), 1, now()),
+(301, 'VEHICLE_PHOTO', 'https://files.test/vehicle/301/photo.jpg',         'VERIFIED', 1, now(), 1, now()),
+
+-- Vehicle 302
+(302, 'RC',            'https://files.test/vehicle/302/rc.pdf',            'VERIFIED', 1, now(), 1, now()),
+(302, 'INSURANCE',     'https://files.test/vehicle/302/insurance.pdf',     'VERIFIED', 1, now(), 1, now()),
+(302, 'PERMIT',        'https://files.test/vehicle/302/permit.pdf',        'VERIFIED', 1, now(), 1, now()),
+(302, 'FITNESS',       'https://files.test/vehicle/302/fitness.pdf',       'VERIFIED', 1, now(), 1, now()),
+(302, 'VEHICLE_PHOTO', 'https://files.test/vehicle/302/photo.jpg',         'VERIFIED', 1, now(), 1, now()),
+
+-- Vehicle 303
+(303, 'RC',            'https://files.test/vehicle/303/rc.pdf',            'VERIFIED', 1, now(), 1, now()),
+(303, 'INSURANCE',     'https://files.test/vehicle/303/insurance.pdf',     'VERIFIED', 1, now(), 1, now()),
+(303, 'PERMIT',        'https://files.test/vehicle/303/permit.pdf',        'VERIFIED', 1, now(), 1, now()),
+(303, 'FITNESS',       'https://files.test/vehicle/303/fitness.pdf',       'VERIFIED', 1, now(), 1, now()),
+(303, 'VEHICLE_PHOTO', 'https://files.test/vehicle/303/photo.jpg',         'VERIFIED', 1, now(), 1, now()),
+
+-- Vehicle 304
+(304, 'RC',            'https://files.test/vehicle/304/rc.pdf',            'VERIFIED', 1, now(), 1, now()),
+(304, 'INSURANCE',     'https://files.test/vehicle/304/insurance.pdf',     'VERIFIED', 1, now(), 1, now()),
+(304, 'PERMIT',        'https://files.test/vehicle/304/permit.pdf',        'VERIFIED', 1, now(), 1, now()),
+(304, 'FITNESS',       'https://files.test/vehicle/304/fitness.pdf',       'VERIFIED', 1, now(), 1, now()),
+(304, 'VEHICLE_PHOTO', 'https://files.test/vehicle/304/photo.jpg',         'VERIFIED', 1, now(), 1, now()),
+
+-- Vehicle 305
+(305, 'RC',            'https://files.test/vehicle/305/rc.pdf',            'VERIFIED', 1, now(), 1, now()),
+(305, 'INSURANCE',     'https://files.test/vehicle/305/insurance.pdf',     'VERIFIED', 1, now(), 1, now()),
+(305, 'PERMIT',        'https://files.test/vehicle/305/permit.pdf',        'VERIFIED', 1, now(), 1, now()),
+(305, 'FITNESS',       'https://files.test/vehicle/305/fitness.pdf',       'VERIFIED', 1, now(), 1, now()),
+(305, 'VEHICLE_PHOTO', 'https://files.test/vehicle/305/photo.jpg',         'VERIFIED', 1, now(), 1, now());
+
+select * from dispatch_attempt;
+select * from trip;
+update trip set status = 'COMPLETED' where trip_id = 11;
+select * from driver_shift;
+TRUNCATE TABLE trip RESTART IDENTITY CASCADE;
+
+
