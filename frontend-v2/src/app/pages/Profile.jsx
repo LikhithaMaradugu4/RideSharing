@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import profileService from '../../services/profile.service';
+import tokenStorage from '../../services/tokenStorage';
 import './Profile.css';
 
 function Profile() {
@@ -25,7 +26,7 @@ function Profile() {
       setLoading(true);
       setError(null);
 
-      const token = localStorage.getItem('jwt_token');
+      const token = tokenStorage.get('jwt_token');
       if (!token) {
         setError('Authentication token not found. Please log in again.');
         navigate('/login');
@@ -60,7 +61,7 @@ function Profile() {
       setError(null);
       setSuccess(null);
 
-      const token = localStorage.getItem('jwt_token');
+      const token = tokenStorage.get('jwt_token');
       const updateData = {
         full_name: formData.full_name,
         gender: formData.gender,

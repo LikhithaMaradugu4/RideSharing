@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import authService from '../../services/auth.service';
+import tokenStorage from '../../services/tokenStorage';
 import './OtpLogin.css';
 
 function OtpLogin() {
@@ -61,8 +62,8 @@ function OtpLogin() {
       }
 
       // Store tokens
-      localStorage.setItem('jwt_token', res.access_token);
-      localStorage.setItem('refresh_token', res.refresh_token);
+      tokenStorage.set('jwt_token', res.access_token);
+      tokenStorage.set('refresh_token', res.refresh_token);
 
       // Small UX note and redirect
       setMessage('Login successful. Redirecting...');

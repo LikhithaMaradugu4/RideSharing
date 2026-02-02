@@ -4,11 +4,12 @@ import DriverLayout from '../layout/DriverLayout';
 import VehicleAddForm from '../components/VehicleAddForm';
 import driverService from '../../services/driver.service';
 import userService from '../../services/user.service';
+import tokenStorage from '../../services/tokenStorage';
 import './DriverVehicles.css';
 
 export default function DriverVehicles() {
   const navigate = useNavigate();
-  const token = localStorage.getItem('jwt_token');
+  const token = tokenStorage.get('jwt_token');
 
   const [driverProfile, setDriverProfile] = useState(null);
   const [profileLoading, setProfileLoading] = useState(true);

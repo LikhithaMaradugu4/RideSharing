@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import fleetService from '../../services/fleet.service';
+import tokenStorage from '../../services/tokenStorage';
 import './FleetDashboard.css';
 
 function FleetDashboard() {
   const navigate = useNavigate();
-  const token = localStorage.getItem('jwt_token');
+  const token = tokenStorage.get('jwt_token');
   
   const [fleet, setFleet] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -38,9 +39,9 @@ function FleetDashboard() {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('jwt_token');
-    localStorage.removeItem('refresh_token');
-    localStorage.removeItem('user_info');
+    tokenStorage.remove('jwt_token');
+    tokenStorage.remove('refresh_token');
+    tokenStorage.remove('user_info');
     navigate('/login');
   };
 

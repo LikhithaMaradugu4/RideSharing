@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import driverService from '../../services/driver.service';
 import userService from '../../services/user.service';
+import tokenStorage from '../../services/tokenStorage';
 import DriverLayout from '../layout/DriverLayout';
 import './DriverDashboard.css';
 
@@ -35,7 +36,7 @@ function DriverDashboard() {
   const dispatchPollingRef = useRef(null);
   const tripPollingRef = useRef(null);
 
-  const token = localStorage.getItem('jwt_token');
+  const token = tokenStorage.get('jwt_token');
 
   useEffect(() => {
     if (!token) {

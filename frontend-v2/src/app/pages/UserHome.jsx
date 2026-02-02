@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import userService from '../../services/user.service';
+import tokenStorage from '../../services/tokenStorage';
 import './UserHome.css';
 
 function UserHome() {
@@ -18,8 +19,8 @@ function UserHome() {
       setLoading(true);
       setError(null);
 
-      // Get token from localStorage (stored during OTP login)
-      const token = localStorage.getItem('jwt_token');
+      // Get token from tokenStorage (stored during OTP login)
+      const token = tokenStorage.get('jwt_token');
       if (!token) {
         setError('Authentication token not found. Please log in again.');
         navigate('/login');

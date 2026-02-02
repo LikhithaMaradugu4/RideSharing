@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import tokenStorage from '../../services/tokenStorage';
 import './DriverLayout.css';
 
 function DriverLayout({ children, driverProfile }) {
@@ -10,7 +11,7 @@ function DriverLayout({ children, driverProfile }) {
   const isActive = (path) => location.pathname === path ? 'active' : '';
 
   const handleLogout = () => {
-    localStorage.removeItem('jwt_token');
+    tokenStorage.remove('jwt_token');
     navigate('/login');
   };
 

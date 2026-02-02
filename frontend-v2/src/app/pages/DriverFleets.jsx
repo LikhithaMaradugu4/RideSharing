@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import driverService from '../../services/driver.service';
+import tokenStorage from '../../services/tokenStorage';
 import DriverLayout from '../layout/DriverLayout';
 import './DriverFleets.css';
 
@@ -15,7 +16,7 @@ function DriverFleets() {
   const [processingFleetId, setProcessingFleetId] = useState(null);
   const [activeTab, setActiveTab] = useState('current');
 
-  const token = localStorage.getItem('jwt_token');
+  const token = tokenStorage.get('jwt_token');
 
   useEffect(() => {
     if (!token) {

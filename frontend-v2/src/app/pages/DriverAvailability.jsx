@@ -2,11 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DriverLayout from '../layout/DriverLayout';
 import driverService from '../../services/driver.service';
+import tokenStorage from '../../services/tokenStorage';
 import './DriverAvailability.css';
 
 export default function DriverAvailability() {
   const navigate = useNavigate();
-  const token = localStorage.getItem('jwt_token');
+  const token = tokenStorage.get('jwt_token');
   const [driverProfile, setDriverProfile] = useState(null);
   const [profileLoading, setProfileLoading] = useState(true);
   const [availabilityEntries, setAvailabilityEntries] = useState([]);

@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import './App.css'
+import tokenStorage from './services/tokenStorage'
 import AdminLayout from './admin/layout/AdminLayout'
 import AdminLogin from './admin/auth/AdminLogin'
 import OtpLogin from './app/pages/OtpLogin'
@@ -63,7 +64,7 @@ function App() {
    * This checks for JWT token, not admin authentication
    */
   const isUserAuthenticated = () => {
-    const token = localStorage.getItem('jwt_token')
+    const token = tokenStorage.get('jwt_token')
     return !!token
   }
 
@@ -71,7 +72,7 @@ function App() {
    * Decode JWT payload (unsafe decode; for role check only)
    */
   const getJwtPayload = () => {
-    const token = localStorage.getItem('jwt_token')
+    const token = tokenStorage.get('jwt_token')
     if (!token) return null
     try {
       const parts = token.split('.')

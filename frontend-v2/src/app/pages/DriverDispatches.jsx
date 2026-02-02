@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import driverService from '../../services/driver.service';
+import tokenStorage from '../../services/tokenStorage';
 import DriverLayout from '../layout/DriverLayout';
 import './DriverDispatches.css';
 
@@ -14,7 +15,7 @@ function DriverDispatches() {
   const [shiftReadiness, setShiftReadiness] = useState(null);
   const [processingId, setProcessingId] = useState(null);
 
-  const token = localStorage.getItem('jwt_token');
+  const token = tokenStorage.get('jwt_token');
 
   useEffect(() => {
     if (!token) {

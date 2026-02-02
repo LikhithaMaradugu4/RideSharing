@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import riderService from '../../services/rider.service';
+import tokenStorage from '../../services/tokenStorage';
 import './TripPlanning.css';
 
 // Fix Leaflet default marker icons
@@ -198,7 +199,7 @@ const vehicleIcons = {
 
 function TripPlanning() {
   const navigate = useNavigate();
-  const token = localStorage.getItem('jwt_token');
+  const token = tokenStorage.get('jwt_token');
   
   // Booking flow state
   const [step, setStep] = useState('SELECT_LOCATIONS'); // SELECT_LOCATIONS, SELECT_VEHICLE, CONFIRM

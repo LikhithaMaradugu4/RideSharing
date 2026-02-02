@@ -2,11 +2,12 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import riderService from '../../services/rider.service';
 import fleetService from '../../services/fleet.service';
+import tokenStorage from '../../services/tokenStorage';
 import './RiderDashboard.css';
 
 function RiderDashboard() {
   const navigate = useNavigate();
-  const token = localStorage.getItem('jwt_token');
+  const token = tokenStorage.get('jwt_token');
   
   // User state
   const [userInfo, setUserInfo] = useState(null);
@@ -28,7 +29,7 @@ function RiderDashboard() {
 
   const fetchUserInfo = async () => {
     try {
-      const user = JSON.parse(localStorage.getItem('user_info') || '{}');
+      const user = JSON.parse(tokenStorage.get('user_info') || '{}');
       setUserInfo(user);
     } catch (err) {
       console.error('Failed to get user info:', err);
@@ -64,9 +65,9 @@ function RiderDashboard() {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('jwt_token');
-    localStorage.removeItem('refresh_token');
-    localStorage.removeItem('user_info');
+    tokenStorage.remove('jwt_token');
+    tokenStorage.remove('refresh_token');
+    tokenStorage.remove('user_info');
     navigate('/login');
   };
 

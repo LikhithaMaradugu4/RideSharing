@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import fleetService from '../../services/fleet.service';
+import tokenStorage from '../../services/tokenStorage';
 import VehicleAddForm from '../components/VehicleAddForm';
 import './FleetVehicles.css';
 
 function FleetVehicles() {
   const navigate = useNavigate();
-  const token = localStorage.getItem('jwt_token');
+  const token = tokenStorage.get('jwt_token');
   
   const [vehicles, setVehicles] = useState([]);
   const [loading, setLoading] = useState(true);

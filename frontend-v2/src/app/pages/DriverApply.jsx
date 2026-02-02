@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import driverService from '../../services/driver.service';
+import tokenStorage from '../../services/tokenStorage';
 import './DriverApply.css';
 
 function DriverApply() {
@@ -30,7 +31,7 @@ function DriverApply() {
       setLoading(true);
       setError(null);
 
-      const token = localStorage.getItem('jwt_token');
+      const token = tokenStorage.get('jwt_token');
       if (!token) {
         setError('Authentication token not found. Please log in again.');
         navigate('/login');
@@ -142,7 +143,7 @@ function DriverApply() {
       setSubmitting(true);
       setError(null);
 
-      const token = localStorage.getItem('jwt_token');
+      const token = tokenStorage.get('jwt_token');
 
       // Build FormData for multipart/form-data
       const multipartData = new FormData();

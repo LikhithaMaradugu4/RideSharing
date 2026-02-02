@@ -1,4 +1,6 @@
 // OTP Auth Service for Phase-2 JWT
+import tokenStorage from './tokenStorage';
+
 const API_BASE_URL = 'http://localhost:8000/api/v2/auth';
 
 const authService = {
@@ -32,7 +34,7 @@ const authService = {
    * Refresh the access token using the stored refresh token
    */
   refreshToken: async () => {
-    const refreshToken = localStorage.getItem('refresh_token');
+    const refreshToken = tokenStorage.get('refresh_token');
     if (!refreshToken) {
       throw new Error('No refresh token available');
     }
@@ -45,13 +47,13 @@ const authService = {
     const data = await res.json();
     if (!res.ok) {
       // If refresh token is invalid, clear tokens and redirect to login
-      localStorage.removeItem('jwt_token');
-      localStorage.removeItem('refresh_token');
+      tokenStorage.remove('jwt_token');
+      tokenStorage.remove('refresh_token');
       throw new Error(data.detail || 'Session expired. Please login again.');
     }
     
     // Store new access token
-    localStorage.setItem('jwt_token', data.access_token);
+    tokenStorage.set('jwt_token', data.access_token);
     return data.access_token;
   },
 
@@ -59,7 +61,7 @@ const authService = {
    * Check if token is about to expire (within 2 minutes)
    */
   isTokenExpiringSoon: () => {
-    const token = localStorage.getItem('jwt_token');
+    const token = tokenStorage.get('jwt_token');
     if (!token) return true;
     
     try {
@@ -83,10 +85,10 @@ const authService = {
         return await authService.refreshToken();
       } catch (e) {
         // Refresh failed, return current token (might fail on API call)
-        return localStorage.getItem('jwt_token');
+        return tokenStorage.get('jwt_token');
       }
     }
-    return localStorage.getItem('jwt_token');
+    return tokenStorage.get('jwt_token');
   }
 };
 
