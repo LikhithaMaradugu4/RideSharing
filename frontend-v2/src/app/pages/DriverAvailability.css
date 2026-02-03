@@ -1,539 +1,320 @@
-.driver-availability-container {
-  max-width: 1200px;
+/* =========================
+   VEHICLE ADD FORM
+========================= */
+
+.vehicle-add-form {
+  max-width: 900px;
   margin: 0 auto;
-  padding: 24px;
+  background: #ffffff;
+  border-radius: 8px;
+  padding: 32px;
 }
 
-.availability-header {
+.vehicle-add-form h2 {
+  font-size: 24px;
+  font-weight: 600;
+  margin-bottom: 24px;
+  color: #1a1a1a;
+}
+
+/* =========================
+   STEP INDICATOR (ENHANCED)
+========================= */
+
+.step-indicator {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: center;
   margin-bottom: 32px;
-  gap: 24px;
+  position: relative;
 }
 
-.header-content {
+.step {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   flex: 1;
 }
 
-.availability-header h1 {
-  font-size: 28px;
+/* STEP NUMBER (CIRCLE) */
+.step-number {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 2px solid #e0e0e0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-weight: 600;
-  color: #1a1a1a;
-  margin: 0 0 8px 0;
-}
-
-.header-description {
   font-size: 14px;
   color: #666;
-  margin: 0;
+  transition: all 0.3s ease;
 }
 
-.btn-add-availability {
-  white-space: nowrap;
-  align-self: center;
-}
-
-/* Empty State */
-.empty-state {
-  text-align: center;
-  padding: 60px 32px;
-  background: #f5f5f5;
-  border-radius: 8px;
-  margin-top: 32px;
-}
-
-.empty-state p {
-  font-size: 16px;
+/* STEP LABEL */
+.step-label {
+  margin-top: 8px;
+  font-size: 13px;
   color: #666;
-  margin: 0 0 8px 0;
-}
-
-.empty-note {
-  font-size: 14px;
-  color: #999;
-  margin-bottom: 24px;
-}
-
-/* Loading State */
-.loading-state {
   text-align: center;
-  padding: 60px 32px;
-  color: #666;
-  font-size: 16px;
+  transition: color 0.3s ease;
 }
 
-/* Add Availability Form */
-.add-availability-card {
-  background: white;
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
-  padding: 32px;
+/* SMALL CONNECTOR LINE AFTER EACH STEP */
+.step:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  top: 18px;
+  left: calc(50% + 26px);
+  width: calc(100% - 52px);
+  height: 2px;
+  background: #e0e0e0;
+  overflow: hidden;
+}
+
+/* ANIMATED FILL INSIDE CONNECTOR */
+.step:not(:last-child)::before {
+  content: "";
+  position: absolute;
+  top: 18px;
+  left: calc(50% + 26px);
+  width: 0;
+  height: 2px;
+  background: #2196f3;
+  transition: width 0.5s ease;
+}
+
+/* COMPLETED STEP */
+.step.completed .step-number {
+  background: #2196f3;
+  border-color: #2196f3;
+  color: #ffffff;
+}
+
+.step.completed .step-label {
+  color: #2196f3;
+  font-weight: 500;
+}
+
+/* CONNECTOR FILL ANIMATION */
+.step.completed:not(:last-child)::before {
+  width: calc(100% - 52px);
+}
+
+/* ACTIVE STEP */
+.step.active .step-number {
+  border-color: #2196f3;
+  color: #2196f3;
+  transform: scale(1.08);
+}
+
+/* SUBTLE PULSE FOR ACTIVE STEP */
+.step.active .step-number {
+  animation: pulse 1.6s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(33, 150, 243, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 8px rgba(33, 150, 243, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(33, 150, 243, 0);
+  }
+}
+
+/* =========================
+   FORM SECTIONS
+========================= */
+
+.form-section {
   margin-bottom: 32px;
 }
 
-.add-availability-card h2 {
-  font-size: 20px;
+.form-section h3 {
+  font-size: 18px;
   font-weight: 600;
-  color: #1a1a1a;
-  margin: 0 0 24px 0;
-}
-
-.form-section {
-  margin-bottom: 24px;
-}
-
-.form-group {
-  margin-bottom: 20px;
-}
-
-.form-group label {
-  display: block;
-  font-size: 14px;
-  font-weight: 500;
-  color: #333;
   margin-bottom: 8px;
 }
 
-.form-group input[type="date"],
-.form-group textarea {
+.section-info {
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 20px;
+}
+
+.form-row {
+  display: flex;
+  gap: 16px;
+}
+
+.form-group {
+  flex: 1;
+  margin-bottom: 16px;
+}
+
+.form-group label {
+  font-size: 14px;
+  font-weight: 500;
+  display: block;
+  margin-bottom: 6px;
+}
+
+.form-group input,
+.form-group select {
   width: 100%;
   padding: 10px 12px;
   border: 1px solid #ddd;
   border-radius: 4px;
   font-size: 14px;
-  font-family: inherit;
-  transition: border-color 0.2s;
 }
 
-.form-group input[type="date"]:focus,
-.form-group textarea:focus {
+.form-group input:focus,
+.form-group select:focus {
   outline: none;
   border-color: #2196f3;
   box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.1);
 }
 
-.checkbox-label {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 14px;
-  font-weight: 500;
-  color: #333;
-  margin-bottom: 0;
+/* =========================
+   FILE INPUTS
+========================= */
+
+.file-group .file-input-wrapper {
+  position: relative;
+}
+
+.file-group input[type="file"] {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
   cursor: pointer;
 }
 
-.checkbox-label input[type="checkbox"] {
-  width: 18px;
-  height: 18px;
-  cursor: pointer;
-  accent-color: #2196f3;
-}
-
-.form-group textarea {
-  resize: vertical;
-  min-height: 80px;
-}
-
-.char-count {
+.file-name {
   display: block;
-  font-size: 12px;
-  color: #999;
-  margin-top: 4px;
-  text-align: right;
-}
-
-.form-actions {
-  display: flex;
-  gap: 12px;
-  justify-content: flex-end;
-  padding-top: 24px;
-  border-top: 1px solid #e0e0e0;
-}
-
-.form-actions button {
-  min-width: 120px;
-}
-
-/* Availability Content */
-.availability-content {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 32px;
-  margin-bottom: 32px;
-}
-
-@media (max-width: 768px) {
-  .availability-content {
-    grid-template-columns: 1fr;
-  }
-}
-
-.availability-section h2 {
-  font-size: 18px;
-  font-weight: 600;
-  color: #1a1a1a;
-  margin: 0 0 16px 0;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.section-title {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.available-indicator,
-.unavailable-indicator {
-  width: 12px;
-  height: 12px;
-  border-radius: 2px;
-}
-
-.available-indicator {
-  background: #4caf50;
-}
-
-.unavailable-indicator {
-  background: #f44336;
-}
-
-.no-entries {
-  padding: 24px;
-  text-align: center;
-  background: #f9f9f9;
+  padding: 10px 12px;
+  border: 1px dashed #ccc;
   border-radius: 4px;
-  color: #999;
-  font-size: 14px;
-}
-
-/* Availability List */
-.availability-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.availability-entry {
-  padding: 16px;
-  background: white;
-  border: 1px solid #e0e0e0;
-  border-left: 4px solid;
-  border-radius: 4px;
-  transition: border-color 0.2s, box-shadow 0.2s;
-}
-
-.availability-entry.available {
-  border-left-color: #4caf50;
-  background: #f1f8e9;
-}
-
-.availability-entry.available:hover {
-  border-color: #4caf50;
-  box-shadow: 0 2px 8px rgba(76, 175, 80, 0.1);
-}
-
-.availability-entry.unavailable {
-  border-left-color: #f44336;
-  background: #ffebee;
-}
-
-.availability-entry.unavailable:hover {
-  border-color: #f44336;
-  box-shadow: 0 2px 8px rgba(244, 67, 54, 0.1);
-}
-
-.entry-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 12px;
-}
-
-.entry-date {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.date-display {
-  font-size: 15px;
-  font-weight: 600;
-  color: #1a1a1a;
-}
-
-.badge-today {
-  display: inline-block;
-  padding: 2px 6px;
-  background: #2196f3;
-  color: white;
-  border-radius: 3px;
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-}
-
-.btn-toggle {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  border: none;
-  background: white;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 18px;
-  transition: background-color 0.2s, color 0.2s;
-}
-
-.availability-entry.available .btn-toggle {
-  color: #4caf50;
-}
-
-.availability-entry.available .btn-toggle:hover {
-  background: #e8f5e9;
-}
-
-.availability-entry.unavailable .btn-toggle {
-  color: #f44336;
-}
-
-.availability-entry.unavailable .btn-toggle:hover {
-  background: #ffebee;
-}
-
-.toggle-icon {
-  display: block;
-  line-height: 1;
-  font-weight: bold;
-}
-
-.entry-notes {
-  display: flex;
-  gap: 8px;
   font-size: 13px;
   color: #666;
-  margin-bottom: 12px;
-  padding: 8px 0;
 }
 
-.notes-label {
-  font-weight: 500;
-  color: #333;
-  flex-shrink: 0;
-}
-
-.notes-text {
-  flex: 1;
-}
-
-.btn-remove {
-  padding: 6px 12px;
-  background: transparent;
-  border: 1px solid #ddd;
-  border-radius: 4px;
+.file-error {
+  color: #d32f2f;
   font-size: 12px;
-  font-weight: 500;
-  color: #999;
-  cursor: pointer;
-  transition: border-color 0.2s, color 0.2s;
-  margin-top: 8px;
+  margin-top: 4px;
 }
 
-.btn-remove:hover {
-  border-color: #666;
-  color: #333;
+/* =========================
+   PHOTOS
+========================= */
+
+.photo-input-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
 }
 
-/* Buttons */
-.btn-primary,
-.btn-secondary {
-  padding: 10px 20px;
+.btn-add-photo {
+  margin-top: 12px;
+  background: transparent;
+  border: 1px dashed #2196f3;
+  color: #2196f3;
+  padding: 8px 12px;
   border-radius: 4px;
-  font-size: 14px;
-  font-weight: 500;
   cursor: pointer;
+}
+
+.btn-remove-photo {
+  background: transparent;
   border: none;
-  transition: background-color 0.2s, color 0.2s;
+  color: #d32f2f;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+/* =========================
+   STEP ACTIONS
+========================= */
+
+.step-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 24px;
 }
 
 .btn-primary {
-  background-color: #2196f3;
+  background: #2196f3;
   color: white;
+  padding: 10px 20px;
+  border-radius: 4px;
+  border: none;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.2s ease;
 }
 
 .btn-primary:hover:not(:disabled) {
-  background-color: #1976d2;
+  background: #1976d2;
+  transform: translateY(-1px);
 }
 
 .btn-primary:disabled {
-  background-color: #ccc;
+  background: #ccc;
   cursor: not-allowed;
-  color: #999;
 }
 
 .btn-secondary {
-  background-color: #e0e0e0;
+  background: #e0e0e0;
   color: #333;
+  padding: 10px 20px;
+  border-radius: 4px;
+  border: none;
+  font-size: 14px;
+  cursor: pointer;
 }
 
-.btn-secondary:hover:not(:disabled) {
-  background-color: #d0d0d0;
+.btn-cancel {
+  background: transparent;
+  border: 1px solid #ccc;
+  padding: 10px 20px;
+  border-radius: 4px;
 }
 
-.btn-secondary:disabled {
-  background-color: #f5f5f5;
-  cursor: not-allowed;
-  color: #999;
-}
+/* =========================
+   ERROR
+========================= */
 
-/* Error Banner */
-.error-banner {
-  padding: 12px 16px;
+.form-error {
   background: #ffebee;
   border: 1px solid #ffcdd2;
-  border-radius: 4px;
   color: #c62828;
+  padding: 12px 16px;
+  border-radius: 4px;
   margin-bottom: 20px;
-  font-size: 14px;
 }
 
-.error-banner strong {
-  display: block;
-  margin-bottom: 4px;
-}
+/* =========================
+   RESPONSIVE
+========================= */
 
-/* Info Box */
-.availability-info-box {
-  background: #e3f2fd;
-  border: 1px solid #bbdefb;
-  border-radius: 8px;
-  padding: 20px;
-}
-
-.availability-info-box h3 {
-  font-size: 16px;
-  font-weight: 600;
-  color: #1565c0;
-  margin: 0 0 12px 0;
-}
-
-.availability-info-box ul {
-  margin: 0;
-  padding-left: 20px;
-  font-size: 14px;
-  color: #333;
-  line-height: 1.6;
-}
-
-.availability-info-box li {
-  margin-bottom: 8px;
-}
-
-/* Responsive */
 @media (max-width: 768px) {
-  .availability-header {
+  .form-row {
     flex-direction: column;
-    align-items: flex-start;
   }
 
-  .availability-header h1 {
-    font-size: 24px;
+  .step-label {
+    font-size: 11px;
   }
 
-  .btn-add-availability {
-    width: 100%;
-  }
-
-  .add-availability-card {
-    padding: 20px;
-  }
-
-  .form-actions {
-    flex-direction: column-reverse;
-  }
-
-  .form-actions button {
-    width: 100%;
-  }
-
-  .entry-header {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .btn-toggle {
-    align-self: flex-end;
-    margin-top: 8px;
-  }
-}
-
-/* Info Banner - For feature unavailable messages */
-.info-banner {
-  display: flex;
-  gap: 16px;
-  background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
-  border: 1px solid #90caf9;
-  border-radius: 12px;
-  padding: 24px;
-  margin-bottom: 24px;
-}
-
-.info-icon {
-  font-size: 32px;
-  flex-shrink: 0;
-}
-
-.info-content {
-  flex: 1;
-}
-
-.info-content h3 {
-  margin: 0 0 12px 0;
-  font-size: 18px;
-  font-weight: 600;
-  color: #1565c0;
-}
-
-.info-content p {
-  margin: 0 0 12px 0;
-  font-size: 14px;
-  color: #333;
-  line-height: 1.6;
-}
-
-.info-content p:last-of-type {
-  margin-bottom: 16px;
-}
-
-.info-content .btn-secondary {
-  background: white;
-  border: 1px solid #1565c0;
-  color: #1565c0;
-  padding: 10px 20px;
-  border-radius: 6px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.info-content .btn-secondary:hover {
-  background: #1565c0;
-  color: white;
-}
-
-@media (max-width: 600px) {
-  .info-banner {
-    flex-direction: column;
-    text-align: center;
-  }
-  
-  .info-icon {
-    font-size: 40px;
+  .step:not(:last-child)::after,
+  .step:not(:last-child)::before {
+    width: 24px;
   }
 }

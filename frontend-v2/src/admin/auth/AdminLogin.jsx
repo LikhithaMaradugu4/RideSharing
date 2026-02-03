@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import adminService from '../../services/admin.service';
 import './AdminLogin.css';
 
-const AdminLogin = ({ onLoginSuccess }) => {
+const AdminLogin = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -25,11 +25,6 @@ const AdminLogin = ({ onLoginSuccess }) => {
         } catch (e) {
           console.warn('Platform session login failed:', e?.message || e);
         }
-      }
-
-      // Refetch admin data to ensure routes are rendered
-      if (onLoginSuccess) {
-        await onLoginSuccess();
       }
       
       // Redirect based on admin type

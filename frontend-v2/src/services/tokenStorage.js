@@ -1,44 +1,44 @@
 /**
- * Centralized Token Storage Abstraction
- * 
- * Environment-aware storage:
- * - DEV: sessionStorage (tab-isolated for testing multiple users)
- * - PROD: localStorage (single user per browser)
- * 
- * All token reads/writes MUST go through this utility.
- * No component should directly access localStorage or sessionStorage.
+ * Centralized Token Storage
+ *
+ * DEV  -> sessionStorage (separate login per tab, great for testing drivers)
+ * PROD -> localStorage   (persistent login for real users)
+ *
+ * IMPORTANT:
+ * Always use ONE static key (ex: "jwt_token")
+ * Never use dynamic keys or prefixes.
  */
 
-const isDev = import.meta.env.DEV || import.meta.env.MODE === 'development';
-
-// Select storage based on environment
-const storage = isDev ? sessionStorage : localStorage;
+const storage =
+  import.meta.env.DEV ? sessionStorage : localStorage;
 
 const tokenStorage = {
   /**
-   * Get a value from token storage
-   * @param {string} key - The key to retrieve
-   * @returns {string|null} - The stored value or null
+   * Get value
    */
-  get: (key) => {
+  get(key) {
     return storage.getItem(key);
   },
 
   /**
-   * Set a value in token storage
-   * @param {string} key - The key to store
-   * @param {string} value - The value to store
+   * Set value
    */
-  set: (key, value) => {
+  set(key, value) {
     storage.setItem(key, value);
   },
 
   /**
-   * Remove a value from token storage
-   * @param {string} key - The key to remove
+   * Remove value
    */
-  remove: (key) => {
+  remove(key) {
     storage.removeItem(key);
+  },
+
+  /**
+   * Clear all auth (optional helper)
+   */
+  clear() {
+    storage.clear();
   }
 };
 

@@ -4,6 +4,9 @@ import authService from '../../services/auth.service';
 import tokenStorage from '../../services/tokenStorage';
 import './OtpLogin.css';
 
+console.log("OTP MOUNTED");
+
+
 function OtpLogin() {
   const navigate = useNavigate();
   const [phone, setPhone] = useState('');
@@ -67,8 +70,9 @@ function OtpLogin() {
 
       // Small UX note and redirect
       setMessage('Login successful. Redirecting...');
-      // Use replace to avoid back to OTP
-      navigate('/app/home', { replace: true });
+      await Promise.resolve(); // let event loop flush
+      navigate('/app/home');
+
     } catch (err) {
       setError(err.message || 'Invalid OTP');
     } finally {

@@ -147,21 +147,18 @@ class DriverShiftServiceV2:
         """
         Start shift (GO ONLINE).
         
+        Idempotent: Returns existing active shift if one exists.
+        
         Preconditions:
-        - No active shift (ended_at IS NULL)
         - All eligibility checks pass
         
         Actions:
-        - Create DriverShift with status=ONLINE
+        - If active shift exists → return it
+        - Else → Create DriverShift with status=ONLINE
         
         Returns: DriverShift object
         """
-        # Validate eligibility
-        driver_profile, active_fleet, assignment, vehicle, tenant_id = (
-            DriverShiftServiceV2.validate_shift_eligibility(db, user)
-        )
-
-        # Check: No active shift
+        # Check: Active shift already exists?
         active_shift = (
             db.query(DriverShift)
             .filter(
@@ -171,10 +168,13 @@ class DriverShiftServiceV2:
             .first()
         )
         if active_shift:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Driver already has an active shift"
-            )
+            # Idempotent: return existing shift
+            return active_shift
+
+        # Validate eligibility
+        driver_profile, active_fleet, assignment, vehicle, tenant_id = (
+            DriverShiftServiceV2.validate_shift_eligibility(db, user)
+        )
 
         # Create shift
         shift = DriverShift(
@@ -193,18 +193,20 @@ class DriverShiftServiceV2:
         return shift
 
     @staticmethod
-    def end_shift(db: Session, user: AppUser) -> DriverShift:
+    def end_shift(db: Session, user: AppUser) -> Optional[DriverShift]:
         """
         End shift (GO OFFLINE).
         
+        Graceful: Returns None if no active shift exists (no error thrown).
+        
         Preconditions:
-        - Active shift exists
         - Shift status != BUSY
         
         Actions:
-        - Update DriverShift: status=OFFLINE, ended_at=now()
+        - If active shift exists → Update DriverShift: status=OFFLINE, ended_at=now()
+        - If no active shift → Return None
         
-        Returns: Updated DriverShift object
+        Returns: Updated DriverShift object or None
         """
         shift = (
             db.query(DriverShift)
@@ -216,10 +218,8 @@ class DriverShiftServiceV2:
         )
 
         if not shift:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="No active shift found"
-            )
+            # Graceful: no active shift is not an error
+            return None
 
         if shift.status == "BUSY":
             raise HTTPException(
@@ -401,3 +401,25 @@ class DriverShiftServiceV2:
         }
 
         return result
+
+    @staticmethod
+    def restart_shift(db: Session, user: AppUser) -> DriverShift:
+        """
+        Automatic shift restart: End current shift and immediately start a new one if eligible.
+        
+        Actions:
+        1. End current shift (if exists)
+        2. Check eligibility
+        3. Create new shift if eligible
+        
+        Returns: New DriverShift object
+        Raises: HTTPException if eligibility checks fail
+        """
+        # Step 1: End current shift (graceful, won't error if none exists)
+        DriverShiftServiceV2.end_shift(db, user)
+        
+        # Step 2: Start new shift (validates eligibility + creates shift)
+        # This will throw appropriate errors if driver is not eligible
+        new_shift = DriverShiftServiceV2.start_shift(db, user)
+        
+        return new_shift

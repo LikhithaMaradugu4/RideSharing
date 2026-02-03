@@ -387,10 +387,10 @@ function DriverDashboard() {
       const isCurrentlyOnline = shiftStatus?.is_online || shiftStatus?.shift_status === 'ONLINE' || shiftStatus?.shift_status === 'BUSY';
 
       if (isCurrentlyOnline) {
-        // End shift
+        // End shift - driver goes fully offline
         await driverService.endShift(token);
       } else {
-        // Start shift
+        // Start shift - create new shift
         await driverService.startShift(token);
       }
 
@@ -403,7 +403,17 @@ function DriverDashboard() {
         setShiftStatus(null);
       }
     } catch (err) {
-      // Provide helpful error messages
+      // Provide helpful error messages✅ No null shift crashes - Start shift is idempotent
+// Automatic shift creation - Eligible drivers get new shift immediately after ending old one
+//Continuous dispatch availability - Drivers stay online unless ineligible
+// Clean state management - ONE active shift per driver maintained
+
+//Tsting Checklist
+ //End shift as eligible driver → New shift auto-created, continues receiving dispatches
+ //End shift as ineligible driver (no vehicle) → Shift ends, goes offline
+ //Toggle shift multiple times → No crashes, clean state transitions
+ //Network tab shows no 500 errors on offline endpoint
+ //Shift status updates correctly in UI after restart
       let errorMessage = err.message || 'Failed to toggle shift';
       if (err.message?.includes('no active fleet association')) {
         errorMessage = 'You are not associated with any fleet. Please contact your fleet manager or register as an independent driver.';

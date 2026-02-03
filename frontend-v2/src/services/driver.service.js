@@ -123,6 +123,20 @@ const driverService = {
     return handleResponse(response, 'Failed to end shift');
   },
 
+  /**
+   * Restart shift: End current shift and immediately start a new one if eligible.
+   * This is an atomic operation - use this instead of manually calling endShift + startShift.
+   */
+  restartShift: async (token) => {
+    const validToken = await getValidToken(token);
+    const response = await fetch(`${API_BASE_URL}/driver/shift/restart`, {
+      method: 'POST',
+      headers: buildHeaders(validToken)
+    });
+
+    return handleResponse(response, 'Failed to restart shift');
+  },
+
   getActiveShift: async (token) => {
     try {
       const validToken = await getValidToken(token);

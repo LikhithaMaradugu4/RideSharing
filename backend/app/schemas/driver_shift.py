@@ -10,17 +10,17 @@ class DriverShiftRequest(BaseModel):
 
 class DriverShiftResponse(BaseModel):
     """Response for shift operations."""
-    shift_id: int
+    shift_id: Optional[int] = None
     driver_id: int
-    tenant_id: int
-    vehicle_id: Optional[int]
+    tenant_id: Optional[int] = None
+    vehicle_id: Optional[int] = None
     status: str  # ONLINE | BUSY | OFFLINE
-    started_at: datetime
-    ended_at: Optional[datetime]
-    created_by: int
-    created_on: datetime
-    updated_by: Optional[int]
-    updated_on: Optional[datetime]
+    started_at: Optional[datetime] = None
+    ended_at: Optional[datetime] = None
+    created_by: Optional[int] = None
+    created_on: Optional[datetime] = None
+    updated_by: Optional[int] = None
+    updated_on: Optional[datetime] = None
 
     model_config = ConfigDict(from_attributes=True)
 

@@ -1,7 +1,12 @@
+import tokenStorage from './tokenStorage';
+
 const API_BASE_URL = 'http://localhost:8000/api/admin';
 const PLATFORM_BASE_URL = 'http://localhost:8000/api/v2/platform-admin';
 const USER_AUTH_BASE_URL = 'http://localhost:8000/auth';
 const PLATFORM_SESSION_KEY = 'platform_session_id';
+
+// Safety guard: Prevent admin API calls outside /admin routes
+const isAdminPath = () => window.location.pathname.startsWith('/admin');
 
 const adminService = {
   // Authentication
@@ -38,7 +43,7 @@ const adminService = {
     // Store session_id for X-Session-Id header usage
     if (data.session_id) {
       try {
-        localStorage.setItem(PLATFORM_SESSION_KEY, data.session_id);
+        tokenStorage.set(PLATFORM_SESSION_KEY, data.session_id);
       } catch {}
     }
     return data;
@@ -46,7 +51,7 @@ const adminService = {
 
   getPlatformSessionId: () => {
     try {
-      return localStorage.getItem(PLATFORM_SESSION_KEY);
+      return tokenStorage.get(PLATFORM_SESSION_KEY);
     } catch {
       return null;
     }
@@ -54,11 +59,17 @@ const adminService = {
 
   clearPlatformSession: () => {
     try {
-      localStorage.removeItem(PLATFORM_SESSION_KEY);
+      tokenStorage.remove(PLATFORM_SESSION_KEY);
     } catch {}
   },
 
   getCurrentAdmin: async () => {
+    // Safety guard: Only allow admin API calls on /admin routes
+    if (!isAdminPath()) {
+      console.warn('[adminService] getCurrentAdmin blocked: Not on /admin route');
+      return null;
+    }
+
     const response = await fetch(`${API_BASE_URL}/auth/me`, {
       credentials: 'include'
     });

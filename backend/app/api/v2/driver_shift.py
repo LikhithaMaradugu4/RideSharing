@@ -66,10 +66,10 @@ def end_shift(
     Requires: Approved driver profile
     
     Preconditions:
-    - Active shift exists
     - Shift status is not BUSY
     
     Response: DriverShift object with status=OFFLINE, ended_at=now()
+             Returns None fields if no active shift exists (graceful)
     
     Note: Vehicle assignment remains active (use /driver/shift/end to terminate assignment)
     """
@@ -77,7 +77,48 @@ def end_shift(
     user = db.query(AppUser).filter(AppUser.user_id == driver_profile.driver_id).first()
 
     shift = DriverShiftServiceV2.end_shift(db=db, user=user)
+    
+    # Graceful: if no active shift, return empty response
+    if not shift:
+        return DriverShiftResponse(
+            shift_id=None,
+            driver_id=driver_profile.driver_id,
+            tenant_id=None,
+            vehicle_id=None,
+            status="OFFLINE",
+            started_at=None,
+            ended_at=None
+        )
+    
     return DriverShiftResponse.model_validate(shift)
+
+
+# ---------------------- Restart Shift (Auto-restart) ----------------------
+
+@router.post("/driver/shift/restart", response_model=DriverShiftResponse)
+def restart_shift(
+    db: Session = Depends(get_db),
+    driver_profile: DriverProfile = Depends(require_approved_driver)
+):
+    """
+    Automatic shift restart: End current shift and immediately start a new one.
+    
+    Requires: Approved driver profile
+    
+    Actions:
+    1. End current shift (if exists)
+    2. Validate eligibility
+    3. Create new shift
+    
+    Response: New DriverShift object with status=ONLINE
+    
+    Raises 403/400 if driver is not eligible to start a shift
+    """
+    # Get the user object for service call
+    user = db.query(AppUser).filter(AppUser.user_id == driver_profile.driver_id).first()
+
+    new_shift = DriverShiftServiceV2.restart_shift(db=db, user=user)
+    return DriverShiftResponse.model_validate(new_shift)
 
 
 # ---------------------- End Assignment ----------------------

@@ -1,4 +1,5 @@
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { Routes, Route, Navigate, useNavigate } from 'react-router-dom'
 import AdminSidebar from './AdminSidebar'
 import AdminHeader from './AdminHeader'
 import TenantsList from '../platform-admin/TenantsList'
@@ -11,9 +12,34 @@ import DriverApprovals from '../tenant-admin/DriverApprovals'
 import FleetApprovals from '../tenant-admin/FleetApprovals'
 import DriversList from '../tenant-admin/DriversList'
 import FleetsList from '../tenant-admin/FleetsList'
+import adminService from '../../services/admin.service'
 import './AdminLayout.css'
 
-const AdminLayout = ({ adminData }) => {
+const AdminLayout = () => {
+  const [adminData, setAdminData] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const navigate = useNavigate()
+
+  useEffect(() => {
+    const fetchAdmin = async () => {
+      try {
+        const data = await adminService.getCurrentAdmin()
+        setAdminData(data)
+      } catch (error) {
+        console.error('Admin auth failed:', error)
+        navigate('/admin/login')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchAdmin()
+  }, [navigate])
+
+  if (loading) {
+    return <div>Loading admin...</div>
+  }
+
   if (!adminData) {
     return <Navigate to="/admin/login" />
   }

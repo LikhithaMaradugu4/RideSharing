@@ -1,7 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
-import { useState, useEffect } from 'react'
 import './App.css'
-import tokenStorage from './services/tokenStorage'
+import ProtectedRoute from './components/ProtectedRoute'
 import AdminLayout from './admin/layout/AdminLayout'
 import AdminLogin from './admin/auth/AdminLogin'
 import OtpLogin from './app/pages/OtpLogin'
@@ -24,279 +23,123 @@ import FleetDrivers from './app/pages/FleetDrivers'
 import FleetAssignments from './app/pages/FleetAssignments'
 import FleetTrips from './app/pages/FleetTrips'
 import FleetCities from './app/pages/FleetCities'
-import adminService from './services/admin.service'
 
 function App() {
-  const [adminData, setAdminData] = useState(null)
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    const fetchAdminData = async () => {
-      try {
-        const data = await adminService.getCurrentAdmin()
-        setAdminData(data)
-      } catch (error) {
-        console.error('Failed to fetch admin data:', error)
-        setAdminData(null)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchAdminData()
-  }, [])
-
-  if (loading) {
-    return <div>Loading...</div>
-  }
-
-  const refetchAdminData = async () => {
-    try {
-      const data = await adminService.getCurrentAdmin()
-      setAdminData(data)
-    } catch (error) {
-      console.error('Failed to refetch admin data:', error)
-    }
-  }
-
-  /**
-   * Check if user is authenticated as normal user (OTP-authenticated)
-   * This checks for JWT token, not admin authentication
-   */
-  const isUserAuthenticated = () => {
-    const token = tokenStorage.get('jwt_token')
-    return !!token
-  }
-
-  /**
-   * Decode JWT payload (unsafe decode; for role check only)
-   */
-  const getJwtPayload = () => {
-    const token = tokenStorage.get('jwt_token')
-    if (!token) return null
-    try {
-      const parts = token.split('.')
-      if (parts.length !== 3) return null
-      const payload = JSON.parse(atob(parts[1]))
-      return payload
-    } catch {
-      return null
-    }
-  }
-
-  /**
-   * Admin tokens must not access user flow
-   */
-  const isUserAdmin = () => {
-    const payload = getJwtPayload()
-    const role = (payload?.role || '').toUpperCase()
-    return role === 'ADMIN' || role === 'PLATFORM_ADMIN'
-  }
-
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<AdminLogin onLoginSuccess={refetchAdminData} />} />
-        <Route path="/admin/login" element={<AdminLogin onLoginSuccess={refetchAdminData} />} />
-        {/* OTP Login for normal users */}
+        <Route path="/" element={<AdminLogin />} />
+        <Route path="/admin/login" element={<AdminLogin />} />
         <Route path="/login" element={<OtpLogin />} />
-        <Route 
-          path="/admin/*" 
-          element={adminData ? <AdminLayout adminData={adminData} /> : <Navigate to="/admin/login" />}
-        />
+        <Route path="/admin/*" element={<AdminLayout />} />
         
-        {/* User App Routes - OTP-authenticated normal users only */}
+        {/* User App Routes - Protected */}
         <Route 
           path="/app/home" 
-          element={
-            isUserAuthenticated()
-              ? (isUserAdmin() ? <Navigate to="/admin/login" /> : <UserHome />)
-              : <Navigate to="/login" />
-          }
+          element={<ProtectedRoute><UserHome /></ProtectedRoute>}
         />
 
-        {/* Shared Profile Page */}
         <Route
           path="/app/profile"
-          element={
-            isUserAuthenticated()
-              ? (isUserAdmin() ? <Navigate to="/admin/login" /> : <Profile />)
-              : <Navigate to="/login" />
-          }
+          element={<ProtectedRoute><Profile /></ProtectedRoute>}
         />
 
-        {/* Driver Pages */}
+        {/* Driver Routes */}
         <Route
           path="/apply-driver/:tenantId"
-          element={
-            isUserAuthenticated()
-              ? (isUserAdmin() ? <Navigate to="/admin/login" /> : <DriverApply />)
-              : <Navigate to="/login" />
-          }
+          element={<ProtectedRoute><DriverApply /></ProtectedRoute>}
         />
 
         <Route
           path="/driver-tenant-selection"
-          element={
-            isUserAuthenticated()
-              ? (isUserAdmin() ? <Navigate to="/admin/login" /> : <TenantSelection applicationType="driver" />)
-              : <Navigate to="/login" />
-          }
+          element={<ProtectedRoute><TenantSelection applicationType="driver" /></ProtectedRoute>}
         />
 
         <Route
           path="/apply-fleet-owner/:tenantId"
-          element={
-            isUserAuthenticated()
-              ? (isUserAdmin() ? <Navigate to="/admin/login" /> : <FleetOwnerApply />)
-              : <Navigate to="/login" />
-          }
+          element={<ProtectedRoute><FleetOwnerApply /></ProtectedRoute>}
         />
 
         <Route
           path="/fleet-owner-tenant-selection"
-          element={
-            isUserAuthenticated()
-              ? (isUserAdmin() ? <Navigate to="/admin/login" /> : <TenantSelection applicationType="fleet-owner" />)
-              : <Navigate to="/login" />
-          }
+          element={<ProtectedRoute><TenantSelection applicationType="fleet-owner" /></ProtectedRoute>}
         />
 
         <Route
           path="/app/driver/apply"
-          element={
-            isUserAuthenticated()
-              ? (isUserAdmin() ? <Navigate to="/admin/login" /> : <Navigate to="/driver-tenant-selection" />)
-              : <Navigate to="/login" />
-          }
+          element={<ProtectedRoute><Navigate to="/driver-tenant-selection" /></ProtectedRoute>}
         />
 
         <Route
           path="/app/driver/dashboard"
-          element={
-            isUserAuthenticated()
-              ? (isUserAdmin() ? <Navigate to="/admin/login" /> : <DriverDashboard />)
-              : <Navigate to="/login" />
-          }
+          element={<ProtectedRoute><DriverDashboard /></ProtectedRoute>}
         />
 
         <Route
           path="/app/driver/dispatches"
-          element={
-            isUserAuthenticated()
-              ? (isUserAdmin() ? <Navigate to="/admin/login" /> : <DriverDispatches />)
-              : <Navigate to="/login" />
-          }
+          element={<ProtectedRoute><DriverDispatches /></ProtectedRoute>}
         />
 
         <Route
           path="/app/driver/vehicles"
-          element={
-            isUserAuthenticated()
-              ? (isUserAdmin() ? <Navigate to="/admin/login" /> : <DriverVehicles />)
-              : <Navigate to="/login" />
-          }
+          element={<ProtectedRoute><DriverVehicles /></ProtectedRoute>}
         />
 
         <Route
           path="/app/driver/availability"
-          element={
-            isUserAuthenticated()
-              ? (isUserAdmin() ? <Navigate to="/admin/login" /> : <DriverAvailability />)
-              : <Navigate to="/login" />
-          }
+          element={<ProtectedRoute><DriverAvailability /></ProtectedRoute>}
         />
 
         <Route
           path="/app/driver/fleets"
-          element={
-            isUserAuthenticated()
-              ? (isUserAdmin() ? <Navigate to="/admin/login" /> : <DriverFleets />)
-              : <Navigate to="/login" />
-          }
+          element={<ProtectedRoute><DriverFleets /></ProtectedRoute>}
         />
 
         {/* Rider Routes */}
         <Route
           path="/app/rider-dashboard"
-          element={
-            isUserAuthenticated()
-              ? (isUserAdmin() ? <Navigate to="/admin/login" /> : <RiderDashboard />)
-              : <Navigate to="/login" />
-          }
+          element={<ProtectedRoute><RiderDashboard /></ProtectedRoute>}
         />
 
         <Route
           path="/app/rider/book"
-          element={
-            isUserAuthenticated()
-              ? (isUserAdmin() ? <Navigate to="/admin/login" /> : <TripPlanning />)
-              : <Navigate to="/login" />
-          }
+          element={<ProtectedRoute><TripPlanning /></ProtectedRoute>}
         />
 
         <Route
           path="/app/rider/trip/:tripId"
-          element={
-            isUserAuthenticated()
-              ? (isUserAdmin() ? <Navigate to="/admin/login" /> : <RiderTripStatus />)
-              : <Navigate to="/login" />
-          }
+          element={<ProtectedRoute><RiderTripStatus /></ProtectedRoute>}
         />
 
         {/* Fleet Owner Routes */}
         <Route
           path="/fleet-dashboard"
-          element={
-            isUserAuthenticated()
-              ? (isUserAdmin() ? <Navigate to="/admin/login" /> : <FleetDashboard />)
-              : <Navigate to="/login" />
-          }
+          element={<ProtectedRoute><FleetDashboard /></ProtectedRoute>}
         />
 
         <Route
           path="/fleet-vehicles"
-          element={
-            isUserAuthenticated()
-              ? (isUserAdmin() ? <Navigate to="/admin/login" /> : <FleetVehicles />)
-              : <Navigate to="/login" />
-          }
+          element={<ProtectedRoute><FleetVehicles /></ProtectedRoute>}
         />
 
         <Route
           path="/fleet-drivers"
-          element={
-            isUserAuthenticated()
-              ? (isUserAdmin() ? <Navigate to="/admin/login" /> : <FleetDrivers />)
-              : <Navigate to="/login" />
-          }
+          element={<ProtectedRoute><FleetDrivers /></ProtectedRoute>}
         />
 
         <Route
           path="/fleet-assignments"
-          element={
-            isUserAuthenticated()
-              ? (isUserAdmin() ? <Navigate to="/admin/login" /> : <FleetAssignments />)
-              : <Navigate to="/login" />
-          }
+          element={<ProtectedRoute><FleetAssignments /></ProtectedRoute>}
         />
 
         <Route
           path="/fleet-trips"
-          element={
-            isUserAuthenticated()
-              ? (isUserAdmin() ? <Navigate to="/admin/login" /> : <FleetTrips />)
-              : <Navigate to="/login" />
-          }
+          element={<ProtectedRoute><FleetTrips /></ProtectedRoute>}
         />
 
         <Route
           path="/fleet-cities"
-          element={
-            isUserAuthenticated()
-              ? (isUserAdmin() ? <Navigate to="/admin/login" /> : <FleetCities />)
-              : <Navigate to="/login" />
-          }
+          element={<ProtectedRoute><FleetCities /></ProtectedRoute>}
         />
 
         {/* Shorthand routes */}
@@ -308,6 +151,5 @@ function App() {
     </BrowserRouter>
   )
 }
-
 
 export default App
