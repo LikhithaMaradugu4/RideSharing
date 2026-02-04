@@ -415,16 +415,15 @@ class TenantAdminService:
             )
 
         tenant_id = TenantAdminService._get_admin_tenant(db, user)
-
         vehicle = (
             db.query(Vehicle)
-            .join(Fleet, Vehicle.fleet_id == Fleet.fleet_id)
             .filter(
                 Vehicle.vehicle_id == vehicle_id,
-                Fleet.tenant_id == tenant_id
+                Vehicle.tenant_id == tenant_id
             )
             .first()
         )
+        
 
         if not vehicle:
             raise HTTPException(
@@ -442,27 +441,24 @@ class TenantAdminService:
 
     @staticmethod
     def get_pending_vehicles(db: Session, user: AppUser):
-        """Get all vehicles pending approval for admin's tenant."""
         if user.role != "TENANT_ADMIN":
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Only tenant admins can view pending vehicles"
             )
-
+    
         tenant_id = TenantAdminService._get_admin_tenant(db, user)
-
-        vehicles = (
+    
+        return (
             db.query(Vehicle)
-            .join(Fleet, Vehicle.fleet_id == Fleet.fleet_id)
             .filter(
-                Fleet.tenant_id == tenant_id,
+                Vehicle.tenant_id == tenant_id,
                 Vehicle.approval_status == "PENDING"
             )
             .order_by(Vehicle.created_on.desc())
             .all()
         )
 
-        return vehicles
 
     @staticmethod
     def approve_vehicle(
@@ -488,14 +484,15 @@ class TenantAdminService:
         tenant_id = TenantAdminService._get_admin_tenant(db, user)
 
         vehicle = (
-            db.query(Vehicle)
-            .join(Fleet, Vehicle.fleet_id == Fleet.fleet_id)
-            .filter(
-                Vehicle.vehicle_id == vehicle_id,
-                Fleet.tenant_id == tenant_id
-            )
-            .first()
+           db.query(Vehicle)
+           .filter(
+               Vehicle.vehicle_id == vehicle_id,
+               Vehicle.tenant_id == tenant_id
+           )
+           .first()
+        
         )
+        
 
         if not vehicle:
             raise HTTPException(
@@ -560,3 +557,23 @@ class TenantAdminService:
         db.refresh(vehicle)
 
         return vehicle
+    @staticmethod
+    def get_all_vehicles(db: Session, user: AppUser):
+      if user.role != "TENANT_ADMIN":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only tenant admins can view vehicles"
+        )
+
+      tenant_id = TenantAdminService._get_admin_tenant(db, user)
+
+      vehicles = (
+        db.query(Vehicle)
+        .filter(Vehicle.tenant_id == tenant_id)
+        .order_by(Vehicle.created_on.desc())
+        .all()
+    )
+
+      return vehicles
+    
+    

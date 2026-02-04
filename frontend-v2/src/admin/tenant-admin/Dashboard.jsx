@@ -6,7 +6,9 @@ const Dashboard = () => {
   const [stats, setStats] = useState({
     pendingDrivers: 0,
     pendingFleets: 0,
+    pendingVehicles: 0,
     approvedDrivers: 0,
+    approvedVehicles: 0,
     approvedFleets: 0,
   })
   const [loading, setLoading] = useState(true)
@@ -21,11 +23,13 @@ const Dashboard = () => {
       setLoading(true)
       setError('')
 
-      const [pendingDrivers, pendingFleets, allDrivers, allFleets] = await Promise.all([
+      const [pendingDrivers, pendingFleets, pendingVehicles, allDrivers, allFleets, allVehicles] = await Promise.all([
         adminService.getPendingDrivers(),
         adminService.getPendingFleets(),
+        adminService.getPendingVehicles(),
         adminService.getAllDrivers(),
         adminService.getAllFleets(),
+        adminService.getAllVehicles(),
       ])
 
       const approvedDrivers = allDrivers.filter(
@@ -35,12 +39,17 @@ const Dashboard = () => {
       const approvedFleets = allFleets.filter(
         (f) => f.approval_status === 'APPROVED'
       ).length
+      const approvedVehicles = allVehicles.filter(
+        (v) => v.approval_status === 'APPROVED'
+      ).length
 
       setStats({
         pendingDrivers: pendingDrivers.length,
         pendingFleets: pendingFleets.length,
+        pendingVehicles: pendingVehicles.length,
         approvedDrivers,
         approvedFleets,
+        approvedVehicles,
       })
     } catch (err) {
       console.error('Failed to load stats:', err)
@@ -80,6 +89,16 @@ const Dashboard = () => {
           <h3>Approved Fleets</h3>
           <p className="stat-number">{stats.approvedFleets}</p>
         </div>
+        <div className="stat-card pending">
+          <h3>Pending Vehicles</h3>
+          <p className="stat-number">{stats.pendingVehicles}</p>
+        </div>
+
+        <div className="stat-card approved">
+          <h3>Approved Vehicles</h3>
+          <p className="stat-number">{stats.approvedVehicles}</p>
+        </div>
+
       </div>
     </div>
   )

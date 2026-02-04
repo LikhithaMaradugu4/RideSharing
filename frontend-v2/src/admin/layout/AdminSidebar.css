@@ -4,74 +4,141 @@
   color: white;
   display: flex;
   flex-direction: column;
-  border-right: 1px solid #34495e;
+  border-right: 1px solid #1a252f;
+  height: 100vh;
+  position: sticky;
+  top: 0;
+  box-shadow: 4px 0 10px rgba(0, 0, 0, 0.1);
+  z-index: 101;
 }
 
 .admin-sidebar-header {
-  padding: 30px 20px;
-  border-bottom: 1px solid #34495e;
+  padding: 30px 24px 20px 24px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background-color: #2c3e50;
 }
 
 .admin-sidebar-header h2 {
   margin: 0;
   font-size: 22px;
   font-weight: 700;
-  color: white;
+  color: #ffffff; /* Pure white */
+  letter-spacing: 0.5px;
 }
 
-.admin-type {
-  margin: 8px 0 0 0;
-  font-size: 13px;
-  color: #95a5a6;
+.admin-type-badge {
+  display: inline-block;
+  margin-top: 10px;
+  padding: 4px 10px;
+  background-color: rgba(52, 152, 219, 0.2);
+  color: #5dade2; /* Brighter Blue for text */
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .admin-sidebar-nav {
   flex: 1;
-  padding: 20px 0;
+  padding: 20px 15px;
   overflow-y: auto;
 }
 
+/* Label for grouping items */
+.nav-group-label {
+  padding: 15px 12px 8px 12px;
+  font-size: 11px;
+  text-transform: uppercase;
+  color: #95a5a6; /* Lighter grey for labels */
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
 .nav-link {
-  display: block;
-  padding: 14px 20px;
-  color: #ecf0f1;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  margin-bottom: 4px;
+  
+  /* UPDATED: Much brighter text for better visibility */
+  color: rgba(255, 255, 255, 0.85); 
+  
   text-decoration: none;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 500;
-  transition: background-color 0.2s, padding-left 0.2s;
-  border-left: 3px solid transparent;
+  border-radius: 8px;
+  transition: all 0.25s ease;
 }
 
+.nav-link svg {
+  width: 18px;
+  height: 18px;
+  /* UPDATED: Icons match text brightness */
+  opacity: 0.9; 
+  transition: opacity 0.2s;
+}
+
+/* Hover State */
 .nav-link:hover {
-  background-color: #34495e;
-  padding-left: 24px;
+  background-color: rgba(255, 255, 255, 0.1);
+  color: #ffffff; /* Pure white on hover */
+  transform: translateX(4px);
 }
 
+.nav-link:hover svg {
+  opacity: 1;
+}
+
+/* Active State */
 .nav-link.active {
-  background-color: #34495e;
-  border-left-color: #3498db;
-  padding-left: 24px;
-  color: white;
+  /* UPDATED: Brighter gradient so it doesn't look "too dark" */
+  background: linear-gradient(90deg, #4aa3df 0%, #2980b9 100%);
+  
+  /* UPDATED: Force Pure White and Bold for maximum contrast */
+  color: #ffffff !important;
+  font-weight: 600;
+  
+  box-shadow: 0 4px 15px rgba(52, 152, 219, 0.4);
+}
+
+.nav-link.active svg {
+  opacity: 1;
+  stroke-width: 2.5px; /* Make icon slightly bolder when active */
 }
 
 .admin-sidebar-footer {
   padding: 20px;
-  border-top: 1px solid #34495e;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  background-color: #273746;
 }
 
 .logout-button {
   width: 100%;
   padding: 12px;
-  background-color: #e74c3c;
-  color: white;
-  border: none;
-  border-radius: 6px;
+  background-color: rgba(231, 76, 60, 0.15);
+  color: #e74c3c; /* Red text matches the border/bg */
+  border: 1px solid rgba(231, 76, 60, 0.4);
+  border-radius: 8px;
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
-  transition: background-color 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  transition: all 0.2s ease;
+}
+
+.logout-button svg {
+  width: 16px;
+  height: 16px;
 }
 
 .logout-button:hover {
   background-color: #c0392b;
+  color: white;
+  border-color: #c0392b;
+  transform: translateY(-1px);
 }

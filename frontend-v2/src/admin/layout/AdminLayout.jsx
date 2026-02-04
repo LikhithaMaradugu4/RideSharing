@@ -14,6 +14,7 @@ import DriversList from '../tenant-admin/DriversList'
 import FleetsList from '../tenant-admin/FleetsList'
 import adminService from '../../services/admin.service'
 import './AdminLayout.css'
+import VehicleApprovals from '../tenant-admin/VehicleApprovals'
 
 const AdminLayout = () => {
   const [adminData, setAdminData] = useState(null)
@@ -67,7 +68,9 @@ const AdminLayout = () => {
                 <Route path="tenant/fleet-approvals" element={<FleetApprovals />} />
                 <Route path="tenant/drivers" element={<DriversList />} />
                 <Route path="tenant/fleets" element={<FleetsList />} />
+                <Route path="tenant/vehicles" element={<VehicleApprovals/>}/>
               </>
+        
             )}
           </Routes>
         </div>

@@ -333,7 +333,8 @@ const adminService = {
       throw new Error(error.detail || 'Failed to fetch pending drivers');
     }
     
-    return response.json();
+    const data = await response.json();
+    return Array.isArray(data) ? data : data.drivers || [];
   },
 
   getAllDrivers: async () => {
@@ -346,7 +347,8 @@ const adminService = {
       throw new Error(error.detail || 'Failed to fetch drivers');
     }
     
-    return response.json();
+    const data = await response.json();
+    return Array.isArray(data) ? data : data.drivers || [];
   },
 
   approveDriver: async (driverId, data) => {
@@ -405,7 +407,8 @@ const adminService = {
       throw new Error(error.detail || 'Failed to fetch pending fleets');
     }
     
-    return response.json();
+    const data = await response.json();
+    return Array.isArray(data) ? data : data.fleets || [];
   },
 
   getAllFleets: async () => {
@@ -418,7 +421,8 @@ const adminService = {
       throw new Error(error.detail || 'Failed to fetch fleets');
     }
     
-    return response.json();
+    const data = await response.json();
+    return Array.isArray(data) ? data : data.fleets || [];
   },
 
   approveFleet: async (fleetId) => {
@@ -449,7 +453,73 @@ const adminService = {
     }
     
     return response.json();
+  },
+  // Vehicle Management (Tenant Admin)
+  getPendingVehicles: async () => {
+    const response = await fetch(`${API_BASE_URL}/vehicles/pending-approval`, {
+      credentials: 'include'
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || 'Failed to fetch pending vehicles');
+    }
+
+    const data = await response.json();
+    // Backend returns a direct array
+    return Array.isArray(data) ? data : data.pending_vehicles || [];
+  },getVehicleDocuments: async (vehicleId) => {
+  const response = await fetch(
+    `${API_BASE_URL}/vehicles/${vehicleId}/documents`,
+    {
+      credentials: 'include'
+    }
+  );
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || 'Failed to fetch vehicle documents');
   }
-};
+
+  return response.json();
+},
+approveOrRejectVehicle: async (vehicleId, data) => {
+  const response = await fetch(
+    `${API_BASE_URL}/vehicles/${vehicleId}/approve`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(data)
+    }
+  );
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || 'Failed to update vehicle status');
+  }
+
+  return response.json();
+},
+
+  getAllVehicles: async () => {
+    const response = await fetch(
+      `${API_BASE_URL}/vehicles`,
+      {
+        credentials: 'include'
+      }
+    );
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || 'Failed to fetch vehicles');
+    }
+
+    const data = await response.json();
+    // Backend returns a direct array
+    return Array.isArray(data) ? data : data.vehicles || [];
+  },};
+
+
 
 export default adminService;
