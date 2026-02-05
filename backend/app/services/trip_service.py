@@ -10,9 +10,11 @@ from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
 from datetime import datetime, timezone
 from typing import Optional
+import json
 
 from app.models.trips import Trip
 from app.models.identity import AppUser
+from app.models.core import City
 from app.services.geo_service import GeoService
 from app.services.pricing_service import PricingService
 
@@ -102,10 +104,33 @@ class TripService:
             drop_lng=drop_lng
         )
         
+        # Get fare config for snapshot
+        fare_config = fare_breakdown.fare_config
+        
+        # Create fare snapshot (freezes fare config at trip creation time)
+        fare_snapshot = {
+            "fare_config_id": fare_config.fare_config_id,
+            "vehicle_category": vehicle_category,
+            "base_fare": float(fare_config.base_fare),
+            "per_km_rate": float(fare_config.per_km_rate),
+            "per_min_rate": float(fare_config.per_min_rate),
+            "minimum_fare": float(fare_config.minimum_fare) if fare_config.minimum_fare else None,
+            "booking_fee": float(fare_config.booking_fee) if fare_config.booking_fee else None,
+            "surge_multiplier": fare_breakdown.surge_multiplier,
+            "surge_zone_id": fare_breakdown.surge_zone_id,
+            "distance_km": fare_breakdown.distance_km,
+            "estimated_minutes": fare_breakdown.estimated_minutes,
+            "calculated_at": datetime.now(timezone.utc).isoformat()
+        }
+        
         # 5. Create trip
         trip = Trip(
             rider_id=user.user_id,
             city_id=city.city_id,
+            country_code=city.country_code,
+            currency=city.currency,
+            fare_config_id=fare_config.fare_config_id,
+            fare_snapshot=fare_snapshot,
             surge_zone_id=fare_breakdown.surge_zone_id,
             pickup_lat=pickup_lat,
             pickup_lng=pickup_lng,

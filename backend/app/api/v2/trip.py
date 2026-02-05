@@ -27,7 +27,10 @@ from app.schemas.trip import (
     ValidateLocationResponse,
     LocationInfo,
     DriverInfo,
-    VehicleInfo
+    VehicleInfo,
+    PaymentOptionsResponse,
+    CreatePaymentRequest,
+    CreatePaymentResponse
 )
 from app.services.trip_service import TripService
 from app.services.dispatch_service import DispatchService
@@ -184,7 +187,10 @@ def create_trip(
     return CreateTripResponse(
         trip_id=trip.trip_id,
         status=trip.status,
-        fare_amount=float(trip.fare_amount) if trip.fare_amount else 0.0
+        fare_amount=float(trip.fare_amount) if trip.fare_amount else 0.0,
+        currency=trip.currency,
+        country_code=trip.country_code,
+        fare_snapshot=trip.fare_snapshot
     )
 
 
@@ -213,6 +219,9 @@ def get_trip(
         status=trip.status,
         driver_id=trip.driver_id,
         fare_amount=float(trip.fare_amount) if trip.fare_amount else 0.0,
+        currency=trip.currency,
+        country_code=trip.country_code,
+        fare_snapshot=trip.fare_snapshot,
         pickup_location=LocationInfo(
             lat=float(trip.pickup_lat),
             lng=float(trip.pickup_lng)
@@ -270,4 +279,91 @@ def cancel_trip(
     return CancelTripResponse(
         trip_id=trip.trip_id,
         status=trip.status
+    )
+
+
+@router.get("/{trip_id}/payment-options", response_model=PaymentOptionsResponse)
+def get_payment_options(
+    trip_id: int,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Get payment options for a completed trip.
+    
+    Returns:
+    - final_fare: The amount to be paid
+    - currency: Currency code (e.g., INR, USD)
+    - available_payment_modes: List of payment modes (ONLINE, CASH)
+    - fare_breakdown: Optional detailed breakdown from fare_snapshot
+    
+    Only available for trips with status=COMPLETED.
+    """
+    user_id = current_user.get("user_id")
+    
+    # Get trip
+    trip = (
+        db.query(Trip)
+        .filter(
+            Trip.trip_id == trip_id,
+            Trip.rider_id == user_id,
+            Trip.status == "COMPLETED"
+        )
+        .first()
+    )
+    
+    if not trip:
+        raise HTTPException(
+            status_code=404,
+            detail="Trip not found or not completed"
+        )
+    
+    # Build response
+    return PaymentOptionsResponse(
+        trip_id=trip.trip_id,
+        final_fare=float(trip.fare_amount) if trip.fare_amount else 0.0,
+        currency=trip.currency,
+        available_payment_modes=["ONLINE", "CASH"],
+        fare_breakdown=trip.fare_snapshot
+    )
+
+
+@router.post("/{trip_id}/payment", response_model=CreatePaymentResponse)
+def create_payment(
+    trip_id: int,
+    request: CreatePaymentRequest,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Create a payment record for a completed trip.
+    
+    Phase 1 of payment flow:
+    - Validates trip is COMPLETED
+    - Creates payment record with status=CREATED
+    - NO money movement
+    - NO wallet updates
+    - NO ledger entries
+    
+    The payment will be processed in a separate step.
+    """
+    from app.services.payment_service import PaymentService
+    
+    user_id = current_user.get("user_id")
+    
+    payment = PaymentService.create_payment_record(
+        db=db,
+        trip_id=trip_id,
+        rider_id=user_id,
+        payment_mode=request.payment_mode
+    )
+    
+    return CreatePaymentResponse(
+        payment_id=payment.payment_id,
+        trip_id=payment.trip_id,
+        amount=float(payment.amount),
+        currency=payment.currency,
+        payment_mode=payment.payment_mode,
+        status=payment.status,
+        gateway_order_id=payment.gateway_order_id
     )

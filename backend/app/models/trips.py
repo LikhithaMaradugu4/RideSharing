@@ -1,4 +1,5 @@
-from sqlalchemy import Column, BigInteger, String, ForeignKey, Numeric, TIMESTAMP,DECIMAL,TEXT
+from sqlalchemy import Column, BigInteger, String, ForeignKey, Numeric, TIMESTAMP,DECIMAL,TEXT, CHAR
+from sqlalchemy.dialects.postgresql import JSONB
 from .base import Base
 from .mixins import AuditMixin
 from sqlalchemy.sql import func
@@ -51,6 +52,12 @@ class Trip(Base, AuditMixin):
 
     city_id = Column(BigInteger, ForeignKey("city.city_id"), nullable=False)
     surge_zone_id = Column(BigInteger, ForeignKey("surge_zone.surge_zone_id"))
+
+    # New columns for multi-currency support
+    country_code = Column(CHAR(2), ForeignKey("country.country_code"), nullable=False)
+    currency = Column(CHAR(3), nullable=False)
+    fare_config_id = Column(BigInteger, ForeignKey("fare_config.fare_config_id"))
+    fare_snapshot = Column(JSONB)  # Stores fare configuration at trip time
 
     pickup_lat = Column(Numeric(9,6), nullable=False)
     pickup_lng = Column(Numeric(9,6), nullable=False)

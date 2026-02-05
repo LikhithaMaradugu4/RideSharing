@@ -56,30 +56,46 @@ class CityResponse(BaseModel):
 
 class FareConfigCreateRequest(BaseModel):
     city_id: int
-    vehicle_category: str
+    vehicle_category: str  # BIKE / AUTO / CAB / XL
+    currency: str  # 3-char currency code
     base_fare: float
-    per_km: float
-    per_minute: float
-    minimum_fare: float
+    per_km_rate: float
+    per_min_rate: float
+    minimum_fare: Optional[float] = None
+    booking_fee: Optional[float] = None
+    surge_allowed: bool = True
+    night_charge_pct: Optional[float] = None
+    effective_from: datetime
+    effective_to: Optional[datetime] = None
 
 
 class FareConfigUpdateRequest(BaseModel):
     base_fare: Optional[float] = None
-    per_km: Optional[float] = None
-    per_minute: Optional[float] = None
+    per_km_rate: Optional[float] = None
+    per_min_rate: Optional[float] = None
     minimum_fare: Optional[float] = None
+    booking_fee: Optional[float] = None
+    surge_allowed: Optional[bool] = None
+    night_charge_pct: Optional[float] = None
+    effective_to: Optional[datetime] = None
 
 
 class FareConfigResponse(BaseModel):
-    fare_id: int
+    fare_config_id: int
     city_id: int
     vehicle_category: str
+    currency: str
     base_fare: float
-    per_km: float
-    per_minute: float
-    minimum_fare: float
+    per_km_rate: float
+    per_min_rate: float
+    minimum_fare: Optional[float] = None
+    booking_fee: Optional[float] = None
+    surge_allowed: bool
+    night_charge_pct: Optional[float] = None
+    effective_from: datetime
+    effective_to: Optional[datetime] = None
+    created_by: Optional[int] = None
     created_on: Optional[datetime] = None
-    updated_on: Optional[datetime] = None
 
     class Config:
         from_attributes = True

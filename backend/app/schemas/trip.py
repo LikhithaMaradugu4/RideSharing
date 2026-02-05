@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, Dict, Any
 
 class ValidateLocationRequest(BaseModel):
     pickup_lat: float
@@ -43,6 +43,9 @@ class CreateTripResponse(BaseModel):
     trip_id: int
     status: str
     fare_amount: float
+    currency: str  # New field
+    country_code: str  # New field
+    fare_snapshot: Optional[Dict[str, Any]] = None  # New field - stores fare config at trip time
 
 
 class LocationInfo(BaseModel):
@@ -67,6 +70,8 @@ class TripStatusResponse(BaseModel):
     status: str
     driver_id: Optional[int] = None
     fare_amount: float
+    currency: Optional[str] = None  # New field
+    country_code: Optional[str] = None  # New field
     estimated_fare: Optional[float] = None
     distance_km: Optional[float] = None
     vehicle_category: Optional[str] = None
@@ -75,6 +80,7 @@ class TripStatusResponse(BaseModel):
     driver: Optional[DriverInfo] = None
     vehicle: Optional[VehicleInfo] = None
     pickup_otp: Optional[str] = None
+    fare_snapshot: Optional[Dict[str, Any]] = None  # New field
 
 class CancelTripResponse(BaseModel):
     trip_id: int
@@ -104,3 +110,30 @@ class VerifyPickupOTPResponse(BaseModel):
     message: str
 
     model_config = {"from_attributes": True}
+
+
+# ----- Payment Schemas -----
+
+class PaymentOptionsResponse(BaseModel):
+    """Response with payment options after trip completion."""
+    trip_id: int
+    final_fare: float
+    currency: str
+    available_payment_modes: list[str]  # ["ONLINE", "CASH"]
+    fare_breakdown: Optional[Dict[str, Any]] = None  # Optional detailed breakdown
+
+
+class CreatePaymentRequest(BaseModel):
+    """Request to create a payment record."""
+    payment_mode: str  # "ONLINE" or "CASH"
+
+
+class CreatePaymentResponse(BaseModel):
+    """Response after creating payment record."""
+    payment_id: int
+    trip_id: int
+    amount: float
+    currency: str
+    payment_mode: str
+    status: str  # Should be "CREATED"
+    gateway_order_id: Optional[str] = None  # For ONLINE payments

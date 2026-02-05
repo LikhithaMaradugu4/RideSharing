@@ -12,7 +12,9 @@ Price is LOCKED at trip request time.
 from typing import Optional
 from dataclasses import dataclass
 from sqlalchemy.orm import Session
+from sqlalchemy import and_, or_
 from fastapi import HTTPException
+from datetime import datetime, timezone
 
 from app.models.pricing import FareConfig
 from app.utils.haversine import haversine
@@ -23,15 +25,18 @@ from app.services.geo_service import GeoService
 class FareBreakdown:
     """Detailed fare breakdown."""
     distance_km: float
+    estimated_minutes: float
     base_fare: float
     distance_fare: float
-    time_fare: float  # Estimated based on distance
+    time_fare: float
+    booking_fee: float
     subtotal: float
     surge_multiplier: float
     surge_zone_id: Optional[int]
     final_fare: float
     minimum_fare: float
     fare_applied: float  # max(final_fare, minimum_fare)
+    fare_config: FareConfig  # Include fare config for snapshot
 
 
 class PricingService:
@@ -44,25 +49,36 @@ class PricingService:
     def get_fare_config(
         db: Session,
         city_id: int,
-        vehicle_category: str
+        vehicle_category: str,
+        effective_time: Optional[datetime] = None
     ) -> Optional[FareConfig]:
         """
-        Get fare configuration for city and vehicle category.
+        Get fare configuration for city and vehicle category at a specific time.
         
         Args:
             db: Database session
             city_id: City ID
-            vehicle_category: Vehicle category code
+            vehicle_category: Vehicle category code (BIKE/AUTO/CAB/XL)
+            effective_time: Time to check (defaults to now)
         
         Returns:
             FareConfig if found, None otherwise
         """
+        if effective_time is None:
+            effective_time = datetime.now(timezone.utc)
+        
         return (
             db.query(FareConfig)
             .filter(
                 FareConfig.city_id == city_id,
-                FareConfig.vehicle_category == vehicle_category
+                FareConfig.vehicle_category == vehicle_category,
+                FareConfig.effective_from <= effective_time,
+                or_(
+                    FareConfig.effective_to.is_(None),
+                    FareConfig.effective_to > effective_time
+                )
             )
+            .order_by(FareConfig.effective_from.desc())
             .first()
         )
     
@@ -120,30 +136,39 @@ class PricingService:
         
         # Calculate fare components
         base_fare = float(fare_config.base_fare)
-        distance_fare = float(fare_config.per_km) * distance_km
-        time_fare = float(fare_config.per_minute) * estimated_minutes
-        minimum_fare = float(fare_config.minimum_fare)
+        distance_fare = float(fare_config.per_km_rate) * distance_km
+        time_fare = float(fare_config.per_min_rate) * estimated_minutes
+        booking_fee = float(fare_config.booking_fee) if fare_config.booking_fee else 0.0
+        minimum_fare = float(fare_config.minimum_fare) if fare_config.minimum_fare else 0.0
         
         # Subtotal before surge
-        subtotal = base_fare + distance_fare + time_fare
+        subtotal = base_fare + distance_fare + time_fare + booking_fee
         
-        # Apply surge
-        final_fare = subtotal * surge_multiplier
+        # Apply surge (only if allowed for this fare config)
+        if fare_config.surge_allowed:
+            final_fare = subtotal * surge_multiplier
+        else:
+            final_fare = subtotal
+            surge_multiplier = 1.0
+            surge_zone_id = None
         
         # Apply minimum fare
         fare_applied = max(final_fare, minimum_fare)
         
         return FareBreakdown(
             distance_km=round(distance_km, 2),
+            estimated_minutes=round(estimated_minutes, 2),
             base_fare=round(base_fare, 2),
             distance_fare=round(distance_fare, 2),
             time_fare=round(time_fare, 2),
+            booking_fee=round(booking_fee, 2),
             subtotal=round(subtotal, 2),
             surge_multiplier=surge_multiplier,
             surge_zone_id=surge_zone_id,
             final_fare=round(final_fare, 2),
             minimum_fare=round(minimum_fare, 2),
-            fare_applied=round(fare_applied, 2)
+            fare_applied=round(fare_applied, 2),
+            fare_config=fare_config
         )
     
     @staticmethod

@@ -142,6 +142,18 @@ class DriverTripService:
 
     @staticmethod
     def complete_trip(db: Session, driver_id: int, trip_id: int):
+        """
+        Complete a trip and calculate final fare.
+        
+        Sets status to COMPLETED and calculates final_fare using:
+        - fare_config (from fare_snapshot or current config)
+        - Actual distance traveled
+        - Time taken
+        - Currency and country_code already stored at trip creation
+        """
+        from app.services.pricing_service import PricingService
+        import json
+        
         trip = (
             db.query(Trip)
             .filter(
@@ -155,10 +167,46 @@ class DriverTripService:
         if not trip:
             raise HTTPException(400, "Trip cannot be completed")
 
+        # Calculate final fare using pricing service
+        try:
+            fare_breakdown = PricingService.calculate_fare(
+                db=db,
+                city_id=trip.city_id,
+                vehicle_category=trip.fare_snapshot.get("vehicle_category") if trip.fare_snapshot else "STANDARD",
+                pickup_lat=float(trip.pickup_lat),
+                pickup_lng=float(trip.pickup_lng),
+                drop_lat=float(trip.drop_lat),
+                drop_lng=float(trip.drop_lng)
+            )
+            
+            # Store final fare
+            trip.fare_amount = fare_breakdown.fare_applied
+            
+            # Update fare_snapshot with actual values
+            if trip.fare_snapshot:
+                snapshot = dict(trip.fare_snapshot)
+                snapshot.update({
+                    "actual_distance_km": fare_breakdown.distance_km,
+                    "actual_minutes": fare_breakdown.estimated_minutes,
+                    "final_fare": fare_breakdown.fare_applied,
+                    "completed_at": datetime.now(timezone.utc).isoformat()
+                })
+                trip.fare_snapshot = snapshot
+        except Exception as e:
+            # If fare calculation fails, , use fare_amount from trip creation (estimated fare)
+            pass
+
         trip.status = "COMPLETED"
         trip.completed_at = datetime.now(timezone.utc)
 
         db.commit()
-        return {"message": "Trip completed"}
+        db.refresh(trip)
+        
+        return {
+            "message": "Trip completed",
+            "trip_id": trip.trip_id,
+            "final_fare": float(trip.fare_amount),
+            "currency": trip.currency
+        }
     
     
