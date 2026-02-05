@@ -65,6 +65,21 @@ class TenantWallet(Base):
     updated_on = Column(TIMESTAMP(timezone=True))
 
 
+class FleetWallet(Base):
+    """Fleet wallet for tracking fleet owner earnings."""
+    __tablename__ = "fleet_wallet"
+    __table_args__ = (
+        {'extend_existing': True}
+    )
+
+    fleet_id = Column(BigInteger, ForeignKey("fleet.fleet_id"), primary_key=True, nullable=False)
+    currency = Column(CHAR(3), primary_key=True, nullable=False)
+    balance = Column(Numeric(12,2), nullable=False, default=0)
+
+    created_on = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
+    updated_on = Column(TIMESTAMP(timezone=True))
+
+
 class TenantSettlement(Base, AuditMixin):
     __tablename__ = "tenant_settlement"
 

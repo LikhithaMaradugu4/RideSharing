@@ -6,7 +6,18 @@ import uuid
 
 from app.models.trips import Trip
 from app.models.payments import Payment
-from app.services.settlement_service import settle_payment
+from app.services.settlement_service import run_cash_settlement
+
+
+# =============================================================================
+# CASH-ONLY PAYMENT POLICY
+# =============================================================================
+# Online payments are disabled. Only CASH payments are supported.
+# Message to show users: "In-app payments are under development. Cash payments supported."
+# =============================================================================
+
+ALLOWED_PAYMENT_MODES = ["CASH"]  # ONLINE is disabled
+
 
 class PaymentService:
 
@@ -20,24 +31,25 @@ class PaymentService:
         """
         Create a payment record with status=CREATED (no money movement).
         
-        This is Phase 1 of payment flow:
-        - Validate trip is COMPLETED
-        - Create payment record with status=CREATED
-        - Store amount, currency from trip
-        - Generate gateway_order_id for ONLINE payments
-        - NO wallet updates
-        - NO ledger entries
-        - NO payment_status update on trip
+        CASH-ONLY: Only payment_mode = CASH is allowed.
+        ONLINE payments are rejected at this level.
         
         Args:
             db: Database session
             trip_id: Trip ID
             rider_id: Rider user ID
-            payment_mode: "ONLINE" or "CASH"
+            payment_mode: Must be "CASH" (ONLINE is rejected)
             
         Returns:
             Payment object with status=CREATED
         """
+        # ENFORCE CASH-ONLY POLICY
+        if payment_mode not in ALLOWED_PAYMENT_MODES:
+            raise HTTPException(
+                status_code=400, 
+                detail="In-app payments are under development. Cash payments supported."
+            )
+
         # 1. Validate trip
         trip = (
             db.query(Trip)
@@ -57,18 +69,12 @@ class PaymentService:
         if existing_payment:
             raise HTTPException(400, "Payment record already exists for this trip")
 
-        # Validate payment_mode
-        if payment_mode not in ["ONLINE", "CASH"]:
-            raise HTTPException(400, "Invalid payment mode. Must be ONLINE or CASH")
-
         # 2. Get currency and amount from trip
         currency = trip.currency if trip.currency else "INR"
         amount = float(trip.fare_amount) if trip.fare_amount else 0.0
 
-        # 3. Generate gateway_order_id for ONLINE payments (for webhook matching)
+        # 3. For CASH payments, no gateway_order_id needed
         gateway_order_id = None
-        if payment_mode == "ONLINE":
-            gateway_order_id = f"order_{trip_id}_{uuid.uuid4().hex[:8]}"
 
         # 4. Create payment record with status=CREATED (no money movement)
         payment = Payment(
@@ -103,9 +109,15 @@ class PaymentService:
         """
         LEGACY METHOD: Creates payment and immediately settles (moves money).
         
-        This is the old flow that does everything in one step.
-        Consider migrating to create_payment_record + settle_payment_record.
+        CASH-ONLY: ONLINE payments are rejected.
         """
+        # ENFORCE CASH-ONLY POLICY
+        if payment_mode not in ALLOWED_PAYMENT_MODES:
+            raise HTTPException(
+                status_code=400, 
+                detail="In-app payments are under development. Cash payments supported."
+            )
+        
         # 1. Validate trip
         trip = (
             db.query(Trip)
@@ -126,7 +138,7 @@ class PaymentService:
         # 2. Get currency from trip (multi-currency support)
         currency = trip.currency if hasattr(trip, 'currency') else "INR"
 
-        # 3. Create payment record with gateway details
+        # 3. Create payment record
         payment = Payment(
             trip_id=trip.trip_id,
             amount=amount,
@@ -146,8 +158,8 @@ class PaymentService:
         # 4. Update trip payment status
         trip.payment_status = "SUCCESS"
 
-        # 5. Settlement (THIS IS THE CORE)
-        settle_payment(
+        # 5. Settlement (CASH only)
+        run_cash_settlement(
             db=db,
             trip=trip,
             amount=amount,
@@ -289,7 +301,22 @@ class PaymentService:
         payment.updated_on = datetime.now(timezone.utc)
         payment.updated_by = driver_id
         
+        # 6. Run settlement ONLY when:
+        #    - payment.status == SUCCESS
+        #    - payment.payment_mode == CASH
+        # This creates ledger entries and triggers wallet updates
+        settlement_result = run_cash_settlement(
+            db=db,
+            trip=trip,
+            amount=float(payment.amount),
+            payment_mode="CASH"
+        )
+        
         db.commit()
         db.refresh(payment)
         
-        return payment
+        # Return payment with settlement info
+        return {
+            "payment": payment,
+            "settlement": settlement_result
+        }

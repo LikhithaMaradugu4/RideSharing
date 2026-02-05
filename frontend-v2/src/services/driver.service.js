@@ -472,6 +472,72 @@ const driverService = {
     });
 
     return handleResponse(response, 'Failed to complete trip');
+  },
+
+  // =====================================================
+  // Payment Collection Methods (CASH only)
+  // =====================================================
+
+  /**
+   * Get payment for a trip.
+   * Returns payment record if exists.
+   */
+  getPaymentForTrip: async (token, tripId) => {
+    const validToken = await getValidToken(token);
+    const response = await fetch(`${API_BASE_URL}/payments/trip/${tripId}`, {
+      method: 'GET',
+      headers: buildHeaders(validToken)
+    });
+
+    return handleResponse(response, 'Failed to fetch payment');
+  },
+
+  /**
+   * Confirm cash payment received from rider.
+   * 
+   * CASH-ONLY: Only cash payments are supported.
+   * This triggers:
+   * 1. Payment status → SUCCESS
+   * 2. Fare split calculation
+   * 3. Ledger entries creation
+   * 4. Trip status → PAID
+   * 
+   * Returns settlement details with driver earnings.
+   */
+  confirmCashReceived: async (token, paymentId) => {
+    const validToken = await getValidToken(token);
+    const response = await fetch(`${API_BASE_URL}/payments/${paymentId}/cash-received`, {
+      method: 'POST',
+      headers: buildHeaders(validToken)
+    });
+
+    return handleResponse(response, 'Failed to confirm cash payment');
+  },
+
+  /**
+   * Get driver's wallet balance.
+   */
+  getWalletBalance: async (token) => {
+    const validToken = await getValidToken(token);
+    const response = await fetch(`${API_BASE_URL}/driver/wallet`, {
+      method: 'GET',
+      headers: buildHeaders(validToken)
+    });
+
+    return handleResponse(response, 'Failed to fetch wallet balance');
+  },
+
+  /**
+   * Get driver's earnings summary (today, week, month).
+   */
+  getEarningsSummary: async (token) => {
+    const validToken = await getValidToken(token);
+    const response = await fetch(`${API_BASE_URL}/driver/earnings`, {
+      method: 'GET',
+      headers: buildHeaders(validToken)
+    });
+
+    return handleResponse(response, 'Failed to fetch earnings');
   }
 };
 

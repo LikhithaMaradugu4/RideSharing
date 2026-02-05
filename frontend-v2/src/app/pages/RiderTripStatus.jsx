@@ -49,7 +49,15 @@ const STATUS_CONFIG = {
     showCancel: false
   },
   COMPLETED: {
-    message: 'Trip completed! Thank you for riding with us.',
+    message: 'Trip completed! Please pay the driver.',
+    icon: '💵',
+    color: '#22c55e',
+    showCancel: false,
+    isFinal: true,
+    showPayment: true
+  },
+  PAID: {
+    message: 'Payment received. Thank you for riding with us!',
     icon: '✅',
     color: '#22c55e',
     showCancel: false,
@@ -405,10 +413,52 @@ function RiderTripStatus() {
           )}
         </div>
 
-        {/* Completed Trip Summary */}
+        {/* Completed Trip Summary with CASH Payment UI */}
         {trip?.status === 'COMPLETED' && (
           <div className="trip-summary">
-            <h3>🎉 Trip Summary</h3>
+            <h3>🎉 Trip Completed!</h3>
+            
+            {/* Cash Payment Card */}
+            <div style={{
+              background: 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)',
+              borderRadius: '16px',
+              padding: '24px',
+              marginBottom: '16px',
+              color: 'white',
+              textAlign: 'center'
+            }}>
+              <div style={{ fontSize: '14px', opacity: 0.9, marginBottom: '8px' }}>
+                💵 Pay driver directly (cash / UPI)
+              </div>
+              <div style={{ fontSize: '36px', fontWeight: '700', marginBottom: '8px' }}>
+                ₹{trip.fare_amount ? parseFloat(trip.fare_amount).toFixed(0) : (trip.estimated_fare ? parseFloat(trip.estimated_fare).toFixed(0) : '--')}
+              </div>
+              <div style={{
+                background: 'rgba(255,255,255,0.2)',
+                borderRadius: '8px',
+                padding: '8px 16px',
+                display: 'inline-block',
+                fontSize: '14px',
+                fontWeight: '600'
+              }}>
+                CASH
+              </div>
+            </div>
+            
+            {/* Info Banner */}
+            <div style={{
+              background: '#fef3c7',
+              border: '1px solid #fbbf24',
+              borderRadius: '10px',
+              padding: '12px 16px',
+              marginBottom: '16px',
+              fontSize: '13px',
+              color: '#92400e',
+              textAlign: 'center'
+            }}>
+              ℹ️ In-app payments are under development. Cash payments supported.
+            </div>
+            
             <div className="summary-card">
               <div className="summary-row">
                 <span>Trip Fare</span>
@@ -419,8 +469,38 @@ function RiderTripStatus() {
                 <span>{trip.distance_km ? parseFloat(trip.distance_km).toFixed(1) : '--'} km</span>
               </div>
               <div className="summary-row">
+                <span>Payment Method</span>
+                <span style={{ color: '#22c55e', fontWeight: '600' }}>💵 Cash</span>
+              </div>
+            </div>
+            
+            <p style={{ 
+              textAlign: 'center', 
+              color: '#6b7280', 
+              fontSize: '13px', 
+              marginTop: '16px' 
+            }}>
+              Please hand the cash to your driver. Thank you for riding with us!
+            </p>
+          </div>
+        )}
+
+        {/* PAID Trip Summary */}
+        {trip?.status === 'PAID' && (
+          <div className="trip-summary">
+            <h3>✅ Payment Complete</h3>
+            <div className="summary-card">
+              <div className="summary-row">
+                <span>Trip Fare</span>
+                <span>₹{trip.fare_amount ? parseFloat(trip.fare_amount).toFixed(0) : '--'}</span>
+              </div>
+              <div className="summary-row">
+                <span>Distance</span>
+                <span>{trip.distance_km ? parseFloat(trip.distance_km).toFixed(1) : '--'} km</span>
+              </div>
+              <div className="summary-row">
                 <span>Payment</span>
-                <span>{trip.payment_method || 'Cash'}</span>
+                <span style={{ color: '#22c55e', fontWeight: '600' }}>✓ Paid (Cash)</span>
               </div>
             </div>
           </div>

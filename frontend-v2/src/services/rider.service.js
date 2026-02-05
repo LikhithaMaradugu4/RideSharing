@@ -172,6 +172,37 @@ const riderService = {
     const data = await handleResponse(response, 'Failed to check active trip');
     // Backend returns { active_trip: {...} } or { active_trip: null }
     return data?.active_trip || null;
+  },
+
+  /**
+   * Create payment record for a completed trip (CASH only)
+   * 
+   * IMPORTANT: Only CASH payments are supported.
+   * Online payments return: "In-app payments are under development. Cash payments supported."
+   */
+  createPayment: async (tripId) => {
+    const token = await getValidToken();
+    const response = await fetch(`${API_BASE_URL}/payments`, {
+      method: 'POST',
+      headers: buildHeaders(token),
+      body: JSON.stringify({
+        trip_id: tripId,
+        payment_mode: 'CASH'  // Only CASH is supported
+      })
+    });
+    return handleResponse(response, 'Failed to create payment');
+  },
+
+  /**
+   * Get payment status for a trip
+   */
+  getPaymentStatus: async (tripId) => {
+    const token = await getValidToken();
+    const response = await fetch(`${API_BASE_URL}/payments/trip/${tripId}`, {
+      method: 'GET',
+      headers: buildHeaders(token)
+    });
+    return handleResponse(response, 'Failed to get payment status');
   }
 };
 

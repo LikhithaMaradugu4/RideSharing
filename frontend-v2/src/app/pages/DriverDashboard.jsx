@@ -32,6 +32,12 @@ function DriverDashboard() {
   const [otpVerified, setOtpVerified] = useState(false);
   const [dispatchPollingActive, setDispatchPollingActive] = useState(false);
 
+  // ========== Cash Collection State ==========
+  const [showCashCollection, setShowCashCollection] = useState(false);
+  const [cashCollectionData, setCashCollectionData] = useState(null);
+  const [cashCollectionLoading, setCashCollectionLoading] = useState(false);
+  const [settlementResult, setSettlementResult] = useState(null);
+
   // Polling refs
   const dispatchPollingRef = useRef(null);
   const tripPollingRef = useRef(null);
@@ -315,20 +321,91 @@ function DriverDashboard() {
       setTripActionLoading(true);
       setError(null);
       const result = await driverService.completeTrip(token, activeTrip.trip_id);
+      
+      // Store trip data for cash collection screen
+      setCashCollectionData({
+        trip_id: activeTrip.trip_id,
+        fare_amount: result.fare_amount || activeTrip.fare_amount,
+        rider_name: activeTrip.rider_name || 'Rider',
+        payment_id: result.payment_id // If payment was auto-created
+      });
+      
+      // Show cash collection screen
+      setShowCashCollection(true);
       setActiveTrip(null);
       setOtpInput('');
       setOtpVerified(false);
+      
       // Refresh shift status (should be ONLINE again)
       const newShift = await driverService.getActiveShift(token);
       setShiftStatus(newShift);
-      // Show success message
-      setError(null);
-      alert(`Trip completed! Fare: ₹${result.fare_amount?.toFixed(0) || '--'}`);
     } catch (err) {
       setError(err.message || 'Failed to complete trip');
     } finally {
       setTripActionLoading(false);
     }
+  };
+
+  // Handle cash payment confirmation
+  const handleConfirmCashReceived = async () => {
+    if (!cashCollectionData) return;
+    
+    try {
+      setCashCollectionLoading(true);
+      setError(null);
+      
+      // First, check if payment exists or create one
+      let paymentId = cashCollectionData.payment_id;
+      
+      if (!paymentId) {
+        // Create payment record if not exists
+        try {
+          const paymentResp = await fetch(`http://localhost:8000/api/v2/payments`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+              trip_id: cashCollectionData.trip_id,
+              payment_mode: 'CASH'
+            })
+          });
+          const paymentData = await paymentResp.json();
+          if (paymentResp.ok) {
+            paymentId = paymentData.payment_id;
+          } else {
+            throw new Error(paymentData.detail || 'Failed to create payment');
+          }
+        } catch (err) {
+          throw new Error(err.message || 'Failed to create payment record');
+        }
+      }
+      
+      // Confirm cash received
+      const result = await driverService.confirmCashReceived(token, paymentId);
+      
+      // Show settlement result
+      setSettlementResult({
+        fare_amount: result.settlement?.fare_amount || cashCollectionData.fare_amount,
+        driver_earning: result.settlement?.driver_earning,
+        platform_commission: result.settlement?.platform_commission,
+        tenant_commission: result.settlement?.tenant_commission,
+        fleet_commission: result.settlement?.fleet_commission
+      });
+      
+    } catch (err) {
+      setError(err.message || 'Failed to confirm cash payment');
+    } finally {
+      setCashCollectionLoading(false);
+    }
+  };
+
+  // Close cash collection modal and reset state
+  const handleCloseCashCollection = () => {
+    setShowCashCollection(false);
+    setCashCollectionData(null);
+    setSettlementResult(null);
   };
 
   const handleSelectVehicle = async (vehicleId, endShiftIfActive = false) => {
@@ -1089,6 +1166,212 @@ function DriverDashboard() {
             </ul>
           </div>
         </div>
+
+        {/* ========== Cash Collection Modal ========== */}
+        {showCashCollection && (
+          <div className="cash-collection-overlay" style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0,0,0,0.7)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000
+          }}>
+            <div className="cash-collection-modal" style={{
+              background: 'white',
+              borderRadius: '20px',
+              padding: '32px',
+              maxWidth: '420px',
+              width: '90%',
+              textAlign: 'center',
+              boxShadow: '0 20px 60px rgba(0,0,0,0.3)'
+            }}>
+              {!settlementResult ? (
+                // Cash Collection Screen
+                <>
+                  <div style={{
+                    width: '80px',
+                    height: '80px',
+                    borderRadius: '50%',
+                    background: 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    margin: '0 auto 20px',
+                    fontSize: '40px'
+                  }}>
+                    💵
+                  </div>
+                  
+                  <h2 style={{ margin: '0 0 8px 0', fontSize: '24px', color: '#1f2937' }}>
+                    Collect Cash
+                  </h2>
+                  
+                  <p style={{ margin: '0 0 24px 0', color: '#6b7280', fontSize: '14px' }}>
+                    Pay driver directly (cash / UPI)
+                  </p>
+                  
+                  <div style={{
+                    background: 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)',
+                    borderRadius: '16px',
+                    padding: '24px',
+                    marginBottom: '24px'
+                  }}>
+                    <div style={{ fontSize: '14px', color: '#16a34a', marginBottom: '8px' }}>
+                      Amount to Collect
+                    </div>
+                    <div style={{ fontSize: '42px', fontWeight: '700', color: '#15803d' }}>
+                      ₹{cashCollectionData?.fare_amount?.toFixed(0) || '--'}
+                    </div>
+                  </div>
+                  
+                  <div style={{
+                    background: '#f8fafc',
+                    borderRadius: '12px',
+                    padding: '16px',
+                    marginBottom: '24px',
+                    textAlign: 'left'
+                  }}>
+                    <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>
+                      Trip #{cashCollectionData?.trip_id}
+                    </div>
+                    <div style={{ fontSize: '14px', color: '#334155' }}>
+                      {cashCollectionData?.rider_name || 'Rider'}
+                    </div>
+                  </div>
+
+                  <div style={{
+                    background: '#fef3c7',
+                    border: '1px solid #fbbf24',
+                    borderRadius: '10px',
+                    padding: '12px',
+                    marginBottom: '24px',
+                    fontSize: '13px',
+                    color: '#92400e'
+                  }}>
+                    ℹ️ In-app payments are under development. Cash payments supported.
+                  </div>
+                  
+                  <button
+                    onClick={handleConfirmCashReceived}
+                    disabled={cashCollectionLoading}
+                    style={{
+                      width: '100%',
+                      padding: '16px',
+                      background: 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '12px',
+                      fontSize: '18px',
+                      fontWeight: '700',
+                      cursor: cashCollectionLoading ? 'not-allowed' : 'pointer',
+                      opacity: cashCollectionLoading ? 0.7 : 1
+                    }}
+                  >
+                    {cashCollectionLoading ? '⏳ Processing...' : '✅ Cash / UPI Received'}
+                  </button>
+                </>
+              ) : (
+                // Settlement Confirmation Screen
+                <>
+                  <div style={{
+                    width: '80px',
+                    height: '80px',
+                    borderRadius: '50%',
+                    background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    margin: '0 auto 20px',
+                    fontSize: '40px'
+                  }}>
+                    🎉
+                  </div>
+                  
+                  <h2 style={{ margin: '0 0 8px 0', fontSize: '24px', color: '#1f2937' }}>
+                    Payment Received!
+                  </h2>
+                  
+                  <p style={{ margin: '0 0 24px 0', color: '#6b7280', fontSize: '14px' }}>
+                    Trip completed and settled
+                  </p>
+                  
+                  <div style={{
+                    background: '#f8fafc',
+                    borderRadius: '12px',
+                    padding: '16px',
+                    marginBottom: '16px',
+                    textAlign: 'left'
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
+                      <span style={{ color: '#64748b' }}>Trip Fare</span>
+                      <span style={{ fontWeight: '600', color: '#1f2937' }}>
+                        ₹{settlementResult?.fare_amount?.toFixed(2) || '--'}
+                      </span>
+                    </div>
+                    
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '13px' }}>
+                      <span style={{ color: '#94a3b8' }}>Platform Fee</span>
+                      <span style={{ color: '#ef4444' }}>
+                        -₹{settlementResult?.platform_commission?.toFixed(2) || '0.00'}
+                      </span>
+                    </div>
+                    
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '13px' }}>
+                      <span style={{ color: '#94a3b8' }}>Tenant Fee</span>
+                      <span style={{ color: '#ef4444' }}>
+                        -₹{settlementResult?.tenant_commission?.toFixed(2) || '0.00'}
+                      </span>
+                    </div>
+                    
+                    {settlementResult?.fleet_commission > 0 && (
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '13px' }}>
+                        <span style={{ color: '#94a3b8' }}>Fleet Fee</span>
+                        <span style={{ color: '#ef4444' }}>
+                          -₹{settlementResult?.fleet_commission?.toFixed(2) || '0.00'}
+                        </span>
+                      </div>
+                    )}
+                    
+                    <div style={{ 
+                      borderTop: '1px solid #e2e8f0', 
+                      marginTop: '12px', 
+                      paddingTop: '12px',
+                      display: 'flex', 
+                      justifyContent: 'space-between'
+                    }}>
+                      <span style={{ fontWeight: '600', color: '#1f2937' }}>Your Earnings</span>
+                      <span style={{ fontWeight: '700', color: '#22c55e', fontSize: '18px' }}>
+                        ₹{settlementResult?.driver_earning?.toFixed(2) || '--'}
+                      </span>
+                    </div>
+                  </div>
+                  
+                  <button
+                    onClick={handleCloseCashCollection}
+                    style={{
+                      width: '100%',
+                      padding: '16px',
+                      background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '12px',
+                      fontSize: '16px',
+                      fontWeight: '600',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Done
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </DriverLayout>
   );
