@@ -380,6 +380,7 @@ def complete_trip(
     
     from datetime import datetime, timezone
     from app.models.operations import DriverShift
+    from app.services.payment_service import PaymentService
     
     trip.status = "COMPLETED"
     trip.completed_at = datetime.now(timezone.utc)
@@ -394,6 +395,9 @@ def complete_trip(
         synchronize_session=False
     )
     
+    # Auto-create cash payment record
+    payment = PaymentService.auto_create_cash_payment(db, trip)
+    
     db.commit()
     db.refresh(trip)
     
@@ -402,7 +406,9 @@ def complete_trip(
         "trip_id": trip.trip_id,
         "status": trip.status,
         "completed_at": trip.completed_at,
-        "fare_amount": float(trip.fare_amount) if trip.fare_amount else None
+        "fare_amount": float(trip.fare_amount) if trip.fare_amount else None,
+        "payment_id": payment.payment_id if payment else None,
+        "payment_status": payment.status if payment else None
     }
 
 

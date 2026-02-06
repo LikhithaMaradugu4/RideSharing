@@ -17,19 +17,19 @@ from decimal import Decimal
 
 # Platform commission (deducted first from total fare)
 PLATFORM_COMMISSION = {
-    "fixed": Decimal("20.00"),      # Minimum ₹20
+    "fixed": Decimal("2.00"),      # Minimum ₹2
     "percentage": Decimal("0.20")   # 20% of fare
 }
 
 # Tenant commission (deducted after platform)
 TENANT_COMMISSION = {
-    "fixed": Decimal("10.00"),      # Minimum ₹10
+    "fixed": Decimal("1.00"),      # Minimum ₹1
     "percentage": Decimal("0.10")   # 10% of remaining
 }
 
 # Fleet commission (deducted after tenant, only if driver belongs to a fleet)
 FLEET_COMMISSION = {
-    "fixed": Decimal("15.00"),      # Minimum ₹15
+    "fixed": Decimal("5.00"),      # Minimum ₹5
     "percentage": Decimal("0.15")   # 15% of remaining
 }
 

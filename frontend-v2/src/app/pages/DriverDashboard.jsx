@@ -354,44 +354,21 @@ function DriverDashboard() {
       setCashCollectionLoading(true);
       setError(null);
       
-      // First, check if payment exists or create one
-      let paymentId = cashCollectionData.payment_id;
-      
-      if (!paymentId) {
-        // Create payment record if not exists
-        try {
-          const paymentResp = await fetch(`http://localhost:8000/api/v2/payments`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify({
-              trip_id: cashCollectionData.trip_id,
-              payment_mode: 'CASH'
-            })
-          });
-          const paymentData = await paymentResp.json();
-          if (paymentResp.ok) {
-            paymentId = paymentData.payment_id;
-          } else {
-            throw new Error(paymentData.detail || 'Failed to create payment');
-          }
-        } catch (err) {
-          throw new Error(err.message || 'Failed to create payment record');
-        }
-      }
-      
-      // Confirm cash received
-      const result = await driverService.confirmCashReceived(token, paymentId);
+      // Confirm cash received - this does everything:
+      // 1. Creates payment if not exists
+      // 2. Marks payment SUCCESS
+      // 3. Runs settlement (fare split + ledger entries)
+      // 4. Updates trip payment_status = PAID
+      const result = await driverService.confirmCashReceived(token, cashCollectionData.trip_id);
       
       // Show settlement result
       setSettlementResult({
-        fare_amount: result.settlement?.fare_amount || cashCollectionData.fare_amount,
-        driver_earning: result.settlement?.driver_earning,
-        platform_commission: result.settlement?.platform_commission,
-        tenant_commission: result.settlement?.tenant_commission,
-        fleet_commission: result.settlement?.fleet_commission
+        fare_amount: cashCollectionData.fare_amount,
+        driver_earning: result.driver_earning,
+        platform_commission: result.platform_commission,
+        tenant_commission: result.tenant_commission,
+        fleet_commission: result.fleet_commission,
+        payment_status: result.status || 'SUCCESS'
       });
       
     } catch (err) {

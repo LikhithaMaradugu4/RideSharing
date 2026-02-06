@@ -30,7 +30,8 @@ from app.schemas.trip import (
     VehicleInfo,
     PaymentOptionsResponse,
     CreatePaymentRequest,
-    CreatePaymentResponse
+    CreatePaymentResponse,
+    CashConfirmResponse
 )
 from app.services.trip_service import TripService
 from app.services.dispatch_service import DispatchService
@@ -294,19 +295,18 @@ def get_payment_options(
     Returns:
     - final_fare: The amount to be paid
     - currency: Currency code (e.g., INR, USD)
-    - available_payment_modes: List of payment modes (ONLINE, CASH)
+    - available_payment_modes: Only CASH (ONLINE disabled)
     - fare_breakdown: Optional detailed breakdown from fare_snapshot
     
     Only available for trips with status=COMPLETED.
     """
     user_id = current_user.get("user_id")
     
-    # Get trip
+    # Get trip - allow both rider and driver to access
     trip = (
         db.query(Trip)
         .filter(
             Trip.trip_id == trip_id,
-            Trip.rider_id == user_id,
             Trip.status == "COMPLETED"
         )
         .first()
@@ -318,45 +318,54 @@ def get_payment_options(
             detail="Trip not found or not completed"
         )
     
-    # Build response
+    # Validate user has access to this trip (rider or driver)
+    if trip.rider_id != user_id and trip.driver_id != user_id:
+        raise HTTPException(
+            status_code=403,
+            detail="Access denied to this trip"
+        )
+    
+    # Build response - CASH only
     return PaymentOptionsResponse(
         trip_id=trip.trip_id,
         final_fare=float(trip.fare_amount) if trip.fare_amount else 0.0,
         currency=trip.currency,
-        available_payment_modes=["ONLINE", "CASH"],
+        available_payment_modes=["CASH"],  # ONLINE disabled
         fare_breakdown=trip.fare_snapshot
     )
 
 
-@router.post("/{trip_id}/payment", response_model=CreatePaymentResponse)
-def create_payment(
+@router.get("/{trip_id}/payment", response_model=CreatePaymentResponse)
+def get_trip_payment(
     trip_id: int,
-    request: CreatePaymentRequest,
     db: Session = Depends(get_db),
     current_user: dict = Depends(get_current_user)
 ):
     """
-    Create a payment record for a completed trip.
-    
-    Phase 1 of payment flow:
-    - Validates trip is COMPLETED
-    - Creates payment record with status=CREATED
-    - NO money movement
-    - NO wallet updates
-    - NO ledger entries
-    
-    The payment will be processed in a separate step.
+    Get payment info for a trip.
     """
     from app.services.payment_service import PaymentService
     
     user_id = current_user.get("user_id")
     
-    payment = PaymentService.create_payment_record(
-        db=db,
-        trip_id=trip_id,
-        rider_id=user_id,
-        payment_mode=request.payment_mode
+    # Validate access to trip
+    trip = (
+        db.query(Trip)
+        .filter(Trip.trip_id == trip_id)
+        .first()
     )
+    
+    if not trip:
+        raise HTTPException(404, "Trip not found")
+    
+    # Allow both rider and driver to access
+    if trip.rider_id != user_id and trip.driver_id != user_id:
+        raise HTTPException(403, "Access denied to this trip")
+    
+    payment = PaymentService.get_payment_for_trip(db, trip_id)
+    
+    if not payment:
+        raise HTTPException(404, "Payment not found for this trip")
     
     return CreatePaymentResponse(
         payment_id=payment.payment_id,
@@ -364,6 +373,49 @@ def create_payment(
         amount=float(payment.amount),
         currency=payment.currency,
         payment_mode=payment.payment_mode,
+        status=payment.status
+    )
+
+
+@router.post("/{trip_id}/confirm-cash", response_model=CashConfirmResponse)
+def confirm_cash_payment(
+    trip_id: int,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Driver confirms cash payment received.
+    
+    This automatically:
+    1. Creates payment record if it doesn't exist
+    2. Updates payment status to SUCCESS
+    3. Runs settlement (commission splits and wallet updates)
+    4. Updates trip payment_status to PAID
+    
+    Returns payment info + settlement breakdown.
+    """
+    from app.services.payment_service import PaymentService
+    
+    driver_id = current_user.get("user_id")
+    
+    result = PaymentService.confirm_cash_received(
+        db=db,
+        trip_id=trip_id,
+        driver_id=driver_id
+    )
+    
+    payment = result["payment"]
+    settlement = result.get("settlement", {})
+    
+    return CashConfirmResponse(
+        payment_id=payment.payment_id,
+        trip_id=payment.trip_id,
+        amount=float(payment.amount),
+        currency=payment.currency,
+        payment_mode=payment.payment_mode,
         status=payment.status,
-        gateway_order_id=payment.gateway_order_id
+        driver_earning=settlement.get("driver_earning"),
+        platform_commission=settlement.get("platform_commission"),
+        tenant_commission=settlement.get("tenant_commission"),
+        fleet_commission=settlement.get("fleet_commission")
     )

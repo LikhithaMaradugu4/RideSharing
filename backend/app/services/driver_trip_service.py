@@ -199,6 +199,14 @@ class DriverTripService:
         trip.status = "COMPLETED"
         trip.completed_at = datetime.now(timezone.utc)
 
+        # Auto-create cash payment record
+        from app.services.payment_service import PaymentService
+        try:
+            PaymentService.auto_create_cash_payment(db, trip)
+        except Exception as e:
+            # Log but don't fail trip completion if payment creation fails
+            print(f"Warning: Could not auto-create payment record: {e}")
+
         db.commit()
         db.refresh(trip)
         

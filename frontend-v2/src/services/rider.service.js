@@ -175,30 +175,12 @@ const riderService = {
   },
 
   /**
-   * Create payment record for a completed trip (CASH only)
-   * 
-   * IMPORTANT: Only CASH payments are supported.
-   * Online payments return: "In-app payments are under development. Cash payments supported."
-   */
-  createPayment: async (tripId) => {
-    const token = await getValidToken();
-    const response = await fetch(`${API_BASE_URL}/payments`, {
-      method: 'POST',
-      headers: buildHeaders(token),
-      body: JSON.stringify({
-        trip_id: tripId,
-        payment_mode: 'CASH'  // Only CASH is supported
-      })
-    });
-    return handleResponse(response, 'Failed to create payment');
-  },
-
-  /**
-   * Get payment status for a trip
+   * Get payment status for a trip.
+   * Payment is auto-created when trip is completed.
    */
   getPaymentStatus: async (tripId) => {
     const token = await getValidToken();
-    const response = await fetch(`${API_BASE_URL}/payments/trip/${tripId}`, {
+    const response = await fetch(`${API_BASE_URL}/trips/${tripId}/payment`, {
       method: 'GET',
       headers: buildHeaders(token)
     });

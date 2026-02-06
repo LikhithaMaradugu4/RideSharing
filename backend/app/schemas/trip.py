@@ -119,13 +119,13 @@ class PaymentOptionsResponse(BaseModel):
     trip_id: int
     final_fare: float
     currency: str
-    available_payment_modes: list[str]  # ["ONLINE", "CASH"]
+    available_payment_modes: list[str]  # ["CASH"]
     fare_breakdown: Optional[Dict[str, Any]] = None  # Optional detailed breakdown
 
 
 class CreatePaymentRequest(BaseModel):
     """Request to create a payment record."""
-    payment_mode: str  # "ONLINE" or "CASH"
+    payment_mode: str  # "CASH"
 
 
 class CreatePaymentResponse(BaseModel):
@@ -135,5 +135,19 @@ class CreatePaymentResponse(BaseModel):
     amount: float
     currency: str
     payment_mode: str
-    status: str  # Should be "CREATED"
-    gateway_order_id: Optional[str] = None  # For ONLINE payments
+    status: str
+
+
+class CashConfirmResponse(BaseModel):
+    """Response after driver confirms cash received. Includes settlement breakdown."""
+    payment_id: int
+    trip_id: int
+    amount: float
+    currency: str
+    payment_mode: str
+    status: str
+    # Settlement breakdown
+    driver_earning: Optional[float] = None
+    platform_commission: Optional[float] = None
+    tenant_commission: Optional[float] = None
+    fleet_commission: Optional[float] = None

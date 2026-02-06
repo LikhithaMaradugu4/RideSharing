@@ -20,11 +20,8 @@ const buildHeaders = (token, contentType = 'application/json') => {
  * Get a valid token, refreshing if needed
  */
 const getValidToken = async (token) => {
-  // If token was passed, check if we need to refresh
-  if (token) {
-    return await authService.getValidToken();
-  }
-  return null;
+  // Always get a valid token from authService
+  return await authService.getValidToken();
 };
 
 const parseJson = async (response) => {
@@ -484,7 +481,7 @@ const driverService = {
    */
   getPaymentForTrip: async (token, tripId) => {
     const validToken = await getValidToken(token);
-    const response = await fetch(`${API_BASE_URL}/payments/trip/${tripId}`, {
+    const response = await fetch(`${API_BASE_URL}/trips/${tripId}/payment`, {
       method: 'GET',
       headers: buildHeaders(validToken)
     });
@@ -497,47 +494,21 @@ const driverService = {
    * 
    * CASH-ONLY: Only cash payments are supported.
    * This triggers:
-   * 1. Payment status → SUCCESS
-   * 2. Fare split calculation
-   * 3. Ledger entries creation
-   * 4. Trip status → PAID
+   * 1. Creates payment if not exists
+   * 2. Payment status → SUCCESS
+   * 3. Fare split calculation + ledger entries
+   * 4. Trip payment_status → PAID
    * 
    * Returns settlement details with driver earnings.
    */
-  confirmCashReceived: async (token, paymentId) => {
+  confirmCashReceived: async (token, tripId) => {
     const validToken = await getValidToken(token);
-    const response = await fetch(`${API_BASE_URL}/payments/${paymentId}/cash-received`, {
+    const response = await fetch(`${API_BASE_URL}/trips/${tripId}/confirm-cash`, {
       method: 'POST',
       headers: buildHeaders(validToken)
     });
 
     return handleResponse(response, 'Failed to confirm cash payment');
-  },
-
-  /**
-   * Get driver's wallet balance.
-   */
-  getWalletBalance: async (token) => {
-    const validToken = await getValidToken(token);
-    const response = await fetch(`${API_BASE_URL}/driver/wallet`, {
-      method: 'GET',
-      headers: buildHeaders(validToken)
-    });
-
-    return handleResponse(response, 'Failed to fetch wallet balance');
-  },
-
-  /**
-   * Get driver's earnings summary (today, week, month).
-   */
-  getEarningsSummary: async (token) => {
-    const validToken = await getValidToken(token);
-    const response = await fetch(`${API_BASE_URL}/driver/earnings`, {
-      method: 'GET',
-      headers: buildHeaders(validToken)
-    });
-
-    return handleResponse(response, 'Failed to fetch earnings');
   }
 };
 
