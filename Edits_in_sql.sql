@@ -522,3 +522,70 @@ select * from driver_shift;
 TRUNCATE TABLE trip RESTART IDENTITY CASCADE;
 
 
+INSERT INTO fare_config (
+    city_id,
+    vehicle_category,
+    currency,
+    base_fare,
+    per_km_rate,
+    per_min_rate,
+    minimum_fare,
+    booking_fee,
+    surge_allowed,
+    night_charge_pct,
+    effective_from,
+    effective_to,
+    created_by
+)
+VALUES
+
+-- 🏍 BIKE (cheapest option)
+(
+    2,
+    'BIKE',
+    'INR',
+    20.00,      -- base_fare
+    6.00,       -- per_km_rate
+    0.80,       -- per_min_rate
+    40.00,      -- minimum_fare
+    5.00,       -- booking_fee
+    true,
+    15.00,      -- 15% night charge
+    now(),
+    NULL,
+    1
+),
+
+-- 🛺 AUTO (mid tier)
+(
+    2,
+    'AUTO',
+    'INR',
+    30.00,
+    10.00,
+    1.50,
+    60.00,
+    8.00,
+    true,
+    18.00,
+    now(),
+    NULL,
+    1
+),
+
+-- 🚗 SEDAN (premium)
+(
+    2,
+    'SEDAN',
+    'INR',
+    50.00,
+    14.00,
+    2.50,
+    100.00,
+    10.00,
+    true,
+    20.00,
+    now(),
+    NULL,
+    1
+);
