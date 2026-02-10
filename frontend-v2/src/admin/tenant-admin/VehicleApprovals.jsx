@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import adminService from '../../services/admin.service'
+import Icons from '../../components/Icons'
 import './VehicleApprovals.css'
 
 const VehicleApprovals = () => {
@@ -110,7 +111,7 @@ const VehicleApprovals = () => {
                   <p>Applied: {new Date(vehicle.created_on).toLocaleDateString()}</p>
                 </div>
                 <div className="toggle-icon">
-                  {expandedVehicle?.vehicle_id === vehicle.vehicle_id ? '▼' : '▶'}
+                  {expandedVehicle?.vehicle_id === vehicle.vehicle_id ? <Icons.ChevronDown size={16} /> : <Icons.ChevronRight size={16} />}
                 </div>
               </div>
 

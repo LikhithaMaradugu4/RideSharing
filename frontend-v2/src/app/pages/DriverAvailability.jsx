@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import DriverLayout from '../layout/DriverLayout';
 import driverService from '../../services/driver.service';
 import tokenStorage from '../../services/tokenStorage';
+import Icons from '../../components/Icons';
 import './DriverAvailability.css';
 
 export default function DriverAvailability() {
@@ -211,7 +212,7 @@ export default function DriverAvailability() {
 
         {notEligible && (
           <div className="info-banner">
-            <div className="info-icon">ℹ️</div>
+            <div className="info-icon"><Icons.Info size={24} /></div>
             <div className="info-content">
               <h3>Feature Not Available</h3>
               <p>

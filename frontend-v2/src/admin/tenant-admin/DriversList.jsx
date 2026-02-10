@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import adminService from '../../services/admin.service'
+import Icons from '../../components/Icons'
 import './DriversList.css'
 
 const DriversList = () => {
@@ -62,7 +63,7 @@ const DriversList = () => {
                   <p>Phone: {driver.phone}</p>
                 </div>
                 <div className="toggle-icon">
-                  {expandedDriver?.driver_id === driver.driver_id ? '▼' : '▶'}
+                  {expandedDriver?.driver_id === driver.driver_id ? <Icons.ChevronDown size={16} /> : <Icons.ChevronRight size={16} />}
                 </div>
               </div>
 

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import fleetService from '../../services/fleet.service';
+import Icons from '../../components/Icons';
 import './FleetOwnerApply.css';
 
 function FleetOwnerApply() {
@@ -156,7 +157,7 @@ function FleetOwnerApply() {
     return (
       <div className="fleet-apply-container">
         <div className="fleet-apply-card success-card">
-          <span className="success-icon">⏳</span>
+          <span className="success-icon"><Icons.Hourglass size={64} /></span>
           <h1>Application Under Review</h1>
           <p>Your fleet application has been submitted and is currently under review.</p>
           <p className="note">This usually takes 1-2 business days. We'll notify you once approved.</p>

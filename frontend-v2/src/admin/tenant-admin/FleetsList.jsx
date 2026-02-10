@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import adminService from '../../services/admin.service'
+import Icons from '../../components/Icons'
 import './FleetsList.css'
 
 const FleetsList = () => {
@@ -62,7 +63,7 @@ const FleetsList = () => {
                   <p>Type: {fleet.fleet_type}</p>
                 </div>
                 <div className="toggle-icon">
-                  {expandedFleet?.fleet_id === fleet.fleet_id ? '▼' : '▶'}
+                  {expandedFleet?.fleet_id === fleet.fleet_id ? <Icons.ChevronDown size={16} /> : <Icons.ChevronRight size={16} />}
                 </div>
               </div>
 

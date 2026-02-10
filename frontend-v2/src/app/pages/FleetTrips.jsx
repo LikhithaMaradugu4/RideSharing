@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import fleetService from '../../services/fleet.service';
+import Icons from '../../components/Icons';
 import './FleetTrips.css';
 
 function FleetTrips() {
@@ -119,7 +120,7 @@ function FleetTrips() {
         <h2>Trip History</h2>
         {trips.length === 0 ? (
           <div className="empty-state">
-            <span className="empty-icon">📋</span>
+            <span className="empty-icon"><Icons.Clipboard size={48} /></span>
             <p>No trips yet</p>
             <p className="hint">Trips completed by your fleet drivers will appear here</p>
           </div>

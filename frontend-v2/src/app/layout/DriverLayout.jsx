@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import tokenStorage from '../../services/tokenStorage';
+import Icons from '../../components/Icons';
 import './DriverLayout.css';
 
 function DriverLayout({ children, driverProfile }) {
@@ -39,7 +40,7 @@ function DriverLayout({ children, driverProfile }) {
             to="/app/driver/dashboard" 
             className={`nav-link ${isActive('/app/driver/dashboard')}`}
           >
-            <span className="nav-icon">📊</span>
+            <span className="nav-icon"><Icons.Dashboard size={20} /></span>
             <span className="nav-label">Dashboard</span>
           </Link>
 
@@ -47,7 +48,7 @@ function DriverLayout({ children, driverProfile }) {
             to="/app/driver/dispatches" 
             className={`nav-link ${isActive('/app/driver/dispatches')}`}
           >
-            <span className="nav-icon">📋</span>
+            <span className="nav-icon"><Icons.Clipboard size={20} /></span>
             <span className="nav-label">Dispatches</span>
           </Link>
 
@@ -55,7 +56,7 @@ function DriverLayout({ children, driverProfile }) {
             to="/app/driver/vehicles" 
             className={`nav-link ${isActive('/app/driver/vehicles')}`}
           >
-            <span className="nav-icon">🚗</span>
+            <span className="nav-icon"><Icons.Car size={20} /></span>
             <span className="nav-label">Vehicles</span>
           </Link>
 
@@ -63,7 +64,7 @@ function DriverLayout({ children, driverProfile }) {
             to="/app/driver/availability" 
             className={`nav-link ${isActive('/app/driver/availability')}`}
           >
-            <span className="nav-icon">📅</span>
+            <span className="nav-icon"><Icons.Calendar size={20} /></span>
             <span className="nav-label">Availability</span>
           </Link>
 
@@ -71,7 +72,7 @@ function DriverLayout({ children, driverProfile }) {
             to="/app/driver/fleets" 
             className={`nav-link ${isActive('/app/driver/fleets')}`}
           >
-            <span className="nav-icon">🏢</span>
+            <span className="nav-icon"><Icons.Building size={20} /></span>
             <span className="nav-label">Fleets</span>
           </Link>
 
@@ -79,7 +80,7 @@ function DriverLayout({ children, driverProfile }) {
             to="/app/profile" 
             className={`nav-link ${isActive('/app/profile')}`}
           >
-            <span className="nav-icon">👤</span>
+            <span className="nav-icon"><Icons.User size={20} /></span>
             <span className="nav-label">Profile</span>
           </Link>
         </nav>

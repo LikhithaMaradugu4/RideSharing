@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import driverService from '../../services/driver.service';
 import tokenStorage from '../../services/tokenStorage';
 import DriverLayout from '../layout/DriverLayout';
+import Icons from '../../components/Icons';
 import './DriverDispatches.css';
 
 function DriverDispatches() {
@@ -134,7 +135,7 @@ function DriverDispatches() {
 
         {error && (
           <div className="error-banner">
-            <span>⚠️</span>
+            <span><Icons.Warning size={20} /></span>
             <span>{error}</span>
             <button className="error-close" onClick={() => setError(null)}>×</button>
           </div>
@@ -142,14 +143,14 @@ function DriverDispatches() {
 
         {getBlockedReason() && (
           <div className="offline-warning">
-            <span className="warning-icon">⏸</span>
+            <span className="warning-icon"><Icons.Pause size={20} /></span>
             <span>{getBlockedReason()}</span>
           </div>
         )}
 
         {dispatches.length === 0 ? (
           <div className="empty-state">
-            <div className="empty-icon">📭</div>
+            <div className="empty-icon"><Icons.Inbox size={64} /></div>
             <h2>No pending dispatches</h2>
             <p>Check back soon for available trips</p>
           </div>

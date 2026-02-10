@@ -394,28 +394,43 @@ def confirm_cash_payment(
     
     Returns payment info + settlement breakdown.
     """
-    from app.services.payment_service import PaymentService
-    
-    driver_id = current_user.get("user_id")
-    
-    result = PaymentService.confirm_cash_received(
-        db=db,
-        trip_id=trip_id,
-        driver_id=driver_id
-    )
-    
-    payment = result["payment"]
-    settlement = result.get("settlement", {})
-    
-    return CashConfirmResponse(
-        payment_id=payment.payment_id,
-        trip_id=payment.trip_id,
-        amount=float(payment.amount),
-        currency=payment.currency,
-        payment_mode=payment.payment_mode,
-        status=payment.status,
-        driver_earning=settlement.get("driver_earning"),
-        platform_commission=settlement.get("platform_commission"),
-        tenant_commission=settlement.get("tenant_commission"),
-        fleet_commission=settlement.get("fleet_commission")
-    )
+    try:
+        from app.services.payment_service import PaymentService
+        
+        driver_id = current_user.get("user_id")
+        if not driver_id:
+            raise HTTPException(status_code=401, detail="User ID not found")
+        
+        print(f"Confirming cash payment for trip {trip_id} by driver {driver_id}")
+        
+        result = PaymentService.confirm_cash_received(
+            db=db,
+            trip_id=trip_id,
+            driver_id=driver_id
+        )
+        
+        payment = result["payment"]
+        settlement = result.get("settlement", {})
+        
+        return CashConfirmResponse(
+            payment_id=payment.payment_id,
+            trip_id=payment.trip_id,
+            amount=float(payment.amount),
+            currency=payment.currency,
+            payment_mode=payment.payment_mode,
+            status=payment.status,
+            driver_earning=settlement.get("driver_earning"),
+            platform_commission=settlement.get("platform_commission"),
+            tenant_commission=settlement.get("tenant_commission"),
+            fleet_commission=settlement.get("fleet_commission")
+        )
+        
+    except HTTPException:
+        # Re-raise HTTP exceptions as-is
+        raise
+    except Exception as e:
+        print(f"Error in confirm_cash_payment: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to confirm payment: {str(e)}"
+        )

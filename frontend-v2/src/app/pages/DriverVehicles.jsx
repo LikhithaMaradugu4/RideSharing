@@ -5,6 +5,7 @@ import VehicleAddForm from '../components/VehicleAddForm';
 import driverService from '../../services/driver.service';
 import userService from '../../services/user.service';
 import tokenStorage from '../../services/tokenStorage';
+import Icons from '../../components/Icons';
 import './DriverVehicles.css';
 
 export default function DriverVehicles() {
@@ -176,7 +177,7 @@ export default function DriverVehicles() {
           </div>
           
           <div className="info-banner fleet-member">
-            <div className="info-icon">🚗</div>
+            <div className="info-icon"><Icons.Car size={32} /></div>
             <div className="info-content">
               <h3>You're Part of {businessFleet.fleet_name}</h3>
               <p>

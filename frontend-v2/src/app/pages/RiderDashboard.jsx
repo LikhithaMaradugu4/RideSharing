@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import riderService from '../../services/rider.service';
 import fleetService from '../../services/fleet.service';
 import tokenStorage from '../../services/tokenStorage';
+import Icons from '../../components/Icons';
 import './RiderDashboard.css';
 
 function RiderDashboard() {
@@ -107,11 +108,11 @@ function RiderDashboard() {
       {/* Header */}
       <header className="rider-header">
         <div className="header-left">
-          <h1>🚕 RideShare</h1>
+          <h1><Icons.Car size={28} style={{verticalAlign: 'middle', marginRight: '8px'}} />RideShare</h1>
         </div>
         <div className="header-right">
           <button className="btn-profile" onClick={handleProfile} title="Profile">
-            👤
+            <Icons.User size={24} />
           </button>
           <button className="btn-logout" onClick={handleLogout}>
             Logout
@@ -133,7 +134,7 @@ function RiderDashboard() {
         <div className="cta-section">
           <button className="btn-book-ride" onClick={handleBookRide}>
             <div className="btn-content">
-              <span className="btn-icon">🚗</span>
+              <span className="btn-icon"><Icons.Car size={24} /></span>
               <div className="btn-text-wrapper">
                 <span className="btn-title">Book a Ride</span>
                 <span className="btn-subtitle">Select pickup & destination on map</span>
@@ -146,11 +147,11 @@ function RiderDashboard() {
         {/* Quick Stats */}
         <div className="info-cards">
           <div className="info-card">
-            <span className="info-icon">📍</span>
+            <span className="info-icon"><Icons.MapPin size={24} /></span>
             <span className="info-text">Available in your area</span>
           </div>
           <div className="info-card">
-            <span className="info-icon">⚡</span>
+            <span className="info-icon"><Icons.Flash size={24} /></span>
             <span className="info-text">Fast pickup times</span>
           </div>
         </div>
@@ -158,15 +159,15 @@ function RiderDashboard() {
         {/* Quick Actions */}
         <div className="quick-actions">
           <button className="action-card" onClick={handleProfile}>
-            <span className="action-icon">👤</span>
+            <span className="action-icon"><Icons.User size={32} /></span>
             <span className="action-text">Profile</span>
           </button>
           <button className="action-card" onClick={() => navigate('/app/rider/history')}>
-            <span className="action-icon">📋</span>
+            <span className="action-icon"><Icons.Clipboard size={32} /></span>
             <span className="action-text">Trip History</span>
           </button>
           <button className="action-card" onClick={() => navigate('/app/help')}>
-            <span className="action-icon">❓</span>
+            <span className="action-icon"><Icons.Info size={32} /></span>
             <span className="action-text">Help</span>
           </button>
         </div>

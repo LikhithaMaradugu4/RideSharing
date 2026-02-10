@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import driverService from '../../services/driver.service';
 import tokenStorage from '../../services/tokenStorage';
 import DriverLayout from '../layout/DriverLayout';
+import Icons from '../../components/Icons';
 import './DriverFleets.css';
 
 function DriverFleets() {
@@ -123,7 +124,7 @@ function DriverFleets() {
 
         {error && (
           <div className="error-banner">
-            <span>⚠️</span>
+            <span><Icons.Warning size={20} /></span>
             <span>{error}</span>
             <button className="error-close" onClick={() => setError(null)}>×</button>
           </div>
@@ -194,7 +195,7 @@ function DriverFleets() {
               </div>
             ) : (
               <div className="empty-state">
-                <div className="empty-icon">🏢</div>
+                <div className="empty-icon"><Icons.Building size={64} /></div>
                 <h2>No active fleet</h2>
                 <p>You will be assigned an INDIVIDUAL fleet upon driver approval.</p>
               </div>
@@ -207,7 +208,7 @@ function DriverFleets() {
           <div className="tab-content">
             {invites.length === 0 ? (
               <div className="empty-state">
-                <div className="empty-icon">📨</div>
+                <div className="empty-icon"><Icons.Mail size={64} /></div>
                 <h2>No pending invites</h2>
                 <p>Invitations will appear here when fleet owners invite you</p>
               </div>
@@ -268,7 +269,7 @@ function DriverFleets() {
           <div className="tab-content">
             {availableFleets.length === 0 ? (
               <div className="empty-state">
-                <div className="empty-icon">🔍</div>
+                <div className="empty-icon"><Icons.Search size={64} /></div>
                 <h2>No fleets available</h2>
                 <p>Check back later for business fleet opportunities</p>
               </div>
@@ -279,10 +280,10 @@ function DriverFleets() {
                     <div className="fleet-info">
                       <h3>{fleet.fleet_name}</h3>
                       {fleet.city_name && (
-                        <p className="city-label">📍 {fleet.city_name}</p>
+                        <p className="city-label"><Icons.MapPin size={16} style={{verticalAlign: 'middle', marginRight: '4px'}} />{fleet.city_name}</p>
                       )}
                       {fleet.contact_phone && (
-                        <p className="contact-label">📞 {fleet.contact_phone}</p>
+                        <p className="contact-label"><Icons.Phone size={16} style={{verticalAlign: 'middle', marginRight: '4px'}} />{fleet.contact_phone}</p>
                       )}
                     </div>
                     <p className="info-note">Fleet information only. Wait for an invite to join.</p>

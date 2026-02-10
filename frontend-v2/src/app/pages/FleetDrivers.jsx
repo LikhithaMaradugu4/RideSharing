@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import fleetService from '../../services/fleet.service';
+import Icons from '../../components/Icons';
 import './FleetDrivers.css';
 
 function FleetDrivers() {
@@ -234,7 +235,7 @@ function FleetDrivers() {
         <h2>Active Drivers ({drivers.length})</h2>
         {drivers.length === 0 ? (
           <div className="empty-state">
-            <span className="empty-icon">👥</span>
+            <span className="empty-icon"><Icons.Users size={48} /></span>
             <p>No drivers in your fleet yet</p>
             <p className="hint">Search for drivers by phone number and send invites</p>
           </div>

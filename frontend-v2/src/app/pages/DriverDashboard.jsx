@@ -4,6 +4,7 @@ import driverService from '../../services/driver.service';
 import userService from '../../services/user.service';
 import tokenStorage from '../../services/tokenStorage';
 import DriverLayout from '../layout/DriverLayout';
+import Icons from '../../components/Icons';
 import './DriverDashboard.css';
 
 function DriverDashboard() {
@@ -544,7 +545,7 @@ function DriverDashboard() {
 
         {error && (
           <div className="error-banner">
-            <span className="error-icon">⚠️</span>
+            <span className="error-icon"><Icons.Warning size={20} /></span>
             <span>{error}</span>
             <button className="error-close" onClick={() => setError(null)}>×</button>
           </div>
@@ -587,7 +588,7 @@ function DriverDashboard() {
 
             {!isDriverOnline() && shiftReadiness && !shiftReadiness.can_go_online && (
               <div className="shift-requirements">
-                <h4>⚠️ Cannot Go Online - Missing Requirements:</h4>
+                <h4><Icons.Warning size={18} style={{verticalAlign: 'middle', marginRight: '4px'}} /> Cannot Go Online - Missing Requirements:</h4>
                 <ul>
                   {!shiftReadiness.checks?.fleet_association?.exists && (
                     <li className="requirement-missing">No fleet association. Please contact your fleet manager.</li>
@@ -631,25 +632,25 @@ function DriverDashboard() {
         <div className="readiness-banner-section">
           {isDriverOnline() && !isDriverBusy() && !activeTrip && (
             <div className="readiness-banner ready">
-              <span className="readiness-icon">✅</span>
+              <span className="readiness-icon"><Icons.CheckCircle size={20} /></span>
               <span className="readiness-text">You are ONLINE and ready for trips</span>
             </div>
           )}
           {isDriverBusy() && activeTrip && (
             <div className="readiness-banner busy">
-              <span className="readiness-icon">🚗</span>
+              <span className="readiness-icon"><Icons.Car size={20} /></span>
               <span className="readiness-text">You are on an active trip</span>
             </div>
           )}
           {!isDriverOnline() && (
             <div className="readiness-banner offline">
-              <span className="readiness-icon">⏸️</span>
+              <span className="readiness-icon"><Icons.Pause size={20} /></span>
               <span className="readiness-text">You are OFFLINE - Go online to accept rides</span>
             </div>
           )}
           {isDriverOnline() && !activeVehicle && (
             <div className="readiness-banner warning">
-              <span className="readiness-icon">⚠️</span>
+              <span className="readiness-icon"><Icons.Warning size={20} /></span>
               <span className="readiness-text">No active vehicle assigned</span>
             </div>
           )}
@@ -660,7 +661,7 @@ function DriverDashboard() {
           <div className="active-trip-section">
             <div className="trip-card">
               <div className="trip-header">
-                <h2>🚗 Active Trip</h2>
+                <h2><Icons.Car size={24} style={{verticalAlign: 'middle', marginRight: '8px'}} />Active Trip</h2>
                 <span className={`trip-status-badge status-${activeTrip.status?.toLowerCase()}`}>
                   {activeTrip.status}
                 </span>
@@ -720,7 +721,7 @@ function DriverDashboard() {
                     color: 'white',
                     marginTop: '16px'
                   }}>
-                    <h4 style={{ margin: '0 0 8px 0', fontSize: '18px' }}>🔐 Enter Pickup OTP</h4>
+                    <h4 style={{ margin: '0 0 8px 0', fontSize: '18px' }}><Icons.Lock size={18} style={{verticalAlign: 'middle', marginRight: '4px'}} />Enter Pickup OTP</h4>
                     <p style={{ margin: '0 0 16px 0', fontSize: '14px', opacity: 0.9 }}>
                       Ask the rider to share their OTP code
                     </p>
@@ -781,7 +782,7 @@ function DriverDashboard() {
                           justifyContent: 'center',
                           gap: '8px'
                         }}>
-                          <span style={{ fontSize: '20px' }}>✅</span>
+                          <Icons.CheckCircle size={20} />
                           <span style={{ fontWeight: '600' }}>OTP Verified Successfully!</span>
                         </div>
                         <button
@@ -799,7 +800,7 @@ function DriverDashboard() {
                             cursor: 'pointer'
                           }}
                         >
-                          {tripActionLoading ? 'Processing...' : '🚀 Start Trip'}
+                          {tripActionLoading ? 'Processing...' : <><Icons.Rocket size={18} style={{verticalAlign: 'middle', marginRight: '4px'}} />Start Trip</>}
                         </button>
                       </>
                     )}
@@ -815,7 +816,7 @@ function DriverDashboard() {
                     color: 'white',
                     marginTop: '16px'
                   }}>
-                    <h4 style={{ margin: '0 0 8px 0', fontSize: '18px' }}>🚗 Trip In Progress</h4>
+                    <h4 style={{ margin: '0 0 8px 0', fontSize: '18px' }}><Icons.Car size={18} style={{verticalAlign: 'middle', marginRight: '4px'}} />Trip In Progress</h4>
                     <p style={{ margin: '0 0 16px 0', fontSize: '14px', opacity: 0.9 }}>
                       Navigate to the drop-off location
                     </p>
@@ -827,7 +828,7 @@ function DriverDashboard() {
                       padding: '12px',
                       marginBottom: '16px'
                     }}>
-                      <div style={{ fontSize: '12px', opacity: 0.8, marginBottom: '4px' }}>📍 DROP-OFF LOCATION</div>
+                      <div style={{ fontSize: '12px', opacity: 0.8, marginBottom: '4px' }}><Icons.MapPin size={14} style={{verticalAlign: 'middle', marginRight: '2px'}} />DROP-OFF LOCATION</div>
                       <div style={{ fontSize: '14px', fontWeight: '600' }}>
                         {activeTrip.drop_lat && activeTrip.drop_lng 
                           ? `${parseFloat(activeTrip.drop_lat).toFixed(4)}, ${parseFloat(activeTrip.drop_lng).toFixed(4)}`
@@ -850,7 +851,7 @@ function DriverDashboard() {
                         cursor: 'pointer'
                       }}
                     >
-                      {tripActionLoading ? 'Processing...' : '✅ Complete Trip'}
+                      {tripActionLoading ? 'Processing...' : <><Icons.CheckCircle size={18} style={{verticalAlign: 'middle', marginRight: '4px'}} />Complete Trip</>}
                     </button>
                   </div>
                 )}
@@ -863,7 +864,7 @@ function DriverDashboard() {
         {isDriverOnline() && !isDriverBusy() && !activeTrip && (
           <div className="dispatches-section">
             <div className="dispatches-header">
-              <h2>📲 Incoming Ride Requests</h2>
+              <h2><Icons.Phone size={24} style={{verticalAlign: 'middle', marginRight: '8px'}} />Incoming Ride Requests</h2>
               {dispatchPollingActive && (
                 <span className="polling-indicator">
                   <span className="pulse-dot"></span> Listening
@@ -873,7 +874,7 @@ function DriverDashboard() {
 
             {pendingDispatches.length === 0 ? (
               <div className="no-dispatches">
-                <span className="no-dispatches-icon">🔍</span>
+                <span className="no-dispatches-icon"><Icons.Search size={48} /></span>
                 <p>Waiting for ride requests...</p>
                 <p className="hint">Stay online and nearby to receive dispatch offers</p>
               </div>
@@ -941,7 +942,7 @@ function DriverDashboard() {
             <div className="context-card">
               <div className="context-card-header">
                 <h3>Active Fleet</h3>
-                <span className="context-icon">🏢</span>
+                <span className="context-icon"><Icons.Building size={24} /></span>
               </div>
               <div className="context-card-content">
                 {activeFleet ? (
@@ -968,7 +969,7 @@ function DriverDashboard() {
                   </>
                 ) : (
                   <div className="empty-state-container">
-                    <p className="empty-state">⚠️ No active fleet association</p>
+                    <p className="empty-state"><Icons.Warning size={18} style={{verticalAlign: 'middle', marginRight: '4px'}} />No active fleet association</p>
                     <p className="empty-hint">You need to be part of a fleet to go online.</p>
                     <a href="/app/driver/fleets" className="btn-link">Join or Create Fleet</a>
                   </div>
@@ -980,7 +981,7 @@ function DriverDashboard() {
             <div className="context-card">
               <div className="context-card-header">
                 <h3>Active Vehicle Assignment</h3>
-                <span className="context-icon">🚗</span>
+                <span className="context-icon"><Icons.Car size={24} /></span>
               </div>
               <div className="context-card-content">
                 {activeVehicle ? (
@@ -1004,7 +1005,7 @@ function DriverDashboard() {
                     <div className="context-item">
                       <span className="label">Documents:</span>
                       <span className={`badge ${activeVehicle.documents_complete ? 'status-approved' : 'status-pending'}`}>
-                        {activeVehicle.documents_complete ? '✓ Complete' : '⚠️ Incomplete'}
+                        {activeVehicle.documents_complete ? <><Icons.Check size={14} style={{verticalAlign: 'middle', marginRight: '2px'}} />Complete</> : <><Icons.Warning size={14} style={{verticalAlign: 'middle', marginRight: '2px'}} />Incomplete</>}
                       </span>
                     </div>
                     {!activeVehicle.documents_complete && activeVehicle.missing_documents?.length > 0 && (
@@ -1038,7 +1039,7 @@ function DriverDashboard() {
                   </div>
                 ) : isIndependent && approvedVehicles.length === 0 ? (
                   <div className="no-vehicles-prompt">
-                    <p className="empty-state">⚠️ No approved vehicles</p>
+                    <p className="empty-state"><Icons.Warning size={18} style={{verticalAlign: 'middle', marginRight: '4px'}} />No approved vehicles</p>
                     <p className="empty-hint">Add and get a vehicle approved to go online.</p>
                     <a href="/app/driver/vehicles" className="btn-add-vehicle">
                       Add Vehicle
@@ -1046,7 +1047,7 @@ function DriverDashboard() {
                   </div>
                 ) : (
                   <div className="empty-state-container">
-                    <p className="empty-state">⚠️ No active vehicle assignment</p>
+                    <p className="empty-state"><Icons.Warning size={18} style={{verticalAlign: 'middle', marginRight: '4px'}} />No active vehicle assignment</p>
                     <p className="empty-hint">
                       {isIndependent 
                         ? 'Select a vehicle from your approved list to go online.'
@@ -1103,7 +1104,7 @@ function DriverDashboard() {
             <div className="context-card">
               <div className="context-card-header">
                 <h3>Today's Availability</h3>
-                <span className="context-icon">📅</span>
+                <span className="context-icon"><Icons.Calendar size={24} /></span>
               </div>
               <div className="context-card-content">
                 <p className="empty-state">Manage availability in the Availability section</p>
@@ -1114,7 +1115,7 @@ function DriverDashboard() {
             <div className="context-card">
               <div className="context-card-header">
                 <h3>Quick Actions</h3>
-                <span className="context-icon">⚡</span>
+                <span className="context-icon"><Icons.Flash size={24} /></span>
               </div>
               <div className="context-card-content quick-actions">
                 <a href="/app/driver/vehicles" className="quick-link">
@@ -1181,7 +1182,7 @@ function DriverDashboard() {
                     margin: '0 auto 20px',
                     fontSize: '40px'
                   }}>
-                    💵
+                    <Icons.DollarSign size={40} color="white" />
                   </div>
                   
                   <h2 style={{ margin: '0 0 8px 0', fontSize: '24px', color: '#1f2937' }}>
@@ -1230,7 +1231,7 @@ function DriverDashboard() {
                     fontSize: '13px',
                     color: '#92400e'
                   }}>
-                    ℹ️ In-app payments are under development. Cash payments supported.
+                    <Icons.Info size={14} style={{verticalAlign: 'middle', marginRight: '4px'}} />In-app payments are under development. Cash payments supported.
                   </div>
                   
                   <button
@@ -1249,7 +1250,7 @@ function DriverDashboard() {
                       opacity: cashCollectionLoading ? 0.7 : 1
                     }}
                   >
-                    {cashCollectionLoading ? '⏳ Processing...' : '✅ Cash / UPI Received'}
+                    {cashCollectionLoading ? <><Icons.Hourglass size={18} style={{verticalAlign: 'middle', marginRight: '4px'}} />Processing...</> : <><Icons.CheckCircle size={18} style={{verticalAlign: 'middle', marginRight: '4px'}} />Cash / UPI Received</>}
                   </button>
                 </>
               ) : (
@@ -1266,7 +1267,7 @@ function DriverDashboard() {
                     margin: '0 auto 20px',
                     fontSize: '40px'
                   }}>
-                    🎉
+                    <Icons.Party size={40} color="white" />
                   </div>
                   
                   <h2 style={{ margin: '0 0 8px 0', fontSize: '24px', color: '#1f2937' }}>

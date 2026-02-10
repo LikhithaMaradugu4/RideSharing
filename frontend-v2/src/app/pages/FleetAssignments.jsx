@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import fleetService from '../../services/fleet.service';
+import Icons from '../../components/Icons';
 import './FleetAssignments.css';
 
 function FleetAssignments() {
@@ -186,7 +187,7 @@ function FleetAssignments() {
         <h2>Active Assignments</h2>
         {assignments.length === 0 ? (
           <div className="empty-state">
-            <span className="empty-icon">🔗</span>
+            <span className="empty-icon"><Icons.Link size={48} /></span>
             <p>No active driver-vehicle assignments</p>
             <p className="hint">Assign drivers to vehicles so they can take trips</p>
             {(availableDrivers.length > 0 && availableVehicles.length > 0) && (

@@ -11,6 +11,7 @@ Endpoints:
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from decimal import Decimal
+from datetime import datetime, timezone
 
 from app.api.deps.jwt_auth import get_current_user
 from app.api.deps.authorization import require_approved_driver
@@ -19,6 +20,8 @@ from app.models.identity import AppUser
 from app.models.fleet import DriverProfile
 from app.models.trips import Trip
 from app.models.dispatch import DispatchAttempt
+from app.models.operations import DriverShift
+from app.services.payment_service import PaymentService
 from app.schemas.dispatch import (
     DriverDispatchNotification,
     DispatchAttemptResponse
@@ -362,54 +365,95 @@ def complete_trip(
     Transitions trip from PICKED_UP to COMPLETED.
     Sets driver shift status back to ONLINE.
     """
-    driver_id = driver_profile.driver_id
-    
-    trip = db.query(Trip).filter(Trip.trip_id == trip_id).first()
-    
-    if not trip:
-        raise HTTPException(status_code=404, detail="Trip not found")
-    
-    if trip.driver_id != driver_id:
-        raise HTTPException(status_code=403, detail="Not authorized for this trip")
-    
-    if trip.status != "PICKED_UP":
+    try:
+        print(f"DEBUG: complete_trip called with trip_id={trip_id}")
+        driver_id = driver_profile.driver_id
+        print(f"DEBUG: driver_id extracted: {driver_id}")
+        
+        # Find trip
+        trip = db.query(Trip).filter(Trip.trip_id == trip_id).first()
+        print(f"DEBUG: Trip query result: {trip}")
+        
+        if not trip:
+            raise HTTPException(status_code=404, detail="Trip not found")
+        
+        if trip.driver_id != driver_id:
+            raise HTTPException(status_code=403, detail="Not authorized for this trip")
+        
+        if trip.status != "PICKED_UP":
+            raise HTTPException(
+                status_code=400,
+                detail=f"Cannot complete trip in '{trip.status}' status"
+            )
+        
+        print(f"DEBUG: All validations passed, proceeding with completion")
+    except HTTPException:
+        # Re-raise HTTP exceptions as-is
+        raise
+    except Exception as e:
+        print(f"EXCEPTION in complete_trip validation: {type(e).__name__}: {str(e)}")
+        import traceback
+        traceback.print_exc()
         raise HTTPException(
-            status_code=400,
-            detail=f"Cannot complete trip in '{trip.status}' status"
+            status_code=500,
+            detail=f"Failed to validate trip completion: {str(e)}"
         )
     
-    from datetime import datetime, timezone
-    from app.models.operations import DriverShift
-    from app.services.payment_service import PaymentService
-    
-    trip.status = "COMPLETED"
-    trip.completed_at = datetime.now(timezone.utc)
-    trip.updated_by = driver_id
-    
-    # Set driver shift back to ONLINE
-    db.query(DriverShift).filter(
-        DriverShift.driver_id == driver_id,
-        DriverShift.ended_at.is_(None)
-    ).update(
-        {"status": "ONLINE"},
-        synchronize_session=False
-    )
-    
-    # Auto-create cash payment record
-    payment = PaymentService.auto_create_cash_payment(db, trip)
-    
-    db.commit()
-    db.refresh(trip)
-    
-    return {
-        "message": "Trip completed successfully",
-        "trip_id": trip.trip_id,
-        "status": trip.status,
-        "completed_at": trip.completed_at,
-        "fare_amount": float(trip.fare_amount) if trip.fare_amount else None,
-        "payment_id": payment.payment_id if payment else None,
-        "payment_status": payment.status if payment else None
-    }
+    try:
+        print(f"DEBUG: Starting trip completion for trip_id={trip_id}, driver_id={driver_id}")
+        
+        # Update trip status
+        trip.status = "COMPLETED"
+        trip.completed_at = datetime.now(timezone.utc)
+        trip.updated_by = driver_id
+        print(f"DEBUG: Updated trip status to COMPLETED")
+        
+        # Set driver shift back to ONLINE
+        shift_update_result = db.query(DriverShift).filter(
+            DriverShift.driver_id == driver_id,
+            DriverShift.ended_at.is_(None)
+        ).update(
+            {"status": "ONLINE"},
+            synchronize_session=False
+        )
+        print(f"DEBUG: Updated {shift_update_result} driver shifts to ONLINE")
+        
+        # Auto-create cash payment record
+        payment = None
+        try:
+            print(f"DEBUG: Creating payment record...")
+            payment = PaymentService.auto_create_cash_payment(db, trip)
+            print(f"DEBUG: Payment created with ID: {payment.payment_id if payment else None}")
+        except Exception as payment_error:
+            print(f"Payment creation failed: {payment_error}")
+            # Continue without failing the trip completion
+        
+        print(f"DEBUG: Committing database transaction...")
+        db.commit()
+        db.refresh(trip)
+        print(f"DEBUG: Transaction committed successfully")
+        
+        result = {
+            "message": "Trip completed successfully",
+            "trip_id": trip.trip_id,
+            "status": trip.status,
+            "completed_at": trip.completed_at.isoformat() if trip.completed_at else None,
+            "fare_amount": float(trip.fare_amount) if trip.fare_amount else None,
+            "payment_id": payment.payment_id if payment else None,
+            "payment_status": payment.status if payment else None
+        }
+        print(f"DEBUG: Returning result: {result}")
+        return result
+        
+    except Exception as e:
+        print(f"EXCEPTION in complete_trip: {type(e).__name__}: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        db.rollback()
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to complete trip: {str(e)}"
+        )
 
 
 # ---------------------- Dispatch Wave Management ----------------------

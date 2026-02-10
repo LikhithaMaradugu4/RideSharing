@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import fleetService from '../../services/fleet.service';
 import tokenStorage from '../../services/tokenStorage';
+import Icons from '../../components/Icons';
 import './FleetDashboard.css';
 
 function FleetDashboard() {
@@ -60,11 +61,11 @@ function FleetDashboard() {
     return (
       <div className="fleet-dashboard">
         <header className="fleet-header">
-          <h1>🏢 Fleet Dashboard</h1>
+          <h1><Icons.Building size={28} style={{verticalAlign: 'middle', marginRight: '8px'}} />Fleet Dashboard</h1>
           <button className="btn-logout" onClick={handleLogout}>Logout</button>
         </header>
         <div className="error-state">
-          <span className="error-icon">⚠️</span>
+          <span className="error-icon"><Icons.Warning size={48} /></span>
           <p>{error}</p>
           <button className="btn-retry" onClick={fetchFleetDetails}>Retry</button>
           <button className="btn-secondary" onClick={() => navigate('/app/rider-dashboard')}>
@@ -80,12 +81,12 @@ function FleetDashboard() {
     return (
       <div className="fleet-dashboard">
         <header className="fleet-header">
-          <h1>🏢 Fleet Dashboard</h1>
+          <h1><Icons.Building size={28} style={{verticalAlign: 'middle', marginRight: '8px'}} />Fleet Dashboard</h1>
           <button className="btn-logout" onClick={handleLogout}>Logout</button>
         </header>
         <div className="pending-state">
           <div className="pending-card">
-            <span className="pending-icon">⏳</span>
+            <span className="pending-icon"><Icons.Hourglass size={48} /></span>
             <h2>Application Under Review</h2>
             <p>Your fleet application for <strong>{fleet.fleet_name}</strong> is currently being reviewed.</p>
             <p className="pending-note">This usually takes 1-2 business days. We'll notify you once approved.</p>
@@ -103,12 +104,12 @@ function FleetDashboard() {
     return (
       <div className="fleet-dashboard">
         <header className="fleet-header">
-          <h1>🏢 Fleet Dashboard</h1>
+          <h1><Icons.Building size={28} style={{verticalAlign: 'middle', marginRight: '8px'}} />Fleet Dashboard</h1>
           <button className="btn-logout" onClick={handleLogout}>Logout</button>
         </header>
         <div className="rejected-state">
           <div className="rejected-card">
-            <span className="rejected-icon">❌</span>
+            <span className="rejected-icon"><Icons.XCircle size={48} /></span>
             <h2>Application Rejected</h2>
             <p>Your fleet application for <strong>{fleet.fleet_name}</strong> was not approved.</p>
             <p className="rejected-note">Please contact support for more information.</p>
@@ -126,15 +127,15 @@ function FleetDashboard() {
     <div className="fleet-dashboard">
       <header className="fleet-header">
         <div className="header-left">
-          <h1>🏢 {fleet?.fleet_name || 'Fleet Dashboard'}</h1>
+          <h1><Icons.Building size={28} style={{verticalAlign: 'middle', marginRight: '8px'}} />{fleet?.fleet_name || 'Fleet Dashboard'}</h1>
           <span className="status-badge approved">APPROVED</span>
         </div>
         <div className="header-right">
           <button className="btn-profile" onClick={() => navigate('/app/profile')} title="Profile">
-            👤<span className="btn-label">Profile</span>
+            <Icons.User size={20} /><span className="btn-label">Profile</span>
           </button>
           <button className="btn-home" onClick={() => navigate('/app/rider-dashboard')} title="Rider Mode">
-            🏠<span className="btn-label">Rider</span>
+            <Icons.Home size={20} /><span className="btn-label">Rider</span>
           </button>
           <button className="btn-logout" onClick={handleLogout}>Logout</button>
         </div>
@@ -146,23 +147,23 @@ function FleetDashboard() {
           <h2>Fleet Overview</h2>
           <div className="stats-grid">
             <div className="stat-card" onClick={() => navigate('/fleet-drivers')}>
-              <span className="stat-icon">👥</span>
+              <span className="stat-icon"><Icons.Users size={32} /></span>
               <span className="stat-label">Drivers</span>
             </div>
             <div className="stat-card" onClick={() => navigate('/fleet-vehicles')}>
-              <span className="stat-icon">🚗</span>
+              <span className="stat-icon"><Icons.Car size={32} /></span>
               <span className="stat-label">Vehicles</span>
             </div>
             <div className="stat-card" onClick={() => navigate('/fleet-assignments')}>
-              <span className="stat-icon">🔗</span>
+              <span className="stat-icon"><Icons.Link size={32} /></span>
               <span className="stat-label">Assignments</span>
             </div>
             <div className="stat-card" onClick={() => navigate('/fleet-trips')}>
-              <span className="stat-icon">📋</span>
+              <span className="stat-icon"><Icons.Clipboard size={32} /></span>
               <span className="stat-label">Trip History</span>
             </div>
             <div className="stat-card" onClick={() => navigate('/fleet-cities')}>
-              <span className="stat-icon">🏙️</span>
+              <span className="stat-icon"><Icons.City size={32} /></span>
               <span className="stat-label">Cities</span>
             </div>
           </div>
@@ -173,7 +174,7 @@ function FleetDashboard() {
           <h2>Quick Actions</h2>
           <div className="action-buttons">
             <button className="action-btn" onClick={() => navigate('/fleet-drivers')}>
-              <span className="action-icon">➕</span>
+              <span className="action-icon"><Icons.Plus size={24} /></span>
               <div className="action-text">
                 <span className="action-title">Invite Driver</span>
                 <span className="action-desc">Add drivers to your fleet</span>
@@ -181,7 +182,7 @@ function FleetDashboard() {
             </button>
             
             <button className="action-btn" onClick={() => navigate('/fleet-vehicles')}>
-              <span className="action-icon">🚙</span>
+              <span className="action-icon"><Icons.Truck size={24} /></span>
               <div className="action-text">
                 <span className="action-title">Add Vehicle</span>
                 <span className="action-desc">Register a new vehicle</span>
@@ -189,7 +190,7 @@ function FleetDashboard() {
             </button>
             
             <button className="action-btn" onClick={() => navigate('/fleet-assignments')}>
-              <span className="action-icon">🔗</span>
+              <span className="action-icon"><Icons.Link size={24} /></span>
               <div className="action-text">
                 <span className="action-title">Assign Vehicle</span>
                 <span className="action-desc">Link drivers with vehicles</span>
@@ -197,7 +198,7 @@ function FleetDashboard() {
             </button>
             
             <button className="action-btn" onClick={() => navigate('/fleet-drivers')}>
-              <span className="action-icon">⏰</span>
+              <span className="action-icon"><Icons.Clock size={24} /></span>
               <div className="action-text">
                 <span className="action-title">Manage Drivers</span>
                 <span className="action-desc">View and manage drivers</span>
@@ -209,21 +210,21 @@ function FleetDashboard() {
         {/* Info Cards */}
         <div className="info-section">
           <div className="info-card">
-            <span className="info-icon">ℹ️</span>
+            <span className="info-icon"><Icons.Info size={24} /></span>
             <div className="info-content">
               <h4>Fleet ID</h4>
               <p>{fleet?.fleet_id}</p>
             </div>
           </div>
           <div className="info-card">
-            <span className="info-icon">🏷️</span>
+            <span className="info-icon"><Icons.Tag size={24} /></span>
             <div className="info-content">
               <h4>Tenant ID</h4>
               <p>{fleet?.tenant_id}</p>
             </div>
           </div>
           <div className="info-card">
-            <span className="info-icon">📊</span>
+            <span className="info-icon"><Icons.BarChart size={24} /></span>
             <div className="info-content">
               <h4>Status</h4>
               <p>{fleet?.status || 'ACTIVE'}</p>

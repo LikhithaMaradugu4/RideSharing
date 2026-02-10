@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import adminService from '../../services/admin.service';
+import Icons from '../../components/Icons';
 import './TenantDocuments.css';
 
 const DOCUMENT_TYPES = [
@@ -218,7 +219,7 @@ const TenantDocuments = () => {
         <div className="documents-grid">
           {documents.map((doc) => (
             <div key={doc.tenant_document_id} className="document-card">
-              <div className="document-icon">📄</div>
+              <div className="document-icon"><Icons.Document size={24} /></div>
               <div className="document-info">
                 <h3 className="document-type">{doc.document_type}</h3>
                 <p className="document-filename">{doc.file_name}</p>

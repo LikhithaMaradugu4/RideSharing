@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import fleetService from '../../services/fleet.service';
 import tokenStorage from '../../services/tokenStorage';
 import VehicleAddForm from '../components/VehicleAddForm';
+import Icons from '../../components/Icons';
 import './FleetVehicles.css';
 
 function FleetVehicles() {
@@ -95,7 +96,7 @@ function FleetVehicles() {
         <button className="btn-back" onClick={() => navigate('/fleet-dashboard')}>
           ← Back
         </button>
-        <h1>🚗 Fleet Vehicles</h1>
+        <h1><Icons.Car size={24} style={{verticalAlign: 'middle', marginRight: '4px'}} /> Fleet Vehicles</h1>
         <button className="btn-add" onClick={() => setShowAddForm(true)}>
           + Add Vehicle
         </button>
@@ -119,7 +120,7 @@ function FleetVehicles() {
       <div className="vehicles-list">
         {vehicles.length === 0 ? (
           <div className="empty-state">
-            <span className="empty-icon">🚗</span>
+            <span className="empty-icon"><Icons.Car size={48} /></span>
             <p>No vehicles in your fleet yet</p>
             <button className="btn-primary" onClick={() => setShowAddForm(true)}>
               Add Your First Vehicle

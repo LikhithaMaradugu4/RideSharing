@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import fleetService from '../../services/fleet.service';
 import tokenStorage from '../../services/tokenStorage';
+import Icons from '../../components/Icons';
 import './FleetCities.css';
 
 function FleetCities() {
@@ -117,7 +118,7 @@ function FleetCities() {
         <button className="btn-back" onClick={() => navigate('/fleet-dashboard')}>
           ← Back
         </button>
-        <h1>📍 Fleet Cities</h1>
+        <h1><Icons.MapPin size={24} style={{verticalAlign: 'middle', marginRight: '4px'}} /> Fleet Cities</h1>
         <button 
           className="btn-add" 
           onClick={() => setShowAddForm(true)}
@@ -190,7 +191,7 @@ function FleetCities() {
       <div className="cities-list">
         {cities.length === 0 ? (
           <div className="empty-state">
-            <span className="empty-icon">📍</span>
+            <span className="empty-icon"><Icons.MapPin size={48} /></span>
             <h2>No cities added yet</h2>
             <p>Add cities where your fleet operates</p>
             {availableCities.length > 0 && (
@@ -205,7 +206,7 @@ function FleetCities() {
               <div className="city-info">
                 <span className="city-name">{city.city_name}</span>
                 {city.address && (
-                  <span className="city-address">📍 {city.address}</span>
+                  <span className="city-address"><Icons.MapPin size={16} style={{verticalAlign: 'middle', marginRight: '4px'}} />{city.address}</span>
                 )}
               </div>
               <div className="city-actions">
@@ -225,7 +226,7 @@ function FleetCities() {
       {/* Info Note */}
       {cities.length > 0 && (
         <div className="info-note">
-          <strong>💡 Tip:</strong> Add addresses to help drivers find your fleet offices. 
+          <strong><Icons.Lightbulb size={16} style={{verticalAlign: 'middle', marginRight: '4px'}} /> Tip:</strong> Add addresses to help drivers find your fleet offices. 
           Addresses are visible to drivers in the "Discover Fleets" section.
         </div>
       )}
