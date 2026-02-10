@@ -1,183 +1,138 @@
-/* UserHome.css - Professional, calm, minimal UI */
+/* UserHome.css - Clean, focused, single-action design */
 
 .user-home-container {
   min-height: 100vh;
-  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   padding: 40px 20px;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
     'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
     sans-serif;
 }
 
-/* Header */
-.user-home-header {
+/* Primary Action Section */
+.primary-action-section {
   text-align: center;
   margin-bottom: 60px;
+  animation: fadeInUp 0.6s ease-out;
+}
+
+.main-heading {
+  font-size: 3rem;
+  color: white;
+  margin: 0 0 40px 0;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   animation: slideDown 0.6s ease-out;
 }
 
-.user-home-header h1 {
-  font-size: 2.5rem;
-  color: #1a202c;
-  margin: 0 0 10px 0;
+/* Primary Action Button */
+.primary-action-button {
+  padding: 24px 60px;
+  font-size: 1.5rem;
   font-weight: 700;
-  letter-spacing: -0.5px;
-}
-
-.user-home-header .subtitle {
-  font-size: 1.1rem;
-  color: #718096;
-  margin: 0;
-  font-weight: 400;
-}
-
-/* Main Section */
-.capabilities-section {
-  max-width: 1200px;
-  margin: 0 auto;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-  gap: 30px;
-  animation: fadeIn 0.8s ease-out 0.2s both;
-}
-
-/* Capability Cards */
-.capability-card {
-  background: white;
-  border-radius: 16px;
-  padding: 40px 30px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07);
-  transition: all 0.3s ease-out;
-  display: flex;
-  flex-direction: column;
-  border: 2px solid transparent;
-}
-
-.capability-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.12);
-}
-
-.capability-card.rider-card {
-  border-top: 4px solid #3182ce;
-}
-
-.capability-card.driver-card {
-  border-top: 4px solid #38a169;
-}
-
-.capability-card.fleet-card {
-  border-top: 4px solid #d69e2e;
-}
-
-/* Card Header */
-.card-header {
-  margin-bottom: 20px;
-}
-
-.card-header h2 {
-  font-size: 1.8rem;
-  color: #1a202c;
-  margin: 0;
-  font-weight: 600;
-}
-
-/* Card Body */
-.card-body {
-  flex-grow: 1;
-  margin-bottom: 30px;
-}
-
-.card-body .description {
-  font-size: 1rem;
-  color: #4a5568;
-  line-height: 1.6;
-  margin: 0;
-  font-weight: 400;
-}
-
-.card-body .status-text {
-  font-size: 1rem;
-  margin: 0;
-  font-weight: 500;
-  padding: 12px 16px;
-  border-radius: 8px;
-  text-align: center;
-}
-
-.status-text.pending {
-  background-color: #fef5e7;
-  color: #d68910;
-  border-left: 4px solid #f39c12;
-}
-
-.status-text.approved {
-  background-color: #e8f8f5;
-  color: #186a3b;
-  border-left: 4px solid #27ae60;
-}
-
-.status-text.rejected {
-  background-color: #fadbd8;
-  color: #922b21;
-  border-left: 4px solid #e74c3c;
-}
-
-/* Card Footer */
-.card-footer {
-  display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
-/* Buttons */
-.action-button {
-  flex: 1;
-  min-width: 200px;
-  padding: 14px 24px;
   border: none;
-  border-radius: 10px;
-  font-size: 1rem;
-  font-weight: 600;
+  border-radius: 16px;
   cursor: pointer;
-  transition: all 0.2s ease-out;
-  text-align: center;
-  white-space: nowrap;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  background: white;
+  color: #667eea;
+  min-width: 300px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
 }
 
-.action-button.primary {
-  background-color: #3182ce;
+.primary-action-button:hover {
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
+}
+
+.primary-action-button:active {
+  transform: translateY(-2px) scale(1.01);
+}
+
+/* Driver-specific primary button */
+.primary-action-button.driver-primary {
+  background: linear-gradient(135deg, #38a169 0%, #2f855a 100%);
   color: white;
 }
 
-.action-button.primary:hover:not(:disabled) {
-  background-color: #2c5aa0;
-  transform: scale(1.02);
+.primary-action-button.driver-primary:hover {
+  background: linear-gradient(135deg, #2f855a 0%, #276749 100%);
 }
 
-.action-button.primary:active:not(:disabled) {
-  transform: scale(0.98);
+/* Fleet owner-specific primary button */
+.primary-action-button.fleet-primary {
+  background: linear-gradient(135deg, #d69e2e 0%, #b7791f 100%);
+  color: white;
 }
 
-.action-button.secondary {
-  background-color: #edf2f7;
-  color: #3182ce;
-  border: 2px solid #3182ce;
+.primary-action-button.fleet-primary:hover {
+  background: linear-gradient(135deg, #b7791f 0%, #975a16 100%);
 }
 
-.action-button.secondary:hover:not(:disabled) {
-  background-color: #e2e8f0;
-  transform: scale(1.02);
+/* Secondary Actions Section */
+.secondary-actions {
+  text-align: center;
+  animation: fadeIn 0.8s ease-out 0.3s both;
 }
 
-.action-button.secondary:active:not(:disabled) {
-  transform: scale(0.98);
+.earn-heading {
+  font-size: 1.1rem;
+  color: rgba(255, 255, 255, 0.9);
+  margin: 0 0 20px 0;
+  font-weight: 500;
 }
 
-.action-button.disabled {
-  background-color: #cbd5e0;
-  color: #a0aec0;
-  cursor: not-allowed;
+.secondary-links {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.secondary-link {
+  background: transparent;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  padding: 12px 24px;
+  font-size: 1rem;
+  font-weight: 500;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+}
+
+.secondary-link:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.5);
+  transform: translateY(-2px);
+}
+
+/* Secondary Action Button (for approved driver/fleet owner) */
+.secondary-action-button {
+  background: rgba(255, 255, 255, 0.2);
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  color: white;
+  padding: 14px 32px;
+  font-size: 1rem;
+  font-weight: 500;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+}
+
+.secondary-action-button:hover {
+  background: rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.6);
+  transform: translateY(-2px);
 }
 
 /* Loading State */
@@ -185,48 +140,63 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 300px;
-  font-size: 1.2rem;
-  color: #4a5568;
-  animation: fadeIn 0.4s ease-out;
+  height: 100vh;
+  font-size: 1.5rem;
+  color: white;
+  animation: pulse 1.5s ease-in-out infinite;
 }
 
 /* Error State */
 .error-message {
-  background-color: #fed7d7;
+  background-color: rgba(254, 215, 215, 0.95);
   color: #742a2a;
-  padding: 20px;
-  border-radius: 10px;
+  padding: 24px 32px;
+  border-radius: 12px;
   margin-bottom: 20px;
   text-align: center;
-  font-size: 1rem;
-  border-left: 4px solid #f56565;
+  font-size: 1.1rem;
+  border-left: 6px solid #f56565;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  max-width: 500px;
 }
 
 .retry-button {
   display: block;
   margin: 20px auto 0;
-  padding: 12px 24px;
+  padding: 14px 32px;
   background-color: #f56565;
   color: white;
   border: none;
-  border-radius: 8px;
-  font-size: 1rem;
+  border-radius: 10px;
+  font-size: 1.1rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease-out;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(245, 101, 101, 0.3);
 }
 
 .retry-button:hover {
   background-color: #e53e3e;
-  transform: scale(1.02);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(245, 101, 101, 0.4);
 }
 
 /* Animations */
 @keyframes slideDown {
   from {
     opacity: 0;
-    transform: translateY(-30px);
+    transform: translateY(-40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(40px);
   }
   to {
     opacity: 1;
@@ -243,57 +213,80 @@
   }
 }
 
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
   .user-home-container {
-    padding: 20px 15px;
-  }
-
-  .user-home-header h1 {
-    font-size: 2rem;
-  }
-
-  .user-home-header .subtitle {
-    font-size: 1rem;
-  }
-
-  .capabilities-section {
-    grid-template-columns: 1fr;
-    gap: 20px;
-  }
-
-  .capability-card {
     padding: 30px 20px;
   }
 
-  .card-header h2 {
-    font-size: 1.5rem;
+  .main-heading {
+    font-size: 2.2rem;
+    margin-bottom: 30px;
   }
 
-  .action-button {
-    min-width: 100%;
+  .primary-action-button {
+    padding: 20px 40px;
+    font-size: 1.3rem;
+    min-width: 250px;
+  }
+
+  .secondary-links {
+    flex-direction: column;
+    gap: 15px;
+  }
+
+  .secondary-link {
+    width: 100%;
+    max-width: 300px;
+  }
+
+  .primary-action-section {
+    margin-bottom: 50px;
   }
 }
 
 @media (max-width: 480px) {
   .user-home-container {
-    padding: 15px 10px;
-  }
-
-  .user-home-header h1 {
-    font-size: 1.5rem;
-  }
-
-  .capability-card {
     padding: 20px 15px;
   }
 
-  .card-header h2 {
-    font-size: 1.3rem;
+  .main-heading {
+    font-size: 1.8rem;
+    margin-bottom: 25px;
   }
 
-  .action-button {
-    padding: 12px 16px;
+  .primary-action-button {
+    padding: 18px 32px;
+    font-size: 1.1rem;
+    min-width: 200px;
+  }
+
+  .earn-heading {
+    font-size: 1rem;
+  }
+
+  .secondary-link,
+  .secondary-action-button {
     font-size: 0.95rem;
+    padding: 12px 20px;
+  }
+
+  .error-message {
+    font-size: 1rem;
+    padding: 20px 24px;
+  }
+
+  .retry-button {
+    font-size: 1rem;
+    padding: 12px 24px;
   }
 }

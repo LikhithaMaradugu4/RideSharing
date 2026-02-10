@@ -19,7 +19,6 @@ function UserHome() {
       setLoading(true);
       setError(null);
 
-      // Get token from tokenStorage (stored during OTP login)
       const token = tokenStorage.get('jwt_token');
       if (!token) {
         setError('Authentication token not found. Please log in again.');
@@ -37,34 +36,10 @@ function UserHome() {
     }
   };
 
-  const handleRiderClick = () => {
-    navigate('/app/rider-dashboard');
-  };
-
-  const handleApplyDriver = () => {
-    navigate('/driver-tenant-selection');
-  };
-
-  const handleContinueDriver = () => {
-    navigate('/app/driver/dashboard');
-  };
-
-  const handleReapplyDriver = () => {
-    navigate('/driver-tenant-selection');
-  };
-
-  const handleApplyFleetOwner = () => {
-    navigate('/fleet-owner-tenant-selection');
-  };
-
-  const handleContinueFleetOwner = () => {
-    navigate('/fleet-dashboard');
-  };
-
   if (loading) {
     return (
       <div className="user-home-container">
-        <div className="loading">Loading your capabilities...</div>
+        <div className="loading">Loading...</div>
       </div>
     );
   }
@@ -91,150 +66,101 @@ function UserHome() {
   // Extract capability states
   const driverExists = capabilities.driver?.exists || false;
   const driverStatus = capabilities.driver?.approval_status;
+  const isApprovedDriver = driverExists && driverStatus === 'APPROVED';
   
   const fleetOwnerExists = capabilities.fleet_owner?.exists || false;
   const fleetOwnerStatus = capabilities.fleet_owner?.approval_status;
+  const isApprovedFleetOwner = fleetOwnerExists && fleetOwnerStatus === 'APPROVED';
+
+  // Determine primary identity
+  const isDriver = isApprovedDriver;
+  const isFleetOwner = isApprovedFleetOwner;
+  const isOnlyRider = !isDriver && !isFleetOwner;
 
   return (
     <div className="user-home-container">
-      {/* Header */}
-      <div className="user-home-header">
-        <h1>Welcome back</h1>
-        <p className="subtitle">Choose how you want to continue</p>
-      </div>
-
-      {/* Main Content */}
-      <div className="capabilities-section">
-        {/* RIDER CARD - Always visible */}
-        <div className="capability-card rider-card">
-          <div className="card-header">
-            <h2>Rider</h2>
-          </div>
-          <div className="card-body">
-            <p className="description">Book rides and travel easily.</p>
-          </div>
-          <div className="card-footer">
-            <button
-              onClick={handleRiderClick}
-              className="action-button primary"
+      
+      {/* CASE 1: ONLY RIDER (Default behavior) */}
+      {isOnlyRider && (
+        <>
+          <div className="primary-action-section">
+            <h1 className="main-heading">Where would you like to go?</h1>
+            <button 
+              onClick={() => navigate('/app/rider-dashboard')}
+              className="primary-action-button"
             >
-              Continue as Rider
+              Book a Ride
             </button>
           </div>
-        </div>
 
-        {/* DRIVER CARD */}
-        <div className="capability-card driver-card">
-          <div className="card-header">
-            <h2>Driver</h2>
-          </div>
-          <div className="card-body">
-            {!driverExists && (
-              <p className="description">
-                Drive and earn by accepting ride requests.
-              </p>
-            )}
-            {driverExists && driverStatus === 'PENDING' && (
-              <p className="status-text pending">
-                Application under review
-              </p>
-            )}
-            {driverExists && driverStatus === 'APPROVED' && (
-              <p className="status-text approved">
-                Application approved
-              </p>
-            )}
-            {driverExists && driverStatus === 'REJECTED' && (
-              <p className="status-text rejected">
-                Application rejected
-              </p>
-            )}
-          </div>
-          <div className="card-footer">
-            {!driverExists && (
-              <button
-                onClick={handleApplyDriver}
-                className="action-button primary"
+          <div className="secondary-actions">
+            <p className="earn-heading">Want to earn with us?</p>
+            <div className="secondary-links">
+              <button 
+                onClick={() => navigate('/driver-tenant-selection')}
+                className="secondary-link"
               >
-                Apply as Driver
+                Drive with us →
               </button>
-            )}
-            {driverExists && driverStatus === 'PENDING' && (
-              <button className="action-button disabled" disabled>
-                Application in Review
-              </button>
-            )}
-            {driverExists && driverStatus === 'APPROVED' && (
-              <button
-                onClick={handleContinueDriver}
-                className="action-button primary"
+              <button 
+                onClick={() => navigate('/fleet-owner-tenant-selection')}
+                className="secondary-link"
               >
-                Continue as Driver
+                Maintain a fleet →
               </button>
-            )}
-            {driverExists && driverStatus === 'REJECTED' && (
-              <button
-                onClick={handleReapplyDriver}
-                className="action-button secondary"
-              >
-                Re-apply as Driver
-              </button>
-            )}
+            </div>
           </div>
-        </div>
+        </>
+      )}
 
-        {/* FLEET OWNER CARD */}
-        <div className="capability-card fleet-card">
-          <div className="card-header">
-            <h2>Fleet Owner</h2>
+      {/* CASE 2: APPROVED DRIVER */}
+      {isDriver && !isFleetOwner && (
+        <>
+          <div className="primary-action-section">
+            <h1 className="main-heading">Ready to earn?</h1>
+            <button 
+              onClick={() => navigate('/app/driver/dashboard')}
+              className="primary-action-button driver-primary"
+            >
+              Start Driving
+            </button>
           </div>
-          <div className="card-body">
-            {!fleetOwnerExists && (
-              <p className="description">
-                Manage drivers and vehicles as a fleet owner.
-              </p>
-            )}
-            {fleetOwnerExists && fleetOwnerStatus === 'PENDING' && (
-              <p className="status-text pending">
-                Application under review
-              </p>
-            )}
-            {fleetOwnerExists && fleetOwnerStatus === 'APPROVED' && (
-              <p className="status-text approved">
-                Application approved
-              </p>
-            )}
-            {fleetOwnerExists && fleetOwnerStatus === 'REJECTED' && (
-              <p className="status-text rejected">
-                Application rejected
-              </p>
-            )}
+
+          <div className="secondary-actions">
+            <button 
+              onClick={() => navigate('/app/rider-dashboard')}
+              className="secondary-action-button"
+            >
+              Book a ride instead
+            </button>
           </div>
-          <div className="card-footer">
-            {!fleetOwnerExists && (
-              <button
-                onClick={handleApplyFleetOwner}
-                className="action-button primary"
-              >
-                Apply as Fleet Owner
-              </button>
-            )}
-            {fleetOwnerExists && fleetOwnerStatus === 'PENDING' && (
-              <button className="action-button disabled" disabled>
-                Application in Review
-              </button>
-            )}
-            {fleetOwnerExists && fleetOwnerStatus === 'APPROVED' && (
-              <button
-                onClick={handleContinueFleetOwner}
-                className="action-button primary"
-              >
-                Continue as Fleet Owner
-              </button>
-            )}
+        </>
+      )}
+
+      {/* CASE 3: APPROVED FLEET OWNER */}
+      {isFleetOwner && (
+        <>
+          <div className="primary-action-section">
+            <h1 className="main-heading">Manage your operations</h1>
+            <button 
+              onClick={() => navigate('/fleet-dashboard')}
+              className="primary-action-button fleet-primary"
+            >
+              Manage Fleet
+            </button>
           </div>
-        </div>
-      </div>
+
+          <div className="secondary-actions">
+            <button 
+              onClick={() => navigate('/app/rider-dashboard')}
+              className="secondary-action-button"
+            >
+              Book a ride instead
+            </button>
+          </div>
+        </>
+      )}
+
     </div>
   );
 }

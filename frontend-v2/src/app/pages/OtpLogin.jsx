@@ -1,40 +1,60 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import authService from '../../services/auth.service';
 import tokenStorage from '../../services/tokenStorage';
 import './OtpLogin.css';
 
-console.log("OTP MOUNTED");
-
+// Simple list of countries - In a real app, this might come from a library or API
+const COUNTRIES = [
+  { code: 'US', dial_code: '+1', flag: '🇺🇸' },
+  { code: 'IN', dial_code: '+91', flag: '🇮🇳' },
+  { code: 'GB', dial_code: '+44', flag: '🇬🇧' },
+  { code: 'CA', dial_code: '+1', flag: '🇨🇦' },
+  { code: 'AU', dial_code: '+61', flag: '🇦🇺' },
+  { code: 'DE', dial_code: '+49', flag: '🇩🇪' },
+  { code: 'JP', dial_code: '+81', flag: '🇯🇵' },
+];
 
 function OtpLogin() {
   const navigate = useNavigate();
-  const [phone, setPhone] = useState('');
-  const [otp, setOtp] = useState('');
+  
+  // Phone State
+  const [countryCode, setCountryCode] = useState('+91');
+  const [localPhone, setLocalPhone] = useState('');
+  
+  // OTP State (Array of 6 strings)
+  const [otp, setOtp] = useState(new Array(6).fill(""));
+  
+  // UI State
   const [step, setStep] = useState('phone'); // 'phone' | 'otp'
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  
+  // Refs to control focus movement
+  const otpBoxReference = useRef([]);
 
-  const validatePhone = (value) => {
-    // Basic validation: must start with + and be digits
-    return /^\+?[0-9]{8,15}$/.test(value);
-  };
+  // --- Phone Logic ---
 
   const handleSendOtp = async (e) => {
     e.preventDefault();
     setError('');
     setMessage('');
 
-    if (!validatePhone(phone)) {
-      setError('Enter a valid phone number (e.g., +15555551234)');
+    // Combine code + number for validation/API
+    const fullPhoneNumber = `${countryCode}${localPhone}`;
+
+    if (!/^\+?[0-9]{8,15}$/.test(fullPhoneNumber)) {
+      setError('Please enter a valid phone number');
       return;
     }
 
     try {
       setLoading(true);
-      const res = await authService.sendOtp(phone);
-      setMessage(`OTP sent to ${res.phone_number}`);
+      const res = await authService.sendOtp(fullPhoneNumber);
+      // Determine masking based on response or local input
+      const displayPhone = res.phone_number || fullPhoneNumber;
+      setMessage(`OTP sent to ${displayPhone}`);
       setStep('otp');
     } catch (err) {
       setError(err.message || 'Failed to send OTP');
@@ -43,34 +63,76 @@ function OtpLogin() {
     }
   };
 
+  // --- OTP Logic ---
+
+  const handleOtpChange = (value, index) => {
+    let newArr = [...otp];
+    newArr[index] = value;
+    setOtp(newArr);
+
+    // Move focus to next box if value is entered
+    if (value && index < 5) {
+      otpBoxReference.current[index + 1].focus();
+    }
+  };
+
+  const handleBackspaceAndEnter = (e, index) => {
+    if (e.key === "Backspace" && !e.target.value && index > 0) {
+      // Move to previous box on backspace if current is empty
+      otpBoxReference.current[index - 1].focus();
+    }
+    if (e.key === "Enter" && index === 5) {
+        handleVerifyOtp(e);
+    }
+  };
+
+  const handlePaste = (e) => {
+    e.preventDefault();
+    const data = e.clipboardData.getData("text");
+    // Ensure only numbers and max 6 chars
+    const sanitized = data.replace(/\D/g, "").slice(0, 6).split("");
+    
+    if (sanitized.length > 0) {
+        const newOtp = [...otp];
+        sanitized.forEach((digit, i) => {
+            if (i < 6) newOtp[i] = digit;
+        });
+        setOtp(newOtp);
+        
+        // Focus the last filled input
+        const focusIndex = Math.min(sanitized.length, 5);
+        otpBoxReference.current[focusIndex].focus();
+    }
+  };
+
   const handleVerifyOtp = async (e) => {
     e.preventDefault();
     setError('');
     setMessage('');
 
-    if (!/^\d{6}$/.test(otp)) {
-      setError('Enter the 6-digit OTP');
+    const otpString = otp.join("");
+    const fullPhoneNumber = `${countryCode}${localPhone}`;
+
+    if (otpString.length !== 6) {
+      setError('Please enter the complete 6-digit code');
       return;
     }
 
     try {
       setLoading(true);
-      const res = await authService.verifyOtp(phone, otp);
+      const res = await authService.verifyOtp(fullPhoneNumber, otpString);
 
-      // Block admin tokens from user flow
       const role = (res.user?.role || '').toUpperCase();
       if (role === 'ADMIN' || role === 'PLATFORM_ADMIN') {
         setError('Admin accounts must use the admin login');
         return;
       }
 
-      // Store tokens
       tokenStorage.set('jwt_token', res.access_token);
       tokenStorage.set('refresh_token', res.refresh_token);
 
-      // Small UX note and redirect
       setMessage('Login successful. Redirecting...');
-      await Promise.resolve(); // let event loop flush
+      await Promise.resolve();
       navigate('/app/home');
 
     } catch (err) {
@@ -83,8 +145,13 @@ function OtpLogin() {
   return (
     <div className="otp-container">
       <div className="otp-card">
-        <h1>OTP Login</h1>
-        <p className="subtitle">Enter your phone to receive a one-time code</p>
+        <h1>{step === 'phone' ? 'Welcome Back' : 'Verify Account'}</h1>
+        <p className="subtitle">
+          {step === 'phone' 
+            ? 'Enter your phone number to sign in' 
+            : `Enter the code sent to ${countryCode} ${localPhone}`
+          }
+        </p>
 
         {message && <div className="message">{message}</div>}
         {error && <div className="error">{error}</div>}
@@ -92,42 +159,74 @@ function OtpLogin() {
         {step === 'phone' && (
           <form onSubmit={handleSendOtp}>
             <label htmlFor="phone">Phone Number</label>
-            <input
-              id="phone"
-              type="tel"
-              placeholder="+15555551234"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              disabled={loading}
-            />
+            
+            <div className="phone-input-group">
+                <select 
+                    className="country-select"
+                    value={countryCode}
+                    onChange={(e) => setCountryCode(e.target.value)}
+                    disabled={loading}
+                >
+                    {COUNTRIES.map((c) => (
+                        <option key={c.code} value={c.dial_code}>
+                            {c.flag} {c.dial_code}
+                        </option>
+                    ))}
+                </select>
+                <input
+                    type="tel"
+                    className="phone-input"
+                    placeholder="555 000 0000"
+                    value={localPhone}
+                    onChange={(e) => setLocalPhone(e.target.value.replace(/\D/g, ''))} // Only numbers
+                    disabled={loading}
+                />
+            </div>
+
             <button type="submit" className="primary" disabled={loading}>
-              {loading ? 'Sending...' : 'Send OTP'}
+              {loading ? 'Sending Code...' : 'Get OTP'}
             </button>
           </form>
         )}
 
         {step === 'otp' && (
           <form onSubmit={handleVerifyOtp}>
-            <label htmlFor="otp">Enter OTP</label>
-            <input
-              id="otp"
-              type="text"
-              placeholder="123456"
-              value={otp}
-              onChange={(e) => setOtp(e.target.value)}
-              disabled={loading}
-              maxLength={6}
-            />
+            <label>Enter 6-digit Code</label>
+            
+            <div className="otp-input-group">
+                {otp.map((digit, index) => (
+                    <input
+                        key={index}
+                        type="text"
+                        maxLength={1}
+                        value={digit}
+                        onChange={(e) => handleOtpChange(e.target.value, index)}
+                        onKeyDown={(e) => handleBackspaceAndEnter(e, index)}
+                        onPaste={index === 0 ? handlePaste : undefined}
+                        ref={(reference) => (otpBoxReference.current[index] = reference)}
+                        className={`otp-box ${digit ? 'filled' : ''}`}
+                        disabled={loading}
+                        inputMode="numeric"
+                        autoComplete="one-time-code"
+                    />
+                ))}
+            </div>
+
             <button type="submit" className="primary" disabled={loading}>
               {loading ? 'Verifying...' : 'Verify & Continue'}
             </button>
-            <button type="button" className="link" onClick={() => setStep('phone')} disabled={loading}>
-              Change phone
+            <button 
+                type="button" 
+                className="link" 
+                onClick={() => { setStep('phone'); setOtp(new Array(6).fill("")); setError(''); }} 
+                disabled={loading}
+            >
+              Change phone number
             </button>
           </form>
         )}
 
-        <div className="footnote">By continuing, you agree to receive your OTP.</div>
+        <div className="footnote">By continuing, you agree to our Terms of Service.</div>
       </div>
     </div>
   );
