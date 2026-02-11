@@ -343,7 +343,8 @@ class TenantAdminService:
             db.query(Fleet)
             .filter(
                 Fleet.tenant_id == tenant_id,
-                Fleet.approval_status == "PENDING"
+                Fleet.approval_status == "PENDING",
+                Fleet.fleet_type == "BUSINESS"
             )
             .all()
         )
@@ -367,7 +368,10 @@ class TenantAdminService:
 
         fleets = (
             db.query(Fleet)
-            .filter(Fleet.tenant_id == tenant_id)
+            .filter(Fleet.tenant_id == tenant_id,
+                    Fleet.fleet_type == "BUSINESS",
+                    Fleet.approval_status == "APPROVED"
+            )
             .all()
         )
 

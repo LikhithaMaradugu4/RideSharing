@@ -66,9 +66,10 @@ const AdminLayout = () => {
                 <Route path="tenant/dashboard" element={<Dashboard />} />
                 <Route path="tenant/driver-approvals" element={<DriverApprovals />} />
                 <Route path="tenant/fleet-approvals" element={<FleetApprovals />} />
+                <Route path="tenant/vehicle-approvals" element={<VehicleApprovals/>}/>
                 <Route path="tenant/drivers" element={<DriversList />} />
                 <Route path="tenant/fleets" element={<FleetsList />} />
-                <Route path="tenant/vehicles" element={<VehicleApprovals/>}/>
+              
               </>
         
             )}

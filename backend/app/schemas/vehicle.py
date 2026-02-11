@@ -6,6 +6,19 @@ class VehicleDocumentInput(BaseModel):
     document_type: str
     file_url: str
 
+    
+class Vehicle(BaseModel):
+    vehicle_id: int
+    tenant_id: int
+    fleet_id: Optional[int]
+    category: str
+    registration_no: str
+    status: str
+    approval_status: str
+    created_on: str  # ISO format date string
+
+    class Config:
+        from_attributes = True
 
 class VehicleCreateRequest(BaseModel):
     category: str

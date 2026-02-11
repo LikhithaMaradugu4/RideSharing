@@ -64,7 +64,13 @@ const AdminSidebar = ({ adminData = {} }) => {
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><path d="M9 15l2 2 4-4"></path></svg>
               <span>Fleet Approvals</span>
             </NavLink>
-
+                      <NavLink
+              to="/admin/tenant/vehicle-approvals"
+              className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="3" width="15" height="13"></rect><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon><circle cx="5.5" cy="18.5" r="2.5"></circle><circle cx="18.5" cy="18.5" r="2.5"></circle></svg>
+              <span>Vehicle Approvals</span>
+            </NavLink>
             <div className="nav-group-label">Management</div>
 
             <NavLink 
@@ -83,13 +89,7 @@ const AdminSidebar = ({ adminData = {} }) => {
               <span>Fleets</span>
             </NavLink>
 
-            <NavLink
-              to="/admin/tenant/vehicles"
-              className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}
-            >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="3" width="15" height="13"></rect><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon><circle cx="5.5" cy="18.5" r="2.5"></circle><circle cx="18.5" cy="18.5" r="2.5"></circle></svg>
-              <span>Vehicles</span>
-            </NavLink>
+            
           </>
         )}
       </nav>

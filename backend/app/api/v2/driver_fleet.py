@@ -198,6 +198,6 @@ def list_work_availability(
     )
 
     return DriverAvailabilityListResponse(
-        records=[DriverWorkAvailabilityResponse.from_attributes(r) for r in records],
+        availability_records=[DriverWorkAvailabilityResponse.model_validate(r) for r in records],
         total=len(records)
     )

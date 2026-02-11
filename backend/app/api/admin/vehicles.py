@@ -4,7 +4,8 @@ from sqlalchemy.orm import Session
 from app.core.database import SessionLocal
 from app.api.admin.auth import get_admin_session
 from app.services.tenant_admin_service import TenantAdminService
-from app.schemas.admin import (
+from app.schemas.vehicle import Vehicle
+from app.schemas.admin import  (
     VehicleDocumentAdminResponse, 
     VehiclePendingApprovalResponse,
     VehicleApprovalRequest,
@@ -45,7 +46,7 @@ def get_pending_vehicles(
     ]
 
 
-@router.get("", response_model=list[VehiclePendingApprovalResponse])
+@router.get("", response_model=list[Vehicle])
 def get_all_vehicles(
     db: Session = Depends(get_db),
     admin_data: dict = Depends(get_admin_session)
@@ -55,8 +56,9 @@ def get_all_vehicles(
     vehicles = TenantAdminService.get_all_vehicles(db, current_user)
     
     return [
-        VehiclePendingApprovalResponse(
+        Vehicle(
             vehicle_id=v.vehicle_id,
+            tenant_id=v.tenant_id,
             fleet_id=v.fleet_id,
             category=v.category,
             registration_no=v.registration_no,
@@ -65,6 +67,7 @@ def get_all_vehicles(
             created_on=v.created_on
         )
         for v in vehicles
+
     ]
 
 

@@ -1,292 +1,204 @@
-/* UserHome.css - Clean, focused, single-action design */
+/* UserHome.css - Final Alignment & Visibility Fix */
 
-.user-home-container {
+:root {
+  --primary: #6366f1;
+  --primary-hover: #4f46e5;
+  --driver-green: #10b981;
+  --driver-green-hover: #059669;
+  --fleet-gold: #f59e0b;
+  --fleet-gold-hover: #d97706;
+  --gradient-bg: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --text-main: #1e293b;
+  --text-muted: #64748b;
+  --card-shadow: 0 20px 50px rgba(0, 0, 0, 0.1);
+}
+
+.user-home-layout {
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--gradient-bg);
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 40px 20px;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
+  padding: 20px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
-/* Primary Action Section */
-.primary-action-section {
-  text-align: center;
-  margin-bottom: 60px;
-  animation: fadeInUp 0.6s ease-out;
+.user-home-card {
+  background: #ffffff;
+  width: 100%;
+  max-width: 460px;
+  padding: 48px 40px;
+  border-radius: 28px;
+  box-shadow: var(--card-shadow);
+  z-index: 1;
 }
 
-.main-heading {
-  font-size: 3rem;
-  color: white;
-  margin: 0 0 40px 0;
-  font-weight: 700;
-  letter-spacing: -0.5px;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  animation: slideDown 0.6s ease-out;
+/* Brand Section */
+.brand-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 40px;
 }
 
-/* Primary Action Button */
-.primary-action-button {
-  padding: 24px 60px;
-  font-size: 1.5rem;
-  font-weight: 700;
+.logo-circle {
+  width: 40px;
+  height: 40px;
+  background: var(--primary);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Action Cards - The Big Buttons */
+.action-card {
+  width: 100%;
+  display: flex !important; /* Force flexbox */
+  flex-direction: row !important; /* Ensure horizontal layout */
+  align-items: center !important; /* Vertical center alignment */
+  justify-content: flex-start !important;
+  gap: 20px;
+  padding: 18px 24px;
   border: none;
-  border-radius: 16px;
+  border-radius: 20px;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-  background: white;
-  color: #667eea;
-  min-width: 300px;
+  transition: all 0.3s ease;
+  margin-top: 16px;
+  margin-bottom: 16px;
+  text-decoration: none;
+}
+
+/* The Icon Container */
+.card-icon {
+  background: var(--primary);
+  width: 56px;
+  height: 56px;
+  min-width: 56px; /* Prevent shrinking */
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: 14px;
+  flex-shrink: 0;
+}
+
+/* Fix for SVG icons inside the card-icon */
+.card-icon svg {
+  width: 28px !important;
+  height: 28px !important;
+  stroke: #000000 !important; /* Force black icon on white square */
+  color: #000000 !important;
+  display: block;
+}
+
+/* The Text Container - Fixed Visibility */
+.card-text {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-start !important;
+  justify-content: center !important;
+  text-align: left !important;
+  color: #000000 !important; 
+}
+
+.card-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  margin-bottom: 2px;
+  color: #000000 !important;
+  line-height: 1.2;
+}
+
+.card-subtitle {
+  font-size: 0.85rem;
+  font-weight: 400;
+  color: rgba(90, 25, 151, 0.9) !important; /* Force light gray/white */
+  display: block !important;
+  line-height: 1.4;
+}
+
+/* Button Backgrounds */
+.primary-card { background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%); }
+.driver-card { background: linear-gradient(135deg, var(--driver-green) 0%, var(--driver-green-hover) 100%); }
+.fleet-card { background: linear-gradient(135deg, var(--fleet-gold) 0%, var(--fleet-gold-hover) 100%); }
+
+.action-card:hover {
+  transform: translateY(-3px);
+  filter: brightness(40%);
+}
+
+/* Rest of the styles */
+.divider {
+  text-align: center;
+  position: relative;
+  margin: 30px 0;
+}
+
+.divider::before {
+  content: "";
+  position: absolute;
+  top: 50%; left: 0; right: 0;
+  height: 1px;
+  background: #f1f5f9;
+}
+
+.divider span {
+  position: relative;
+  background: #ffffff;
+  padding: 0 12px;
+  color: var(--text-muted);
+  font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 1px;
 }
 
-.primary-action-button:hover {
-  transform: translateY(-4px) scale(1.02);
-  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
+.onboarding-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
 }
 
-.primary-action-button:active {
-  transform: translateY(-2px) scale(1.01);
-}
-
-/* Driver-specific primary button */
-.primary-action-button.driver-primary {
-  background: linear-gradient(135deg, #38a169 0%, #2f855a 100%);
-  color: white;
-}
-
-.primary-action-button.driver-primary:hover {
-  background: linear-gradient(135deg, #2f855a 0%, #276749 100%);
-}
-
-/* Fleet owner-specific primary button */
-.primary-action-button.fleet-primary {
-  background: linear-gradient(135deg, #d69e2e 0%, #b7791f 100%);
-  color: white;
-}
-
-.primary-action-button.fleet-primary:hover {
-  background: linear-gradient(135deg, #b7791f 0%, #975a16 100%);
-}
-
-/* Secondary Actions Section */
-.secondary-actions {
-  text-align: center;
-  animation: fadeIn 0.8s ease-out 0.3s both;
-}
-
-.earn-heading {
-  font-size: 1.1rem;
-  color: rgba(255, 255, 255, 0.9);
-  margin: 0 0 20px 0;
-  font-weight: 500;
-}
-
-.secondary-links {
+.onboarding-option {
   display: flex;
-  gap: 20px;
-  justify-content: center;
-  flex-wrap: wrap;
-}
-
-.secondary-link {
-  background: transparent;
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  color: white;
-  padding: 12px 24px;
-  font-size: 1rem;
-  font-weight: 500;
-  border-radius: 10px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  backdrop-filter: blur(10px);
-}
-
-.secondary-link:hover {
-  background: rgba(255, 255, 255, 0.15);
-  border-color: rgba(255, 255, 255, 0.5);
-  transform: translateY(-2px);
-}
-
-/* Secondary Action Button (for approved driver/fleet owner) */
-.secondary-action-button {
-  background: rgba(255, 255, 255, 0.2);
-  border: 2px solid rgba(255, 255, 255, 0.4);
-  color: white;
-  padding: 14px 32px;
-  font-size: 1rem;
-  font-weight: 500;
-  border-radius: 12px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  backdrop-filter: blur(10px);
-}
-
-.secondary-action-button:hover {
-  background: rgba(255, 255, 255, 0.3);
-  border-color: rgba(255, 255, 255, 0.6);
-  transform: translateY(-2px);
-}
-
-/* Loading State */
-.loading {
-  display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  height: 100vh;
-  font-size: 1.5rem;
-  color: white;
-  animation: pulse 1.5s ease-in-out infinite;
+  padding: 18px 10px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: var(--text-main);
+  font-weight: 600;
+  font-size: 0.85rem;
+  gap: 10px;
 }
 
-/* Error State */
-.error-message {
-  background-color: rgba(254, 215, 215, 0.95);
-  color: #742a2a;
-  padding: 24px 32px;
-  border-radius: 12px;
-  margin-bottom: 20px;
-  text-align: center;
-  font-size: 1.1rem;
-  border-left: 6px solid #f56565;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  max-width: 500px;
+.onboarding-option svg {
+  color: var(--primary);
 }
 
-.retry-button {
-  display: block;
-  margin: 20px auto 0;
-  padding: 14px 32px;
-  background-color: #f56565;
-  color: white;
+.onboarding-option:hover {
+  border-color: var(--primary);
+  background: #ffffff;
+  transform: translateY(-2px);
+}
+
+.ghost-button {
+  width: 100%;
+  background: transparent;
   border: none;
-  border-radius: 10px;
-  font-size: 1.1rem;
+  color: var(--text-muted);
+  padding: 15px;
+  margin-top: 10px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 12px rgba(245, 101, 101, 0.3);
 }
 
-.retry-button:hover {
-  background-color: #e53e3e;
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(245, 101, 101, 0.4);
-}
-
-/* Animations */
-@keyframes slideDown {
-  from {
-    opacity: 0;
-    transform: translateY(-40px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(40px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes pulse {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.5;
-  }
-}
-
-/* Responsive Design */
-@media (max-width: 768px) {
-  .user-home-container {
-    padding: 30px 20px;
-  }
-
-  .main-heading {
-    font-size: 2.2rem;
-    margin-bottom: 30px;
-  }
-
-  .primary-action-button {
-    padding: 20px 40px;
-    font-size: 1.3rem;
-    min-width: 250px;
-  }
-
-  .secondary-links {
-    flex-direction: column;
-    gap: 15px;
-  }
-
-  .secondary-link {
-    width: 100%;
-    max-width: 300px;
-  }
-
-  .primary-action-section {
-    margin-bottom: 50px;
-  }
-}
+/* States */
+.loading { color: white; display: flex; justify-content: center; align-items: center; height: 100vh; }
+.error-message { background: #fee2e2; color: #991b1b; padding: 20px; border-radius: 12px; text-align: center; margin-bottom: 10px; }
 
 @media (max-width: 480px) {
-  .user-home-container {
-    padding: 20px 15px;
-  }
-
-  .main-heading {
-    font-size: 1.8rem;
-    margin-bottom: 25px;
-  }
-
-  .primary-action-button {
-    padding: 18px 32px;
-    font-size: 1.1rem;
-    min-width: 200px;
-  }
-
-  .earn-heading {
-    font-size: 1rem;
-  }
-
-  .secondary-link,
-  .secondary-action-button {
-    font-size: 0.95rem;
-    padding: 12px 20px;
-  }
-
-  .error-message {
-    font-size: 1rem;
-    padding: 20px 24px;
-  }
-
-  .retry-button {
-    font-size: 1rem;
-    padding: 12px 24px;
-  }
+  .user-home-card { padding: 32px 20px; border-radius: 0; min-height: 100vh; }
 }
