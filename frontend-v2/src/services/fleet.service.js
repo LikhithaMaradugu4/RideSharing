@@ -175,6 +175,22 @@ const fleetService = {
     return handleResponse(response, 'Failed to remove driver');
   },
 
+  /**
+   * Assign a driver with duration (start_date and end_date)
+   */
+  assignDriverByDuration: async (driverId, startDate, endDate) => {
+    const token = await getValidToken();
+    const response = await fetch(`${API_BASE_URL}/fleet/drivers/${driverId}/assign`, {
+      method: 'POST',
+      headers: buildHeaders(token),
+      body: JSON.stringify({ 
+        start_date: startDate, 
+        end_date: endDate 
+      })
+    });
+    return handleResponse(response, 'Failed to assign driver');
+  },
+
   // ==================== Vehicle Management ====================
 
   /**

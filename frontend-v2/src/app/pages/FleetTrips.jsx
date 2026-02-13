@@ -29,78 +29,69 @@ function FleetTrips() {
       setTotal(response.total || 0);
     } catch (err) {
       console.error('Load trips error:', err);
-      if (err.status === 404 || err.status === 403) {
-        navigate('/rider-dashboard');
-        return;
-      }
+      // Optional: Redirect if unauthorized
+      // if (err.response?.status === 403) navigate('/rider-dashboard');
       setError(err.message || 'Failed to load trips');
     } finally {
       setLoading(false);
     }
-  }, [navigate, skip]);
+  }, [skip]);
 
   useEffect(() => {
     loadTrips();
   }, [loadTrips]);
 
-  // Get status badge
+  // Helper Functions
   const getStatusBadge = (status) => {
     switch (status) {
-      case 'COMPLETED':
-        return <span className="badge badge-success">Completed</span>;
-      case 'IN_PROGRESS':
-        return <span className="badge badge-info">In Progress</span>;
-      case 'CANCELLED':
-        return <span className="badge badge-danger">Cancelled</span>;
-      case 'REQUESTED':
-        return <span className="badge badge-warning">Requested</span>;
-      default:
-        return <span className="badge badge-default">{status}</span>;
+      case 'COMPLETED': return <span className="badge badge-success">Completed</span>;
+      case 'IN_PROGRESS': return <span className="badge badge-info">In Progress</span>;
+      case 'CANCELLED': return <span className="badge badge-danger">Cancelled</span>;
+      case 'REQUESTED': return <span className="badge badge-warning">Requested</span>;
+      default: return <span className="badge badge-default">{status}</span>;
     }
   };
 
-  // Format fare
   const formatFare = (amount) => {
-    if (!amount) return '₹0';
+    if (!amount) return '₹0.00';
     return `₹${parseFloat(amount).toFixed(2)}`;
   };
 
-  // Format date
   const formatDate = (dateStr) => {
     if (!dateStr) return 'N/A';
-    return new Date(dateStr).toLocaleString();
+    return new Date(dateStr).toLocaleString('en-IN', {
+      month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+    });
   };
 
-  // Calculate total earnings
-  const totalEarnings = trips
+  // Calculate earnings for current page
+  const pageEarnings = trips
     .filter(t => t.status === 'COMPLETED')
     .reduce((sum, t) => sum + (parseFloat(t.fare_amount) || 0), 0);
 
   if (loading && trips.length === 0) {
     return (
-      <div className="fleet-trips">
-        <div className="loading-state">
-          <div className="loading-spinner"></div>
-          <p>Loading trips...</p>
-        </div>
+      <div className="fleet-trips-container">
+        <div style={{padding: '50px'}}><div className="loading-spinner"></div></div>
       </div>
     );
   }
 
   return (
-    <div className="fleet-trips">
-      <div className="page-header">
+    <div className="fleet-trips-container">
+      {/* 1. Header */}
+      <header className="page-header">
         <button className="btn-back" onClick={() => navigate('/fleet-dashboard')}>
-          ← Back
+          <span>←</span> Back
         </button>
         <h1>Fleet Trips</h1>
         <div style={{ width: '60px' }}></div>
-      </div>
+      </header>
 
       {error && <div className="alert alert-error">{error}</div>}
 
-      {/* Summary Stats */}
-      <div className="stats-row">
+      {/* 2. Summary Stats */}
+      <div className="stats-grid">
         <div className="stat-card">
           <span className="stat-value">{total}</span>
           <span className="stat-label">Total Trips</span>
@@ -110,55 +101,63 @@ function FleetTrips() {
           <span className="stat-label">Completed</span>
         </div>
         <div className="stat-card earnings">
-          <span className="stat-value">{formatFare(totalEarnings)}</span>
+          <span className="stat-value">{formatFare(pageEarnings)}</span>
           <span className="stat-label">Page Earnings</span>
         </div>
       </div>
 
-      {/* Trips List */}
+      {/* 3. Trips List */}
       <div className="section">
-        <h2>Trip History</h2>
+        <h2 className="section-title">Trip History</h2>
+        
         {trips.length === 0 ? (
           <div className="empty-state">
             <span className="empty-icon"><Icons.Clipboard size={48} /></span>
-            <p>No trips yet</p>
-            <p className="hint">Trips completed by your fleet drivers will appear here</p>
+            <p>No trips found.</p>
           </div>
         ) : (
           <>
             <div className="trips-list">
               {trips.map((trip) => (
                 <div key={trip.trip_id} className="trip-card">
-                  <div className="trip-header">
-                    <span className="trip-id">Trip #{trip.trip_id}</span>
+                  
+                  {/* Card Header */}
+                  <div className="trip-card-header">
+                    <span className="trip-id">#{trip.trip_id}</span>
                     {getStatusBadge(trip.status)}
                   </div>
-                  <div className="trip-details">
+
+                  {/* Card Body */}
+                  <div className="trip-card-body">
                     <div className="trip-row">
-                      <span className="label">Driver:</span>
-                      <span className="value">{trip.driver_name || 'N/A'}</span>
+                      <span className="row-label">Driver</span>
+                      <span className="row-value">{trip.driver_name || 'N/A'}</span>
                     </div>
+                    
                     <div className="trip-row">
-                      <span className="label">Vehicle:</span>
-                      <span className="value">
-                        {trip.vehicle_registration || 'N/A'}
-                        {trip.vehicle_category && ` (${trip.vehicle_category})`}
+                      <span className="row-label">Vehicle</span>
+                      <span className="row-value">
+                        {trip.vehicle_registration || 'N/A'} 
+                        {trip.vehicle_category ? ` • ${trip.vehicle_category}` : ''}
                       </span>
                     </div>
+
                     <div className="trip-row">
-                      <span className="label">Fare:</span>
-                      <span className="value fare">{formatFare(trip.fare_amount)}</span>
+                      <span className="row-label">Requested</span>
+                      <span className="row-value">{formatDate(trip.requested_at)}</span>
                     </div>
-                    <div className="trip-row">
-                      <span className="label">Requested:</span>
-                      <span className="value">{formatDate(trip.requested_at)}</span>
-                    </div>
+
                     {trip.completed_at && (
                       <div className="trip-row">
-                        <span className="label">Completed:</span>
-                        <span className="value">{formatDate(trip.completed_at)}</span>
+                        <span className="row-label">Completed</span>
+                        <span className="row-value">{formatDate(trip.completed_at)}</span>
                       </div>
                     )}
+
+                    <div className="trip-row" style={{marginTop: '8px', paddingTop: '8px', borderTop: '1px dashed #eee'}}>
+                      <span className="row-label">Fare Amount</span>
+                      <span className="row-value fare">{formatFare(trip.fare_amount)}</span>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -172,17 +171,17 @@ function FleetTrips() {
                   onClick={() => setSkip(Math.max(0, skip - limit))}
                   disabled={skip === 0 || loading}
                 >
-                  ← Previous
+                  Previous
                 </button>
                 <span className="page-info">
-                  {skip + 1} - {Math.min(skip + limit, total)} of {total}
+                  Showing {skip + 1} - {Math.min(skip + limit, total)} of {total}
                 </span>
                 <button
                   className="btn-page"
                   onClick={() => setSkip(skip + limit)}
                   disabled={skip + limit >= total || loading}
                 >
-                  Next →
+                  Next
                 </button>
               </div>
             )}

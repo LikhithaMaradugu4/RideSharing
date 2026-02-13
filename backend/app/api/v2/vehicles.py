@@ -213,7 +213,10 @@ def get_driver_approved_vehicles(
             registration_no=v["registration_no"],
             category=v["category"],
             approval_status=v["approval_status"],
-            is_currently_assigned=v["is_currently_assigned"]
+            is_currently_assigned=v["is_currently_assigned"],
+            documents_complete=v["documents_complete"],
+            missing_documents=v["missing_documents"],
+            is_approved=v["is_approved"]
         )
         for v in vehicles
     ]
@@ -254,5 +257,8 @@ def select_vehicle_for_shift(
         registration_no=result["registration_no"],
         category=result["category"],
         approval_status=result["approval_status"],
-        is_currently_assigned=result["is_currently_assigned"]
+        is_currently_assigned=result["is_currently_assigned"],
+        documents_complete=result["documents_complete"],
+        missing_documents=result["missing_documents"],
+        is_approved=result["is_approved"]
     )

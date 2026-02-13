@@ -412,7 +412,11 @@ function DriverDashboard() {
       setActiveVehicle({
         registration: result.registration_no,
         category: result.category,
-        status: result.approval_status
+        status: result.approval_status,
+        is_approved: result.is_approved,
+        documents_complete: result.documents_complete,
+        missing_documents: result.missing_documents || []
+
       });
       
       // Update the list to reflect new assignment
@@ -492,6 +496,25 @@ function DriverDashboard() {
     }
   };
 
+    //// Function to fetch vehicles for independent drivers (not used for shift readiness checks, just for selection UI)  
+    const fetchVehicles = useCallback(async () => {
+    if (!token) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError('');
+      const data = await driverService.getMyVehicles(token);
+      setVehicles(Array.isArray(data) ? data : []);
+    } catch (err) {
+      setError(err.message || 'Failed to load vehicles');
+      setVehicles([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [token]);
+
   const getShiftStatusLabel = () => {
     if (!shiftStatus) return 'OFFLINE';
     // Handle both DriverShiftResponse (status) and ShiftStatusResponse (shift_status)
@@ -510,7 +533,7 @@ function DriverDashboard() {
   const isDriverOnline = () => {
     return shiftStatus?.is_online || shiftStatus?.shift_status === 'ONLINE' || shiftStatus?.shift_status === 'BUSY';
   };
-
+ 
   // Helper to check if driver is busy (on a trip)
   const isDriverBusy = () => {
     const status = shiftStatus?.shift_status || shiftStatus?.status;
@@ -616,7 +639,7 @@ function DriverDashboard() {
 
             {!isDriverOnline() && shiftReadiness?.can_go_online && (
               <div className="shift-info">
-                <span>✅ Ready! Click "Go Online" to start accepting trips</span>
+                <span> Ready! Click "Go Online" to start accepting trips</span>
               </div>
             )}
 
@@ -1100,17 +1123,6 @@ function DriverDashboard() {
               </div>
             )}
 
-            {/* Today's Availability Card */}
-            <div className="context-card">
-              <div className="context-card-header">
-                <h3>Today's Availability</h3>
-                <span className="context-icon"><Icons.Calendar size={24} /></span>
-              </div>
-              <div className="context-card-content">
-                <p className="empty-state">Manage availability in the Availability section</p>
-              </div>
-            </div>
-
             {/* Quick Links Card */}
             <div className="context-card">
               <div className="context-card-header">
@@ -1139,7 +1151,7 @@ function DriverDashboard() {
             <ul>
               <li>You must be ONLINE to accept dispatches</li>
               <li>Complete all vehicle documents for approval</li>
-              <li>Set your availability if joining a business fleet</li>
+              <li>You can join a fleet for more trip opportunities</li>
               <li>Manage vehicles from the Vehicles page</li>
             </ul>
           </div>

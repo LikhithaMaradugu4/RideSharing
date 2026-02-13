@@ -89,6 +89,24 @@ const AdminSidebar = ({ adminData = {} }) => {
               <span>Fleets</span>
             </NavLink>
 
+            <NavLink 
+              to="/admin/tenant/vehicles" 
+              className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="3" width="15" height="13"></rect><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon><circle cx="5.5" cy="18.5" r="2.5"></circle><circle cx="18.5" cy="18.5" r="2.5"></circle></svg>
+              <span>Vehicles</span>
+            </NavLink>
+
+            <div className="nav-group-label">Settings</div>
+
+            <NavLink 
+              to="/admin/tenant/operating-regions" 
+              className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+              <span>Operating Regions</span>
+            </NavLink>
+
             
           </>
         )}

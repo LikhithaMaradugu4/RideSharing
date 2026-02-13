@@ -51,13 +51,5 @@ class DriverVehicleAssignment(Base, AuditMixin):
     end_time = Column(TIMESTAMP(timezone=True))
 
 
-class DriverWorkAvailability(Base, AuditMixin):
-    __tablename__ = "driver_work_availability"
-
-    id = Column(BigInteger, primary_key=True)
-    driver_id = Column(BigInteger, ForeignKey("app_user.user_id", ondelete="CASCADE"), nullable=False)
-    fleet_id = Column(BigInteger, ForeignKey("fleet.fleet_id", ondelete="CASCADE"), nullable=False)
-
-    date = Column(Date, nullable=False)
-    is_available = Column(Boolean, default=True, nullable=False)
-    note = Column(Text, nullable=True)
+# NOTE: DriverWorkAvailability model has been removed.
+# Run backend/remove_driver_availability.sql to drop the table from database.

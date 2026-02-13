@@ -7,6 +7,7 @@ const FleetsList = () => {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [expandedFleet, setExpandedFleet] = useState(null)
+  const [statusUpdating, setStatusUpdating] = useState(null)
 
   useEffect(() => {
     loadApprovedFleets()
@@ -32,6 +33,21 @@ const FleetsList = () => {
       setExpandedFleet(null)
     } else {
       setExpandedFleet(fleet)
+    }
+  }
+
+  const handleStatusChange = async (fleetId, newStatus) => {
+    if (!window.confirm(`Are you sure you want to change this fleet's approval status to ${newStatus}?`)) {
+      return
+    }
+    try {
+      setStatusUpdating(fleetId)
+      await adminService.updateFleetStatus(fleetId, newStatus)
+      await loadApprovedFleets()
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Failed to update status')
+    } finally {
+      setStatusUpdating(null)
     }
   }
 
@@ -120,6 +136,26 @@ const FleetsList = () => {
                       <div className="detail-row full-width">
                         <span className="label">Fleet ID:</span>
                         <span className="value code-font">{fleet.fleet_id}</span>
+                      </div>
+
+                      <div className="status-actions">
+                        <label>Change Approval Status:</label>
+                        <div className="action-buttons">
+                          <button
+                            onClick={() => handleStatusChange(fleet.fleet_id, 'PENDING')}
+                            disabled={statusUpdating === fleet.fleet_id}
+                            className="btn-status btn-pending"
+                          >
+                            {statusUpdating === fleet.fleet_id ? 'Updating...' : 'Set Pending'}
+                          </button>
+                          <button
+                            onClick={() => handleStatusChange(fleet.fleet_id, 'REJECTED')}
+                            disabled={statusUpdating === fleet.fleet_id}
+                            className="btn-status btn-reject"
+                          >
+                            {statusUpdating === fleet.fleet_id ? 'Updating...' : 'Reject'}
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>

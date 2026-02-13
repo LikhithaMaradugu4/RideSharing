@@ -10,7 +10,9 @@ from app.schemas.admin import (
     DriverApproveRequest,
     DriverRejectRequest,
     DriverDocumentResponse,
-    DriverListResponse
+    DriverListResponse,
+    ApprovalStatusUpdateRequest,
+    DriverDetailResponse
 )
 
 
@@ -127,3 +129,34 @@ def get_all_drivers(
         )
         for driver, user in drivers
     ]
+
+
+@router.patch("/{driver_id}/status")
+def update_driver_status(
+    driver_id: int,
+    request: ApprovalStatusUpdateRequest,
+    db: Session = Depends(get_db),
+    admin_data: dict = Depends(get_admin_session)
+):
+    """Update driver approval status."""
+    current_user = admin_data["user"]
+    driver = TenantAdminService.update_driver_approval_status(
+        db, current_user, driver_id, request.approval_status
+    )
+    return {
+        "message": f"Driver status updated to {request.approval_status}",
+        "driver_id": driver_id,
+        "approval_status": driver.approval_status
+    }
+
+
+@router.get("/{driver_id}/details", response_model=DriverDetailResponse)
+def get_driver_details(
+    driver_id: int,
+    db: Session = Depends(get_db),
+    admin_data: dict = Depends(get_admin_session)
+):
+    """Get detailed driver info including fleet assignment."""
+    current_user = admin_data["user"]
+    details = TenantAdminService.get_driver_details(db, current_user, driver_id)
+    return DriverDetailResponse(**details)

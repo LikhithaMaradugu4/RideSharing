@@ -323,7 +323,11 @@ class VehicleService:
         """
         Get all APPROVED vehicles for an independent driver.
         Only works for drivers with INDIVIDUAL fleet.
+        Includes document approval status.
         """
+        # Define required document types for vehicles
+        REQUIRED_DOCUMENTS = {"RC", "INSURANCE", "VEHICLE_PHOTO"}
+        
         # Check if driver has an INDIVIDUAL fleet (is independent)
         fleet = (
             db.query(Fleet)
@@ -362,16 +366,38 @@ class VehicleService:
 
         active_vehicle_id = active_assignment.vehicle_id if active_assignment else None
 
-        return [
-            {
+        result = []
+        for v in vehicles:
+            # Get all documents for this vehicle
+            documents = (
+                db.query(VehicleDocument)
+                .filter(VehicleDocument.vehicle_id == v.vehicle_id)
+                .all()
+            )
+            
+            # Get existing documents (any status that's not rejected)
+            # Include PENDING, APPROVED, SUBMITTED, etc - just exclude REJECTED
+            existing_docs = {
+                doc.document_type 
+                for doc in documents 
+                if doc.verification_status != "REJECTED"
+            }
+            
+            # Get missing documents (required but not uploaded)
+            missing_docs = list(REQUIRED_DOCUMENTS - existing_docs)
+            
+            result.append({
                 "vehicle_id": v.vehicle_id,
                 "registration_no": v.registration_no,
                 "category": v.category,
                 "approval_status": v.approval_status,
-                "is_currently_assigned": v.vehicle_id == active_vehicle_id
-            }
-            for v in vehicles
-        ]
+                "is_currently_assigned": v.vehicle_id == active_vehicle_id,
+                "documents_complete": len(missing_docs) == 0,
+                "missing_documents": missing_docs,
+                "is_approved": v.approval_status == "APPROVED"
+            })
+        
+        return result
 
     @staticmethod
     def select_vehicle_for_shift(db: Session, user: AppUser, vehicle_id: int, end_shift_if_active: bool = False) -> dict:
@@ -383,6 +409,9 @@ class VehicleService:
         - If end_shift_if_active=True, will auto-end any active shift first
         - If end_shift_if_active=False (default), will reject if shift is active
         """
+        # Define required document types for vehicles
+        REQUIRED_DOCUMENTS = {"RC", "INSURANCE", "VEHICLE_PHOTO"}
+        
         # Check if driver has an INDIVIDUAL fleet (is independent)
         fleet = (
             db.query(Fleet)
@@ -457,12 +486,30 @@ class VehicleService:
         if existing_assignment:
             # If already assigned to this vehicle, just return
             if existing_assignment.vehicle_id == vehicle_id:
+                # Get document status
+                documents = (
+                    db.query(VehicleDocument)
+                    .filter(VehicleDocument.vehicle_id == vehicle.vehicle_id)
+                    .all()
+                )
+                
+                existing_docs = {
+                    doc.document_type 
+                    for doc in documents 
+                    if doc.verification_status != "REJECTED"
+                }
+                
+                missing_docs = list(REQUIRED_DOCUMENTS - existing_docs)
+                
                 return {
                     "vehicle_id": vehicle.vehicle_id,
                     "registration_no": vehicle.registration_no,
                     "category": vehicle.category,
                     "approval_status": vehicle.approval_status,
-                    "is_currently_assigned": True
+                    "is_currently_assigned": True,
+                    "documents_complete": len(missing_docs) == 0,
+                    "missing_documents": missing_docs,
+                    "is_approved": vehicle.approval_status == "APPROVED"
                 }
             
             # End the existing assignment
@@ -480,10 +527,28 @@ class VehicleService:
         db.add(new_assignment)
         db.commit()
 
+        # Get document status
+        documents = (
+            db.query(VehicleDocument)
+            .filter(VehicleDocument.vehicle_id == vehicle.vehicle_id)
+            .all()
+        )
+        
+        existing_docs = {
+            doc.document_type 
+            for doc in documents 
+            if doc.verification_status != "REJECTED"
+        }
+        
+        missing_docs = list(REQUIRED_DOCUMENTS - existing_docs)
+
         return {
             "vehicle_id": vehicle.vehicle_id,
             "registration_no": vehicle.registration_no,
             "category": vehicle.category,
             "approval_status": vehicle.approval_status,
-            "is_currently_assigned": True
+            "is_currently_assigned": True,
+            "documents_complete": len(missing_docs) == 0,
+            "missing_documents": missing_docs,
+            "is_approved": vehicle.approval_status == "APPROVED"
         }

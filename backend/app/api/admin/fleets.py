@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from app.core.database import SessionLocal
 from app.api.admin.auth import get_admin_session
 from app.services.tenant_admin_service import TenantAdminService
-from app.schemas.admin import FleetApprovalResponse, PendingFleetResponse, FleetPendingDocument, FleetListResponse
+from app.schemas.admin import FleetApprovalResponse, PendingFleetResponse, FleetPendingDocument, FleetListResponse, ApprovalStatusUpdateRequest
 
 
 router = APIRouter(prefix="/fleets", tags=["Admin - Fleets"])
@@ -106,3 +106,22 @@ def get_fleets(
         )
         for fleet in fleets
     ]
+
+
+@router.patch("/{fleet_id}/status")
+def update_fleet_status(
+    fleet_id: int,
+    request: ApprovalStatusUpdateRequest,
+    db: Session = Depends(get_db),
+    admin_data: dict = Depends(get_admin_session)
+):
+    """Update fleet approval status."""
+    current_user = admin_data["user"]
+    fleet = TenantAdminService.update_fleet_approval_status(
+        db, current_user, fleet_id, request.approval_status
+    )
+    return {
+        "message": f"Fleet status updated to {request.approval_status}",
+        "fleet_id": fleet_id,
+        "approval_status": fleet.approval_status
+    }

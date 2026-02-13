@@ -17,18 +17,17 @@ from app.schemas.fleet import (
     FleetDriverInviteRequest,
     FleetDriverResponse,
     FleetDriverListResponse,
+    FleetDriverAssignRequest,
     FleetAssignmentCreateRequest,
     FleetAssignmentResponse,
     FleetAssignmentListResponse,
     FleetCityAddRequest,
     FleetCityResponse,
     FleetCityListResponse,
-    FleetDriverAvailabilityListResponse,
     FleetDocumentInput
 )
 from app.services.fleet_service import FleetService
 from app.services.fleet_owner_service import FleetOwnerService
-from app.services.driver_work_availability_service import DriverWorkAvailabilityService
 
 
 router = APIRouter(prefix="/fleet", tags=["Phase-2 Fleet"])
@@ -239,9 +238,11 @@ def list_fleet_drivers(
             full_name=user_row.full_name,
             phone=user_row.phone,
             start_date=assoc.start_date,
-            end_date=assoc.end_date
+            end_date=assoc.end_date,
+            allowed_vehicle_categories=profile.allowed_vehicle_categories if profile else None,
+            assignment_status=assignment_status
         )
-        for assoc, user_row in rows
+        for assoc, user_row, profile, assignment_status in rows
     ]
 
     return FleetDriverListResponse(drivers=drivers, total=len(drivers))
@@ -264,6 +265,59 @@ def remove_fleet_driver(
     FleetOwnerService.remove_driver(db=db, user=user, driver_id=driver_id)
 
     return {"message": "Driver removed from fleet"}
+
+
+@router.post("/drivers/assign", response_model=FleetDriverResponse)
+def assign_driver_with_duration(
+    data: FleetDriverAssignRequest,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Assign a driver to the fleet with specified duration.
+    
+    - start_date: When assignment begins (required)
+    - end_date: When assignment ends (optional, None = indefinite)
+    
+    Only one active assignment per driver is allowed.
+    """
+    user_id = current_user.get("user_id")
+    user = db.query(AppUser).filter(AppUser.user_id == user_id).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+
+    # Convert date to datetime
+    from datetime import timezone as tz
+    start_datetime = datetime.combine(data.start_date, datetime.min.time()).replace(tzinfo=tz.utc)
+    end_datetime = None
+    if data.end_date:
+        end_datetime = datetime.combine(data.end_date, datetime.max.time()).replace(tzinfo=tz.utc)
+
+    assignment = FleetOwnerService.assign_driver_with_duration(
+        db=db,
+        user=user,
+        driver_id=data.driver_id,
+        start_date=start_datetime,
+        end_date=end_datetime
+    )
+    
+    # Get driver details
+    from app.models.fleet import DriverProfile
+    driver_user = db.query(AppUser).filter(AppUser.user_id == data.driver_id).first()
+    profile = db.query(DriverProfile).filter(DriverProfile.driver_id == data.driver_id).first()
+
+    return FleetDriverResponse(
+        driver_id=assignment.driver_id,
+        full_name=driver_user.full_name if driver_user else "",
+        phone=driver_user.phone if driver_user else "",
+        start_date=assignment.start_date,
+        end_date=assignment.end_date,
+        allowed_vehicle_categories=profile.allowed_vehicle_categories if profile else None,
+        assignment_status="ACTIVE"
+    )
 
 
 # ==================== Fleet Owner Assignments ====================
@@ -477,46 +531,8 @@ def remove_fleet_city(
     return {"message": "City removed"}
 
 
-# ---------------------- Driver Availability (Fleet Owner View) ----------------------
-
-@router.get("/drivers/availability", response_model=FleetDriverAvailabilityListResponse)
-def view_drivers_availability(
-    start_date: Optional[date] = None,
-    end_date: Optional[date] = None,
-    db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
-):
-    """View all drivers' work availability in fleet for date range."""
-    user_id = current_user.get("user_id")
-    user = db.query(AppUser).filter(AppUser.user_id == user_id).first()
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found"
-        )
-
-    rows = DriverWorkAvailabilityService.list_fleet_driver_availability(
-        db=db,
-        user=user,
-        start_date=start_date,
-        end_date=end_date
-    )
-
-    from app.schemas.fleet import FleetDriverAvailabilityItem
-
-    items = [
-        FleetDriverAvailabilityItem(
-            driver_id=app_user.user_id,
-            full_name=app_user.full_name,
-            phone=app_user.phone,
-            date=avail.date,
-            is_available=avail.is_available,
-            note=avail.note
-        )
-        for avail, app_user in rows
-    ]
-
-    return FleetDriverAvailabilityListResponse(records=items, total=len(items))
+# NOTE: Driver Availability endpoint has been removed.
+# This functionality is no longer supported.
 
 
 # ==================== Driver Lookup (by phone) ====================

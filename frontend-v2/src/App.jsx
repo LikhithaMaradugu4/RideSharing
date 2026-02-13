@@ -12,7 +12,6 @@ import TenantSelection from './app/TenantSelection'
 import DriverDashboard from './app/pages/DriverDashboard'
 import DriverDispatches from './app/pages/DriverDispatches'
 import DriverVehicles from './app/pages/DriverVehicles'
-import DriverAvailability from './app/pages/DriverAvailability'
 import DriverFleets from './app/pages/DriverFleets'
 import RiderDashboard from './app/pages/RiderDashboard'
 import RiderTripStatus from './app/pages/RiderTripStatus'
@@ -85,10 +84,7 @@ function App() {
           element={<ProtectedRoute><DriverVehicles /></ProtectedRoute>}
         />
 
-        <Route
-          path="/app/driver/availability"
-          element={<ProtectedRoute><DriverAvailability /></ProtectedRoute>}
-        />
+        {/* Driver availability route removed - feature discontinued */}
 
         <Route
           path="/app/driver/fleets"

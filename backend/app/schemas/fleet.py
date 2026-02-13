@@ -60,12 +60,21 @@ class FleetDriverInviteRequest(BaseModel):
     driver_id: int
 
 
+class FleetDriverAssignRequest(BaseModel):
+    """Request to assign a driver to fleet with duration."""
+    driver_id: int
+    start_date: date
+    end_date: Optional[date] = None  # None means indefinite
+
+
 class FleetDriverResponse(BaseModel):
     driver_id: int
     full_name: str
     phone: str
     start_date: datetime
     end_date: Optional[datetime]
+    allowed_vehicle_categories: Optional[List[str]] = None
+    assignment_status: Optional[str] = None  # ACTIVE, EXPIRED
 
     class Config:
         from_attributes = True
@@ -169,41 +178,5 @@ class FleetCityListResponse(BaseModel):
     total: int
 
 
-# ==================== Driver Work Availability ====================
-
-class DriverWorkAvailabilityRequest(BaseModel):
-    date: date
-    is_available: bool = True
-    note: Optional[str] = None
-
-
-class DriverWorkAvailabilityResponse(BaseModel):
-    id: int
-    driver_id: int
-    fleet_id: int
-    date: date
-    is_available: bool
-    note: Optional[str]
-    model_config = ConfigDict(from_attributes=True)
-
-
-class DriverAvailabilityListResponse(BaseModel):
-    availability_records: List[DriverWorkAvailabilityResponse]
-    total: int
-
-
-# ==================== Fleet Driver Availability View ====================
-
-class FleetDriverAvailabilityItem(BaseModel):
-    driver_id: int
-    full_name: str
-    phone: str
-    date: date
-    is_available: bool
-    note: Optional[str]
-    model_config = ConfigDict(from_attributes=True)
-
-
-class FleetDriverAvailabilityListResponse(BaseModel):
-    records: List[FleetDriverAvailabilityItem]
-    total: int
+# NOTE: Driver Work Availability schemas have been removed.
+# This functionality is no longer supported.

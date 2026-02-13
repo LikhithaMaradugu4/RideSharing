@@ -144,7 +144,7 @@ export default function DriverVehicles() {
     };
     return statusMap[approvalStatus] || 'badge-pending';
   };
-
+ 
   const getStatusLabel = (approvalStatus) => {
     const labels = {
       APPROVED: 'Approved',
@@ -273,7 +273,7 @@ export default function DriverVehicles() {
                       {getStatusLabel(vehicle.approval_status)}
                     </span>
                   </div>
-                  <span className="vehicle-category">{vehicle.category || '—'}</span>
+                  <span className="vehicle-category-icon">{vehicle.category || '—'}</span>
                 </div>
 
                 <div className="vehicle-details">
@@ -291,7 +291,8 @@ export default function DriverVehicles() {
                   </div>
                 </div>
 
-                <div className="vehicle-actions">
+                <div className="vehicle-footer">
+                  <div className={`status-dot dot-${vehicle.approval_status.toLowerCase()}`}></div>
                   <span className="action-info">
                     {vehicle.approval_status === 'PENDING' && 'Awaiting tenant admin review.'}
                     {vehicle.approval_status === 'APPROVED' && 'Approved and ready to use.'}

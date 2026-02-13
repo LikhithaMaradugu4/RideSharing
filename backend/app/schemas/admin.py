@@ -229,3 +229,103 @@ class VehicleApprovalRequest(BaseModel):
 
 class VehicleRejectionRequest(BaseModel):
     rejection_reason: str  # Required for rejection
+
+
+# ============================================
+# APPROVAL STATUS UPDATE SCHEMAS
+# ============================================
+
+class ApprovalStatusUpdateRequest(BaseModel):
+    approval_status: str  # PENDING, APPROVED, REJECTED
+
+
+# ============================================
+# TENANT OPERATING COUNTRIES/CITIES SCHEMAS
+# ============================================
+
+class CountryResponse(BaseModel):
+    country_code: str
+    name: str
+    phone_code: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+
+class CityResponse(BaseModel):
+    city_id: int
+    name: str
+    country_code: str
+    is_active: bool = True
+
+    class Config:
+        from_attributes = True
+
+
+class TenantCountryAddRequest(BaseModel):
+    country_code: str
+
+
+class TenantCityAddRequest(BaseModel):
+    city_id: int
+
+
+class TenantCountryResponse(BaseModel):
+    tenant_id: int
+    country_code: str
+    country_name: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+
+class TenantCityResponse(BaseModel):
+    tenant_id: int
+    city_id: int
+    city_name: Optional[str] = None
+    country_code: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+
+class TenantCountryListResponse(BaseModel):
+    countries: List[TenantCountryResponse]
+    total: int
+
+
+class TenantCityListResponse(BaseModel):
+    cities: List[TenantCityResponse]
+    total: int
+
+
+class AllCountriesResponse(BaseModel):
+    countries: List[CountryResponse]
+    total: int
+
+
+class AllCitiesResponse(BaseModel):
+    cities: List[CityResponse]
+    total: int
+
+
+# ============================================
+# DRIVER DETAILS WITH FLEET ASSIGNMENT
+# ============================================
+
+class DriverDetailResponse(BaseModel):
+    driver_id: int
+    full_name: Optional[str] = None
+    phone: Optional[str] = None
+    approval_status: str
+    allowed_vehicle_categories: Optional[List[str]] = None
+    driver_type: Optional[str] = None
+    # Fleet assignment info
+    fleet_id: Optional[int] = None
+    fleet_name: Optional[str] = None
+    assignment_start_date: Optional[datetime] = None
+    assignment_end_date: Optional[datetime] = None
+    assignment_status: Optional[str] = None  # ACTIVE, EXPIRED
+
+    class Config:
+        from_attributes = True

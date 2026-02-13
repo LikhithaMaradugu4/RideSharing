@@ -1,7 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import Optional
-from datetime import date
 
 from app.api.deps.jwt_auth import get_current_user
 from app.core.database import SessionLocal
@@ -11,13 +10,9 @@ from app.schemas.fleet import (
     FleetDiscoveryItemResponse,
     DriverFleetInviteListResponse,
     DriverFleetInviteResponse,
-    DriverCurrentFleetResponse,
-    DriverWorkAvailabilityRequest,
-    DriverWorkAvailabilityResponse,
-    DriverAvailabilityListResponse
+    DriverCurrentFleetResponse
 )
 from app.services.driver_fleet_service import DriverFleetService
-from app.services.driver_work_availability_service import DriverWorkAvailabilityService
 
 router = APIRouter(tags=["Driver Fleet"])
 
@@ -152,52 +147,5 @@ def reject_fleet_invite(
     return {"message": "Fleet invite rejected"}
 
 
-# ---------------------- Work Availability ----------------------
-
-@router.post("/driver/work-availability", response_model=DriverWorkAvailabilityResponse)
-def declare_work_availability(
-    request: DriverWorkAvailabilityRequest,
-    db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
-):
-    """Declare or update driver's work availability for a date."""
-    user_id = current_user.get("user_id")
-    user = db.query(AppUser).filter(AppUser.user_id == user_id).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-
-    record = DriverWorkAvailabilityService.declare_availability(
-        db=db,
-        user=user,
-        data_date=request.date,
-        is_available=request.is_available,
-        note=request.note
-    )
-
-    return DriverWorkAvailabilityResponse.model_validate(record)
-
-
-@router.get("/driver/work-availability", response_model=DriverAvailabilityListResponse)
-def list_work_availability(
-    start_date: Optional[date] = None,
-    end_date: Optional[date] = None,
-    db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user)
-):
-    """List driver's work availability records."""
-    user_id = current_user.get("user_id")
-    user = db.query(AppUser).filter(AppUser.user_id == user_id).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-
-    records = DriverWorkAvailabilityService.list_driver_availability(
-        db=db,
-        user=user,
-        start_date=start_date,
-        end_date=end_date
-    )
-
-    return DriverAvailabilityListResponse(
-        availability_records=[DriverWorkAvailabilityResponse.model_validate(r) for r in records],
-        total=len(records)
-    )
+# NOTE: Work Availability endpoints have been removed.
+# This functionality is no longer supported.

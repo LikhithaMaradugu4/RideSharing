@@ -61,14 +61,6 @@ function DriverLayout({ children, driverProfile }) {
           </Link>
 
           <Link 
-            to="/app/driver/availability" 
-            className={`nav-link ${isActive('/app/driver/availability')}`}
-          >
-            <span className="nav-icon"><Icons.Calendar size={20} /></span>
-            <span className="nav-label">Availability</span>
-          </Link>
-
-          <Link 
             to="/app/driver/fleets" 
             className={`nav-link ${isActive('/app/driver/fleets')}`}
           >

@@ -6,8 +6,9 @@ from datetime import datetime, timezone
 from app.models.fleet import DriverProfile, Fleet, FleetDriver
 from app.models.identity import UserKYC
 from app.models.vehicle import Vehicle, VehicleDocument, DriverVehicleAssignment
-from app.models.tenant import TenantAdmin
+from app.models.tenant import TenantAdmin, TenantCountry, TenantCity
 from app.models.identity import AppUser
+from app.models.core import Country, City
 
 class TenantAdminService:
 
@@ -579,5 +580,448 @@ class TenantAdminService:
     )
 
       return vehicles
-    
+
+    @staticmethod
+    def get_approved_vehicles(db: Session, user: AppUser):
+        """Get all approved vehicles for admin's tenant."""
+        if user.role != "TENANT_ADMIN":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only tenant admins can view vehicles"
+            )
+
+        tenant_id = TenantAdminService._get_admin_tenant(db, user)
+
+        vehicles = (
+            db.query(Vehicle)
+            .filter(
+                Vehicle.tenant_id == tenant_id,
+                Vehicle.approval_status == "APPROVED"
+            )
+            .order_by(Vehicle.created_on.desc())
+            .all()
+        )
+
+        return vehicles
+
+    # ============================================
+    # APPROVAL STATUS UPDATE METHODS
+    # ============================================
+
+    @staticmethod
+    def update_driver_approval_status(db: Session, user: AppUser, driver_id: int, new_status: str):
+        """Update driver approval status."""
+        if user.role != "TENANT_ADMIN":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only tenant admins can update driver status"
+            )
+
+        if new_status not in ["PENDING", "APPROVED", "REJECTED"]:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid approval status"
+            )
+
+        tenant_id = TenantAdminService._get_admin_tenant(db, user)
+
+        driver = (
+            db.query(DriverProfile)
+            .filter(
+                DriverProfile.driver_id == driver_id,
+                DriverProfile.tenant_id == tenant_id
+            )
+            .first()
+        )
+
+        if not driver:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Driver not found for this tenant"
+            )
+
+        driver.approval_status = new_status
+        driver.updated_by = user.user_id
+        db.commit()
+        db.refresh(driver)
+        return driver
+
+    @staticmethod
+    def update_fleet_approval_status(db: Session, user: AppUser, fleet_id: int, new_status: str):
+        """Update fleet approval status."""
+        if user.role != "TENANT_ADMIN":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only tenant admins can update fleet status"
+            )
+
+        if new_status not in ["PENDING", "APPROVED", "REJECTED"]:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid approval status"
+            )
+
+        tenant_id = TenantAdminService._get_admin_tenant(db, user)
+
+        fleet = (
+            db.query(Fleet)
+            .filter(
+                Fleet.fleet_id == fleet_id,
+                Fleet.tenant_id == tenant_id
+            )
+            .first()
+        )
+
+        if not fleet:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Fleet not found for this tenant"
+            )
+
+        fleet.approval_status = new_status
+        fleet.updated_by = user.user_id
+        db.commit()
+        db.refresh(fleet)
+        return fleet
+
+    @staticmethod
+    def update_vehicle_approval_status(db: Session, user: AppUser, vehicle_id: int, new_status: str):
+        """Update vehicle approval status."""
+        if user.role != "TENANT_ADMIN":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only tenant admins can update vehicle status"
+            )
+
+        if new_status not in ["PENDING", "APPROVED", "REJECTED"]:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid approval status"
+            )
+
+        tenant_id = TenantAdminService._get_admin_tenant(db, user)
+
+        vehicle = (
+            db.query(Vehicle)
+            .filter(
+                Vehicle.vehicle_id == vehicle_id,
+                Vehicle.tenant_id == tenant_id
+            )
+            .first()
+        )
+
+        if not vehicle:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Vehicle not found for this tenant"
+            )
+
+        vehicle.approval_status = new_status
+        vehicle.updated_by = user.user_id
+        
+        # Update status column based on approval
+        if new_status == "APPROVED":
+            vehicle.status = "ACTIVE"
+        elif new_status == "REJECTED":
+            vehicle.status = "INACTIVE"
+        
+        db.commit()
+        db.refresh(vehicle)
+        return vehicle
+
+    # ============================================
+    # TENANT OPERATING COUNTRIES/CITIES
+    # ============================================
+
+    @staticmethod
+    def get_all_countries(db: Session):
+        """Get all available countries."""
+        return db.query(Country).order_by(Country.name).all()
+
+    @staticmethod
+    def get_all_cities(db: Session, country_code: Optional[str] = None):
+        """Get all available cities, optionally filtered by country."""
+        query = db.query(City).filter(City.is_active == True)
+        if country_code:
+            query = query.filter(City.country_code == country_code)
+        return query.order_by(City.name).all()
+
+    @staticmethod
+    def get_tenant_countries(db: Session, user: AppUser):
+        """Get countries where tenant operates."""
+        if user.role != "TENANT_ADMIN":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only tenant admins can view tenant countries"
+            )
+
+        tenant_id = TenantAdminService._get_admin_tenant(db, user)
+
+        countries = (
+            db.query(TenantCountry, Country)
+            .join(Country, Country.country_code == TenantCountry.country_code)
+            .filter(TenantCountry.tenant_id == tenant_id)
+            .all()
+        )
+
+        return countries
+
+    @staticmethod
+    def add_tenant_country(db: Session, user: AppUser, country_code: str):
+        """Add a country to tenant's operating regions."""
+        if user.role != "TENANT_ADMIN":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only tenant admins can add countries"
+            )
+
+        tenant_id = TenantAdminService._get_admin_tenant(db, user)
+
+        # Verify country exists
+        country = db.query(Country).filter(Country.country_code == country_code).first()
+        if not country:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Country not found"
+            )
+
+        # Check if already exists
+        existing = (
+            db.query(TenantCountry)
+            .filter(
+                TenantCountry.tenant_id == tenant_id,
+                TenantCountry.country_code == country_code
+            )
+            .first()
+        )
+        if existing:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Country already added to tenant"
+            )
+
+        tenant_country = TenantCountry(
+            tenant_id=tenant_id,
+            country_code=country_code,
+            created_by=user.user_id
+        )
+        db.add(tenant_country)
+        db.commit()
+        db.refresh(tenant_country)
+        return tenant_country, country
+
+    @staticmethod
+    def remove_tenant_country(db: Session, user: AppUser, country_code: str):
+        """Remove a country from tenant's operating regions."""
+        if user.role != "TENANT_ADMIN":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only tenant admins can remove countries"
+            )
+
+        tenant_id = TenantAdminService._get_admin_tenant(db, user)
+
+        tenant_country = (
+            db.query(TenantCountry)
+            .filter(
+                TenantCountry.tenant_id == tenant_id,
+                TenantCountry.country_code == country_code
+            )
+            .first()
+        )
+
+        if not tenant_country:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Country not found for this tenant"
+            )
+
+        db.delete(tenant_country)
+        db.commit()
+        return {"message": "Country removed"}
+
+    @staticmethod
+    def get_tenant_cities(db: Session, user: AppUser):
+        """Get cities where tenant operates."""
+        if user.role != "TENANT_ADMIN":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only tenant admins can view tenant cities"
+            )
+
+        tenant_id = TenantAdminService._get_admin_tenant(db, user)
+
+        cities = (
+            db.query(TenantCity, City)
+            .join(City, City.city_id == TenantCity.city_id)
+            .filter(TenantCity.tenant_id == tenant_id)
+            .all()
+        )
+
+        return cities
+
+    @staticmethod
+    def add_tenant_city(db: Session, user: AppUser, city_id: int):
+        """Add a city to tenant's operating regions."""
+        if user.role != "TENANT_ADMIN":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only tenant admins can add cities"
+            )
+
+        tenant_id = TenantAdminService._get_admin_tenant(db, user)
+
+        # Verify city exists
+        city = db.query(City).filter(City.city_id == city_id).first()
+        if not city:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="City not found"
+            )
+
+        # Verify country is added to tenant
+        tenant_country = (
+            db.query(TenantCountry)
+            .filter(
+                TenantCountry.tenant_id == tenant_id,
+                TenantCountry.country_code == city.country_code
+            )
+            .first()
+        )
+        if not tenant_country:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="City's country is not added to tenant. Add country first."
+            )
+
+        # Check if already exists
+        existing = (
+            db.query(TenantCity)
+            .filter(
+                TenantCity.tenant_id == tenant_id,
+                TenantCity.city_id == city_id
+            )
+            .first()
+        )
+        if existing:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="City already added to tenant"
+            )
+
+        tenant_city = TenantCity(
+            tenant_id=tenant_id,
+            city_id=city_id,
+            created_by=user.user_id
+        )
+        db.add(tenant_city)
+        db.commit()
+        db.refresh(tenant_city)
+        return tenant_city, city
+
+    @staticmethod
+    def remove_tenant_city(db: Session, user: AppUser, city_id: int):
+        """Remove a city from tenant's operating regions."""
+        if user.role != "TENANT_ADMIN":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only tenant admins can remove cities"
+            )
+
+        tenant_id = TenantAdminService._get_admin_tenant(db, user)
+
+        tenant_city = (
+            db.query(TenantCity)
+            .filter(
+                TenantCity.tenant_id == tenant_id,
+                TenantCity.city_id == city_id
+            )
+            .first()
+        )
+
+        if not tenant_city:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="City not found for this tenant"
+            )
+
+        db.delete(tenant_city)
+        db.commit()
+        return {"message": "City removed"}
+
+    @staticmethod
+    def get_driver_details(db: Session, user: AppUser, driver_id: int):
+        """Get driver details including fleet assignment info."""
+        if user.role != "TENANT_ADMIN":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only tenant admins can view driver details"
+            )
+
+        tenant_id = TenantAdminService._get_admin_tenant(db, user)
+
+        # Get driver profile and user info
+        result = (
+            db.query(DriverProfile, AppUser)
+            .join(AppUser, DriverProfile.driver_id == AppUser.user_id)
+            .filter(
+                DriverProfile.driver_id == driver_id,
+                DriverProfile.tenant_id == tenant_id
+            )
+            .first()
+        )
+
+        if not result:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Driver not found for this tenant"
+            )
+
+        driver_profile, app_user = result
+
+        # Get fleet assignment info
+        fleet_info = (
+            db.query(FleetDriver, Fleet)
+            .join(Fleet, Fleet.fleet_id == FleetDriver.fleet_id)
+            .filter(FleetDriver.driver_id == driver_id)
+            .order_by(FleetDriver.start_date.desc())
+            .first()
+        )
+
+        fleet_id = None
+        fleet_name = None
+        assignment_start_date = None
+        assignment_end_date = None
+        assignment_status = None
+
+        if fleet_info:
+            fleet_driver, fleet = fleet_info
+            fleet_id = fleet.fleet_id
+            fleet_name = fleet.fleet_name
+            assignment_start_date = fleet_driver.start_date
+            assignment_end_date = fleet_driver.end_date
+            
+            # Determine assignment status
+            now = datetime.now(timezone.utc)
+            if fleet_driver.end_date is None:
+                assignment_status = "ACTIVE"
+            elif fleet_driver.end_date > now:
+                assignment_status = "ACTIVE"
+            else:
+                assignment_status = "EXPIRED"
+
+        return {
+            "driver_id": driver_profile.driver_id,
+            "full_name": app_user.full_name,
+            "phone": app_user.phone,
+            "approval_status": driver_profile.approval_status,
+            "allowed_vehicle_categories": driver_profile.allowed_vehicle_categories,
+            "driver_type": driver_profile.driver_type,
+            "fleet_id": fleet_id,
+            "fleet_name": fleet_name,
+            "assignment_start_date": assignment_start_date,
+            "assignment_end_date": assignment_end_date,
+            "assignment_status": assignment_status
+        }
+
     

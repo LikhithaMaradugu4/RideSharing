@@ -7,6 +7,7 @@ const DriversList = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [expandedDriver, setExpandedDriver] = useState(null);
+  const [statusUpdating, setStatusUpdating] = useState(null);
 
   useEffect(() => {
     loadApprovedDrivers();
@@ -33,6 +34,21 @@ const DriversList = () => {
       setExpandedDriver(null);
     } else {
       setExpandedDriver(driver);
+    }
+  };
+
+  const handleStatusChange = async (driverId, newStatus) => {
+    if (!window.confirm(`Are you sure you want to change this driver's status to ${newStatus}?`)) {
+      return;
+    }
+    try {
+      setStatusUpdating(driverId);
+      await adminService.updateDriverStatus(driverId, newStatus);
+      await loadApprovedDrivers();
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Failed to update status');
+    } finally {
+      setStatusUpdating(null);
     }
   };
 
@@ -124,6 +140,26 @@ const DriversList = () => {
                     <div className="detail-row">
                         <span className="label">Driver ID:</span>
                         <span className="value code-font">{driver.driver_id}</span>
+                    </div>
+
+                    <div className="status-actions">
+                      <label>Change Approval Status:</label>
+                      <div className="action-buttons">
+                        <button
+                          onClick={() => handleStatusChange(driver.driver_id, 'PENDING')}
+                          disabled={statusUpdating === driver.driver_id}
+                          className="btn-status btn-pending"
+                        >
+                          {statusUpdating === driver.driver_id ? 'Updating...' : 'Set Pending'}
+                        </button>
+                        <button
+                          onClick={() => handleStatusChange(driver.driver_id, 'REJECTED')}
+                          disabled={statusUpdating === driver.driver_id}
+                          className="btn-status btn-reject"
+                        >
+                          {statusUpdating === driver.driver_id ? 'Updating...' : 'Reject'}
+                        </button>
+                      </div>
                     </div>
                   </div>
                 )}

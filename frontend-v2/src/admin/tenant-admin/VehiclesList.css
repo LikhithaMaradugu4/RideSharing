@@ -1,4 +1,4 @@
-.drivers-list-view {
+.vehicles-list-view {
   padding: 30px;
   max-width: 1000px;
   margin: 0 auto;
@@ -12,7 +12,7 @@
   margin-bottom: 30px;
 }
 
-.drivers-list-view h1 {
+.vehicles-list-view h1 {
   font-size: 24px;
   font-weight: 700;
   color: #2c3e50;
@@ -20,7 +20,7 @@
 }
 
 .count-badge {
-  background-color: #27ae60; /* Green for active/approved */
+  background-color: #27ae60;
   color: white;
   padding: 4px 12px;
   border-radius: 20px;
@@ -28,7 +28,7 @@
   font-weight: 600;
 }
 
-/* Error & Loading - Reused styles for consistency */
+/* Error & Loading */
 .error-banner {
   background-color: #fef2f2;
   color: #c0392b;
@@ -53,17 +53,23 @@
 }
 
 .empty-state svg {
-  width: 48px;
-  height: 48px;
+  width: 64px;
+  height: 64px;
   margin-bottom: 16px;
   opacity: 0.5;
+  stroke: #9ca3af;
+}
+
+.empty-state p {
+  font-size: 1rem;
+  margin: 0;
 }
 
 .spinner {
   width: 30px;
   height: 30px;
   border: 3px solid #f3f3f3;
-  border-top: 3px solid #3498db;
+  border-top: 3px solid #27ae60;
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin: 0 auto 15px auto;
@@ -74,14 +80,14 @@
   100% { transform: rotate(360deg); }
 }
 
-/* Driver Card */
-.drivers-list {
+/* Vehicle Card */
+.vehicles-list {
   display: flex;
   flex-direction: column;
   gap: 16px;
 }
 
-.driver-card {
+.vehicle-card {
   background: white;
   border: 1px solid #e0e0e0;
   border-radius: 10px;
@@ -89,17 +95,17 @@
   transition: all 0.2s ease;
 }
 
-.driver-card:hover {
+.vehicle-card:hover {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
   border-color: #bdc3c7;
 }
 
-.driver-card.expanded {
-  border-color: #3498db;
-  box-shadow: 0 4px 15px rgba(52, 152, 219, 0.1);
+.vehicle-card.expanded {
+  border-color: #27ae60;
+  box-shadow: 0 4px 15px rgba(39, 174, 96, 0.1);
 }
 
-.driver-header {
+.vehicle-header {
   display: flex;
   align-items: center;
   padding: 20px;
@@ -108,39 +114,42 @@
   gap: 15px;
 }
 
-.driver-header:hover {
+.vehicle-header:hover {
   background-color: #fcfcfc;
 }
 
-.driver-avatar {
-  width: 42px;
-  height: 42px;
-  background: linear-gradient(135deg, #3498db, #2980b9);
-  color: white;
+.vehicle-icon {
+  width: 48px;
+  height: 48px;
+  background: linear-gradient(135deg, #27ae60, #1e8449);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 16px;
-  font-weight: 700;
   flex-shrink: 0;
-  box-shadow: 0 2px 5px rgba(52, 152, 219, 0.3);
+  box-shadow: 0 2px 5px rgba(39, 174, 96, 0.3);
 }
 
-.driver-info {
+.vehicle-icon svg {
+  width: 22px;
+  height: 22px;
+  stroke: white;
+}
+
+.vehicle-info {
   flex: 1;
   display: flex;
   flex-direction: column;
   gap: 4px;
 }
 
-.driver-name-row {
+.vehicle-name-row {
   display: flex;
   align-items: center;
   gap: 10px;
 }
 
-.driver-info h3 {
+.vehicle-name-row h3 {
   margin: 0;
   color: #2c3e50;
   font-size: 16px;
@@ -160,22 +169,34 @@
   text-transform: uppercase;
 }
 
+.status-badge.approved {
+  background-color: rgba(39, 174, 96, 0.1);
+  color: #27ae60;
+}
+
 .status-badge svg {
   width: 12px;
   height: 12px;
 }
 
-.driver-contact {
+.vehicle-meta {
   display: flex;
+  gap: 12px;
   align-items: center;
-  gap: 6px;
-  color: #7f8c8d;
-  font-size: 13px;
 }
 
-.driver-contact svg {
-  width: 14px;
-  height: 14px;
+.category-badge {
+  background-color: #e8f4fd;
+  color: #2980b9;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.fleet-id {
+  color: #7f8c8d;
+  font-size: 13px;
 }
 
 .toggle-icon {
@@ -192,11 +213,11 @@
 
 .toggle-icon.rotated {
   transform: rotate(180deg);
-  color: #3498db;
+  color: #27ae60;
 }
 
 /* Details Section */
-.driver-details {
+.vehicle-details {
   border-top: 1px solid #eef2f7;
   padding: 24px;
   background-color: #f8f9fa;
@@ -208,59 +229,29 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
-.detail-section h4 {
-  margin: 0 0 12px 0;
-  color: #7f8c8d;
-  font-size: 13px;
-  text-transform: uppercase;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.detail-section h4 svg {
-  width: 16px;
-  height: 16px;
-}
-
-.tags-container {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 20px;
-}
-
-.vehicle-tag {
-  background-color: white;
-  border: 1px solid #bdc3c7;
-  color: #2c3e50;
-  padding: 6px 14px;
-  border-radius: 20px;
-  font-size: 13px;
-  font-weight: 500;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-}
-
-.no-tags {
-  font-style: italic;
-  color: #95a5a6;
-  font-size: 13px;
-}
-
 .detail-row {
   display: flex;
   align-items: center;
   gap: 10px;
   font-size: 13px;
-  color: #7f8c8d;
-  padding-top: 10px;
-  border-top: 1px dashed #e0e0e0;
+  color: #2c3e50;
+  padding: 10px 0;
+  border-bottom: 1px dashed #e0e0e0;
+}
+
+.detail-row:last-child {
+  border-bottom: none;
 }
 
 .detail-row .label {
   font-weight: 500;
+  color: #7f8c8d;
+  min-width: 100px;
+}
+
+.detail-row .value {
+  font-weight: 500;
+  color: #2c3e50;
 }
 
 .detail-row .value.code-font {
@@ -271,32 +262,46 @@
   color: #34495e;
 }
 
+.detail-row .value.status-active {
+  color: #27ae60;
+}
+
+.detail-row .value.status-inactive {
+  color: #e74c3c;
+}
+
 .status-actions {
-  margin-top: 16px;
-  padding-top: 16px;
+  margin-top: 20px;
+  padding-top: 20px;
   border-top: 1px solid #e5e7eb;
 }
 
 .status-actions label {
   display: block;
-  font-size: 0.875rem;
-  color: #6b7280;
+  font-size: 13px;
+  font-weight: 600;
+  color: #7f8c8d;
   margin-bottom: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .action-buttons {
   display: flex;
-  gap: 8px;
+  gap: 10px;
 }
 
 .btn-status {
-  padding: 8px 16px;
-  border-radius: 6px;
-  font-size: 0.875rem;
-  font-weight: 500;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
   cursor: pointer;
   border: none;
   transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .btn-status:disabled {
@@ -305,19 +310,23 @@
 }
 
 .btn-pending {
-  background: #fef3c7;
-  color: #d97706;
+  background: linear-gradient(135deg, #f39c12, #e67e22);
+  color: white;
 }
 
 .btn-pending:hover:not(:disabled) {
-  background: #fde68a;
+  background: linear-gradient(135deg, #e67e22, #d35400);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(230, 126, 34, 0.3);
 }
 
 .btn-reject {
-  background: #fee2e2;
-  color: #dc2626;
+  background: linear-gradient(135deg, #e74c3c, #c0392b);
+  color: white;
 }
 
 .btn-reject:hover:not(:disabled) {
-  background: #fecaca;
+  background: linear-gradient(135deg, #c0392b, #a93226);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(231, 76, 60, 0.3);
 }

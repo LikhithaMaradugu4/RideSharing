@@ -9,7 +9,8 @@ from app.schemas.admin import  (
     VehicleDocumentAdminResponse, 
     VehiclePendingApprovalResponse,
     VehicleApprovalRequest,
-    VehicleRejectionRequest
+    VehicleRejectionRequest,
+    ApprovalStatusUpdateRequest
 )
 
 router = APIRouter(prefix="/vehicles", tags=["Admin - Vehicles"])
@@ -130,4 +131,46 @@ def get_vehicle_documents(
         for doc in documents
     ]
 
+
+@router.get("/approved", response_model=list[Vehicle])
+def get_approved_vehicles(
+    db: Session = Depends(get_db),
+    admin_data: dict = Depends(get_admin_session)
+):
+    """Get all approved vehicles for admin's tenant."""
+    current_user = admin_data["user"]
+    vehicles = TenantAdminService.get_approved_vehicles(db, current_user)
+    
+    return [
+        Vehicle(
+            vehicle_id=v.vehicle_id,
+            tenant_id=v.tenant_id,
+            fleet_id=v.fleet_id,
+            category=v.category,
+            registration_no=v.registration_no,
+            status=v.status,
+            approval_status=v.approval_status,
+            created_on=v.created_on
+        )
+        for v in vehicles
+    ]
+
+
+@router.patch("/{vehicle_id}/status")
+def update_vehicle_status(
+    vehicle_id: int,
+    request: ApprovalStatusUpdateRequest,
+    db: Session = Depends(get_db),
+    admin_data: dict = Depends(get_admin_session)
+):
+    """Update vehicle approval status."""
+    current_user = admin_data["user"]
+    vehicle = TenantAdminService.update_vehicle_approval_status(
+        db, current_user, vehicle_id, request.approval_status
+    )
+    return {
+        "message": f"Vehicle status updated to {request.approval_status}",
+        "vehicle_id": vehicle_id,
+        "approval_status": vehicle.approval_status
+    }
 

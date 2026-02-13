@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 from typing import Optional, List
+from datetime import datetime
 
 
 class VehicleDocumentInput(BaseModel):
@@ -15,10 +16,11 @@ class Vehicle(BaseModel):
     registration_no: str
     status: str
     approval_status: str
-    created_on: str  # ISO format date string
+    created_on: datetime  # ISO format date string
 
-    class Config:
-        from_attributes = True
+    model_config = {
+        "from_attributes": True
+    }
 
 class VehicleCreateRequest(BaseModel):
     category: str
@@ -112,6 +114,9 @@ class DriverVehicleResponse(BaseModel):
     category: str
     approval_status: str
     is_currently_assigned: bool  # True if this vehicle has active assignment to this driver
+    documents_complete: bool = False  # True if all required documents are approved
+    missing_documents: List[str] = []  # List of document types that are not approved
+    is_approved: bool = False  # True if vehicle approval_status is APPROVED
 
     class Config:
         from_attributes = True

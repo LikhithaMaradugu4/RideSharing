@@ -12,6 +12,8 @@ import DriverApprovals from '../tenant-admin/DriverApprovals'
 import FleetApprovals from '../tenant-admin/FleetApprovals'
 import DriversList from '../tenant-admin/DriversList'
 import FleetsList from '../tenant-admin/FleetsList'
+import VehiclesList from '../tenant-admin/VehiclesList'
+import OperatingRegions from '../tenant-admin/OperatingRegions'
 import adminService from '../../services/admin.service'
 import './AdminLayout.css'
 import VehicleApprovals from '../tenant-admin/VehicleApprovals'
@@ -69,6 +71,8 @@ const AdminLayout = () => {
                 <Route path="tenant/vehicle-approvals" element={<VehicleApprovals/>}/>
                 <Route path="tenant/drivers" element={<DriversList />} />
                 <Route path="tenant/fleets" element={<FleetsList />} />
+                <Route path="tenant/vehicles" element={<VehiclesList />} />
+                <Route path="tenant/operating-regions" element={<OperatingRegions />} />
               
               </>
         

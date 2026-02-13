@@ -518,7 +518,293 @@ approveOrRejectVehicle: async (vehicleId, data) => {
     const data = await response.json();
     // Backend returns a direct array
     return Array.isArray(data) ? data : data.vehicles || [];
-  },};
+  },
+
+  // Get approved vehicles only
+  getApprovedVehicles: async () => {
+    const response = await fetch(
+      `${API_BASE_URL}/vehicles/approved`,
+      {
+        credentials: 'include'
+      }
+    );
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || 'Failed to fetch approved vehicles');
+    }
+
+    const data = await response.json();
+    return Array.isArray(data) ? data : data.vehicles || [];
+  },
+
+  // Update driver approval status
+  updateDriverStatus: async (driverId, approvalStatus) => {
+    const response = await fetch(
+      `${API_BASE_URL}/drivers/${driverId}/status`,
+      {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ approval_status: approvalStatus })
+      }
+    );
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || 'Failed to update driver status');
+    }
+
+    return response.json();
+  },
+
+  // Update fleet approval status
+  updateFleetStatus: async (fleetId, approvalStatus) => {
+    const response = await fetch(
+      `${API_BASE_URL}/fleets/${fleetId}/status`,
+      {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ approval_status: approvalStatus })
+      }
+    );
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || 'Failed to update fleet status');
+    }
+
+    return response.json();
+  },
+
+  // Update vehicle approval status
+  updateVehicleStatus: async (vehicleId, approvalStatus) => {
+    const response = await fetch(
+      `${API_BASE_URL}/vehicles/${vehicleId}/status`,
+      {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ approval_status: approvalStatus })
+      }
+    );
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || 'Failed to update vehicle status');
+    }
+
+    return response.json();
+  },
+
+  // Get driver details with fleet assignment
+  getDriverDetails: async (driverId) => {
+    const response = await fetch(
+      `${API_BASE_URL}/drivers/${driverId}/details`,
+      {
+        credentials: 'include'
+      }
+    );
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || 'Failed to fetch driver details');
+    }
+
+    return response.json();
+  },
+
+  // ==================== Operating Regions ====================
+
+  // Get all available countries
+  getAllCountries: async () => {
+    const response = await fetch(
+      `${API_BASE_URL}/operating-regions/countries/all`,
+      {
+        credentials: 'include'
+      }
+    );
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || 'Failed to fetch countries');
+    }
+
+    const data = await response.json();
+    return data.countries || [];
+  },
+
+  // Get all available cities
+  getAllCities: async (countryCode = null) => {
+    let url = `${API_BASE_URL}/operating-regions/cities/all`;
+    if (countryCode) {
+      url += `?country_code=${countryCode}`;
+    }
+
+    const response = await fetch(url, {
+      credentials: 'include'
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || 'Failed to fetch cities');
+    }
+
+    const data = await response.json();
+    return data.cities || [];
+  },
+  //Get All available cities 
+  getAvailableCountries : async () => {
+    const response = await fetch(
+      `${API_BASE_URL}/operating-regions/countries/all`,
+      {
+        credentials: 'include'
+      }
+    );
+
+      if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || 'Failed to fetch tenant countries');
+    }
+
+    const data = await response.json();
+    return data.countries || [];
+  },
+
+  // Get all available cities for a specific country
+  getAvailableCities: async (countryCode) => {
+    let url = `${API_BASE_URL}/operating-regions/cities/all`;
+    if (countryCode) {
+      url += `?country_code=${encodeURIComponent(countryCode)}`;
+    }
+
+    const response = await fetch(url, {
+      credentials: 'include'
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || 'Failed to fetch available cities');
+    }
+
+    const data = await response.json();
+    return data.cities || [];
+  },
+
+  // Get tenant operating countries
+  getTenantCountries: async () => {
+    const response = await fetch(
+      `${API_BASE_URL}/operating-regions/countries`,
+      {
+        credentials: 'include'
+      }
+      
+    );
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || 'Failed to fetch tenant countries');
+    }
+
+    const data = await response.json();
+    return data.countries || [];
+  },
+
+  // Add country to tenant
+  addTenantCountry: async (countryCode) => {
+    const response = await fetch(
+      `${API_BASE_URL}/operating-regions/countries`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ country_code: countryCode })
+      }
+    );
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || 'Failed to add country');
+    }
+
+    return response.json();
+  },
+
+  // Remove country from tenant
+  removeTenantCountry: async (countryCode) => {
+    const response = await fetch(
+      `${API_BASE_URL}/operating-regions/countries/${countryCode}`,
+      {
+        method: 'DELETE',
+        credentials: 'include'
+      }
+    );
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || 'Failed to remove country');
+    }
+
+    return response.json();
+  },
+
+  // Get tenant operating cities
+  getTenantCities: async () => {
+    const response = await fetch(
+      `${API_BASE_URL}/operating-regions/cities`,
+      {
+        credentials: 'include'
+      }
+    );
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || 'Failed to fetch tenant cities');
+    }
+
+    const data = await response.json();
+    return data.cities || [];
+  },
+
+  // Add city to tenant
+  addTenantCity: async (cityId) => {
+    const response = await fetch(
+      `${API_BASE_URL}/operating-regions/cities`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ city_id: cityId })
+      }
+    );
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || 'Failed to add city');
+    }
+
+    return response.json();
+  },
+
+  // Remove city from tenant
+  removeTenantCity: async (cityId) => {
+    const response = await fetch(
+      `${API_BASE_URL}/operating-regions/cities/${cityId}`,
+      {
+        method: 'DELETE',
+        credentials: 'include'
+      }
+    );
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || 'Failed to remove city');
+    }
+
+    return response.json();
+  },
+};
 
 
 

@@ -267,3 +267,55 @@
   color: #34495e;
   font-size: 13px;
 }
+
+.status-actions {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #d5dbdc;
+  width: 100%;
+}
+
+.status-actions label {
+  display: block;
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin-bottom: 12px;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-status {
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s ease;
+}
+
+.btn-status:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-pending {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.btn-pending:hover:not(:disabled) {
+  background: #fde68a;
+}
+
+.btn-reject {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.btn-reject:hover:not(:disabled) {
+  background: #fecaca;
+}

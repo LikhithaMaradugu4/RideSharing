@@ -356,42 +356,7 @@ const driverService = {
     return handleResponse(response, 'Failed to reject fleet invite');
   },
 
-  /**
-   * Driver work availability.
-   */
-  getWorkAvailability: async (token) => {
-    const response = await fetch(`${API_BASE_URL}/driver/work-availability`, {
-      method: 'GET',
-      headers: buildHeaders(token)
-    });
-
-    const data = await handleResponse(response, 'Failed to fetch work availability');
-    return data?.records ?? [];
-  },
-
-  updateWorkAvailability: async (token, availabilityData) => {
-    const payload = {
-      date: availabilityData.date,
-      is_available: availabilityData.is_available,
-      note: availabilityData.note ?? null
-    };
-
-    const response = await fetch(`${API_BASE_URL}/driver/work-availability`, {
-      method: 'POST',
-      headers: buildHeaders(token),
-      body: JSON.stringify(payload)
-    });
-
-    return handleResponse(response, 'Failed to update work availability');
-  },
-
-  setWorkAvailability: async (token, availabilityData) => driverService.updateWorkAvailability(token, availabilityData),
-
-  deleteWorkAvailability: async (token, date) => driverService.updateWorkAvailability(token, {
-    date,
-    is_available: false,
-    note: null
-  }),
+  // NOTE: Work availability functionality has been removed
 
   // =====================================================
   // Trip Lifecycle Methods (Driver-facing)

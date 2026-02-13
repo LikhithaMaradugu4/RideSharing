@@ -152,20 +152,110 @@ class FleetOwnerService:
         return invite
 
     @staticmethod
+    def assign_driver_with_duration(
+        db: Session, 
+        user: AppUser, 
+        driver_id: int, 
+        start_date: datetime,
+        end_date: datetime = None
+    ) -> FleetDriver:
+        """
+        Assign a driver to the fleet with specified duration.
+        
+        - Validates driver is approved and in same tenant
+        - Ensures driver has no active fleet assignment
+        - Creates FleetDriver record with start_date and end_date
+        
+        Args:
+            start_date: When assignment begins
+            end_date: When assignment ends (None = indefinite)
+        """
+        fleet = FleetOwnerService._get_owner_fleet(db, user)
+        
+        # Validate driver
+        profile = FleetOwnerService._get_driver_profile(db, driver_id)
+        
+        if profile.tenant_id != fleet.tenant_id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Driver belongs to a different tenant"
+            )
+        
+        # Check for existing active assignment
+        existing = (
+            db.query(FleetDriver)
+            .filter(
+                FleetDriver.driver_id == driver_id,
+                FleetDriver.end_date.is_(None)
+            )
+            .first()
+        )
+        
+        if existing:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Driver already has an active fleet assignment. End the current assignment first."
+            )
+        
+        # Also check for non-expired assignments
+        now = datetime.now(timezone.utc)
+        active_dated = (
+            db.query(FleetDriver)
+            .filter(
+                FleetDriver.driver_id == driver_id,
+                FleetDriver.end_date > now
+            )
+            .first()
+        )
+        
+        if active_dated:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Driver has an active assignment that hasn't expired yet."
+            )
+        
+        # Create assignment
+        assignment = FleetDriver(
+            fleet_id=fleet.fleet_id,
+            driver_id=driver_id,
+            start_date=start_date,
+            end_date=end_date,
+            created_by=user.user_id
+        )
+        
+        db.add(assignment)
+        db.commit()
+        db.refresh(assignment)
+        
+        return assignment
+
+    @staticmethod
     def list_drivers(db: Session, user: AppUser):
+        """List fleet drivers with their profile info including allowed_vehicle_categories."""
         fleet = FleetOwnerService._get_owner_fleet(db, user)
 
         drivers = (
-            db.query(FleetDriver, AppUser)
+            db.query(FleetDriver, AppUser, DriverProfile)
             .join(AppUser, AppUser.user_id == FleetDriver.driver_id)
-            .filter(
-                FleetDriver.fleet_id == fleet.fleet_id,
-                FleetDriver.end_date.is_(None)
-            )
+            .outerjoin(DriverProfile, DriverProfile.driver_id == FleetDriver.driver_id)
+            .filter(FleetDriver.fleet_id == fleet.fleet_id)
             .all()
         )
 
-        return drivers
+        # Calculate assignment status
+        now = datetime.now(timezone.utc)
+        results = []
+        for assoc, app_user, profile in drivers:
+            if assoc.end_date is None:
+                assignment_status = "ACTIVE"
+            elif assoc.end_date > now:
+                assignment_status = "ACTIVE"
+            else:
+                assignment_status = "EXPIRED"
+            
+            results.append((assoc, app_user, profile, assignment_status))
+        
+        return results
 
     @staticmethod
     def remove_driver(db: Session, user: AppUser, driver_id: int):
