@@ -12,7 +12,7 @@ class FareConfig(Base):
     fare_config_id = Column(BigInteger, primary_key=True)
     city_id = Column(BigInteger, ForeignKey("city.city_id"), nullable=False)
     vehicle_category = Column(Text, nullable=False)  # BIKE / AUTO / CAB / XL
-    currency = Column(CHAR(3), nullable=False)  # Frozen from city
+    currency = Column(CHAR(3), nullable=False)  # Frozen from cit
 
     base_fare = Column(Numeric(10,2), nullable=False)
     per_km_rate = Column(Numeric(10,2), nullable=False)

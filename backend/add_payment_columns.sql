@@ -160,3 +160,138 @@ VALUES
 '{"type":"Polygon","coordinates":[[[103.90,1.38],[104.00,1.38],[104.00,1.45],[103.90,1.45],[103.90,1.38]]]}',
 1,1,true);
 select * from city;
+
+
+CREATE TABLE commission_config (
+    id bigserial PRIMARY KEY,
+
+    commission_type text NOT NULL, -- platform | tenant | fleet
+
+    tenant_id bigint NULL,
+    city_id bigint NULL,
+    vehicle_category text NULL,
+
+    fixed_amount numeric(10,2) DEFAULT 0,
+    percentage numeric(5,4) DEFAULT 0,
+
+    currency char(3) DEFAULT 'INR',
+
+    is_active boolean DEFAULT true,
+
+    effective_from timestamptz NOT NULL,
+    effective_to timestamptz NULL,
+
+    created_on timestamptz DEFAULT now(),
+    created_by bigint,
+    updated_on timestamptz,
+    updated_by bigint
+);
+
+ALTER TABLE commission_config
+ADD CONSTRAINT check_percentage_range
+CHECK (percentage >= 0 AND percentage <= 1);
+
+ALTER TABLE commission_config
+ADD CONSTRAINT check_fixed_positive
+CHECK (fixed_amount >= 0);
+
+
+CREATE TABLE payout_request (
+    id bigserial PRIMARY KEY,
+
+    driver_id bigint NOT NULL,
+
+    requested_amount numeric(12,2) NOT NULL,
+
+    payout_type text NOT NULL, -- full | specific_rides
+
+    status text DEFAULT 'requested',
+    -- requested
+    -- approved
+    -- rejected
+    -- completed
+
+    processed_by bigint NULL,
+
+    processed_on timestamptz NULL,
+
+    created_on timestamptz DEFAULT now()
+);
+
+CREATE TABLE ride_payment_dispute (
+    id bigserial PRIMARY KEY,
+
+    ride_id bigint NOT NULL,
+    driver_id bigint NOT NULL,
+
+    raised_by text NOT NULL, -- rider | driver
+
+    reason text,
+
+    status text DEFAULT 'open',
+    -- open
+    -- under_review
+    -- resolved
+    -- rejected
+
+    resolved_by bigint NULL,
+    resolved_on timestamptz NULL,
+
+    created_on timestamptz DEFAULT now()
+);
+
+
+ALTER TABLE trip
+ADD COLUMN tenant_commission numeric(10,2) DEFAULT 0,
+ADD COLUMN fleet_commission numeric(10,2) DEFAULT 0,
+ADD COLUMN payment_mode text, -- cash | online
+ADD COLUMN settlement_status text DEFAULT 'unsettled';
+
+
+INSERT INTO commission_config
+(commission_type, percentage, currency, effective_from)
+VALUES
+('platform', 0.20, 'INR', now()),
+('tenant',   0.05, 'INR', now()),
+('fleet',    0.05, 'INR', now());
+drop table payout_request;
+
+CREATE TABLE payout_request (
+    id bigserial PRIMARY KEY,
+
+    driver_id bigint NOT NULL,
+
+    total_amount numeric(12,2) NOT NULL,
+
+    payout_type text NOT NULL, -- full | specific_trips
+
+    status text DEFAULT 'requested',
+    -- requested
+    -- approved
+    -- rejected
+    -- processing
+    -- completed
+
+    payment_reference text NULL,  -- bank/UPI txn id
+
+    processed_by bigint NULL,
+    processed_on timestamptz NULL,
+
+    created_on timestamptz DEFAULT now()
+);
+CREATE TABLE payout_request_item (
+    id bigserial PRIMARY KEY,
+
+    payout_request_id bigint NOT NULL,
+    ledger_id bigint NOT NULL,
+
+    created_on timestamptz DEFAULT now()
+);
+
+ALTER TABLE tenant_wallet
+ADD CONSTRAINT tenant_wallet_tenant_currency_unique
+UNIQUE (tenant_id, currency);
+
+ALTER TABLE fleet_wallet
+ADD CONSTRAINT fleet_wallet_fleet_currency_unique
+UNIQUE (fleet_id, currency);

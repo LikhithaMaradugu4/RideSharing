@@ -316,7 +316,7 @@ function RiderTripStatus() {
             )}
             
             <p style={{ margin: '16px 0 0 0', opacity: 0.8, fontSize: '12px' }}>
-              ⚠️ Do not share this code with anyone except your driver
+               Do not share this code with anyone except your driver
             </p>
           </div>
         )}
