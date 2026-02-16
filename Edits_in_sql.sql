@@ -589,3 +589,31 @@ VALUES
     NULL,
     1
 );
+
+
+select * from tenant_ledger;
+ALTER TABLE driver_ledger
+add COLUMN settlement_status text DEFAULT 'unsettled';
+
+ALTER TABLE driver_profile
+ADD COLUMN is_blocked boolean DEFAULT false NOT NULL;
+
+ALTER TABLE driver_profile
+ADD COLUMN blocked_reason text;
+
+SELECT
+    status,
+    payment_mode,
+    payment_status,
+    settlement_status
+FROM trip
+WHERE trip_id = 11;
+
+select * from driver_ledger;
+truncate 
+ driver_ledger,
+ tenant_ledger,
+ platform_ledger
+ fleet_ledger
+restart identity cascade;
+

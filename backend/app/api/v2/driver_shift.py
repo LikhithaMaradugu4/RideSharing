@@ -39,6 +39,7 @@ def start_shift(
     Requires: Approved driver profile
     
     Preconditions:
+    - Driver is not blocked (wallet balance < MAX_NEGATIVE_LIMIT)
     - Driver has active fleet association
     - Driver has active vehicle assignment
     - Vehicle has all required documents (RC, INSURANCE, VEHICLE_PHOTO)
@@ -46,6 +47,13 @@ def start_shift(
     
     Response: DriverShift object with status=ONLINE
     """
+    # Check if driver is blocked
+    if driver_profile.is_blocked:
+        raise HTTPException(
+            status_code=403,
+            detail=f"Driver blocked: {driver_profile.blocked_reason or 'Outstanding commission payment required'}"
+        )
+    
     # Get the user object for service call (service still needs user object)
     user = db.query(AppUser).filter(AppUser.user_id == driver_profile.driver_id).first()
 

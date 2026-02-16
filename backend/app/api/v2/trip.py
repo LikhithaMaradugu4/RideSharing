@@ -387,12 +387,13 @@ def confirm_cash_payment(
     Driver confirms cash payment received.
     
     This automatically:
-    1. Creates payment record if it doesn't exist
-    2. Updates payment status to SUCCESS
-    3. Runs settlement (commission splits and wallet updates)
+    1. Validates trip (status=COMPLETED, mode=CASH)
+    2. Creates ledger DEBIT entries for commissions ONLY
+    3. Updates wallet balance (driver owes commission)
     4. Updates trip payment_status to PAID
+    5. Applies blocking rule if balance < MAX_NEGATIVE_LIMIT
     
-    Returns payment info + settlement breakdown.
+    Returns settlement breakdown (commissions + wallet info).
     """
     try:
         from app.services.payment_service import PaymentService
@@ -409,20 +410,20 @@ def confirm_cash_payment(
             driver_id=driver_id
         )
         
-        payment = result["payment"]
-        settlement = result.get("settlement", {})
+        # Extract values from result dict (new format)
+        commission = result.get("commission", {})
         
         return CashConfirmResponse(
-            payment_id=payment.payment_id,
-            trip_id=payment.trip_id,
-            amount=float(payment.amount),
-            currency=payment.currency,
-            payment_mode=payment.payment_mode,
-            status=payment.status,
-            driver_earning=settlement.get("driver_earning"),
-            platform_commission=settlement.get("platform_commission"),
-            tenant_commission=settlement.get("tenant_commission"),
-            fleet_commission=settlement.get("fleet_commission")
+            payment_id=trip_id,  # Use trip_id as payment_id
+            trip_id=result.get("trip_id"),
+            amount=commission.get("total_commission", 0),
+            currency=result.get("currency", "INR"),
+            payment_mode="CASH",
+            status=result.get("payment_status", "paid"),
+            driver_earning=0,  # CASH-only: no earning credit in ledger
+            platform_commission=commission.get("platform_fee", 0),
+            tenant_commission=commission.get("tenant_commission", 0),
+            fleet_commission=commission.get("fleet_commission", 0)
         )
         
     except HTTPException:
@@ -430,6 +431,8 @@ def confirm_cash_payment(
         raise
     except Exception as e:
         print(f"Error in confirm_cash_payment: {e}")
+        import traceback
+        traceback.print_exc()
         raise HTTPException(
             status_code=500,
             detail=f"Failed to confirm payment: {str(e)}"

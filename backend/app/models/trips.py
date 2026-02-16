@@ -75,6 +75,11 @@ class Trip(Base, AuditMixin):
     fare_amount = Column(Numeric(10,2))
     driver_earning = Column(Numeric(10,2))
     platform_fee = Column(Numeric(10,2))
+    tenant_commission = Column(Numeric(10,2), default=0)
+    fleet_commission = Column(Numeric(10,2), default=0)
+    
+    payment_mode = Column(String)  # cash | online
+    settlement_status = Column(String, default='unsettled')  # unsettled | settled
 
     payment_status = Column(String, ForeignKey("lu_payment_status.status_code"))
 

@@ -152,6 +152,7 @@ def accept_dispatch(
     Requires: Approved driver profile
     
     Preconditions:
+    - Driver is not blocked (commission limit exceeded)
     - Driver is still ONLINE
     - Driver is not BUSY
     - Dispatch attempt is still PENDING
@@ -166,6 +167,13 @@ def accept_dispatch(
     Response: Trip details with assigned driver
     """
     driver_id = driver_profile.driver_id
+
+    # Check if driver is blocked
+    if driver_profile.is_blocked:
+        raise HTTPException(
+            status_code=403,
+            detail=f"Driver blocked: {driver_profile.blocked_reason or 'Outstanding commission payment required'}"
+        )
 
     # Get attempt to find trip_id
     attempt = (
@@ -406,6 +414,10 @@ def complete_trip(
         trip.status = "COMPLETED"
         trip.completed_at = datetime.now(timezone.utc)
         trip.updated_by = driver_id
+        trip.payment_mode = "CASH"
+        trip.payment_status = "PENDING_CASH"
+        trip.settlement_status = "unsettled"
+
         print(f"DEBUG: Updated trip status to COMPLETED")
         
         # Set driver shift back to ONLINE

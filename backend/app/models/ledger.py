@@ -58,6 +58,10 @@ class DriverLedger(Base):
     - DEBIT: Fleet commission (driver owes fleet, if applicable)
     
     Driver collects full cash from rider, debits represent amounts owed.
+    
+    settlement_status:
+    - 'unsettled': Not yet settled
+    - 'settled': Already settled via payout request
     """
     __tablename__ = "driver_ledger"
 
@@ -69,5 +73,7 @@ class DriverLedger(Base):
     amount = Column(Numeric(12,2), nullable=False)
     entry_type = Column(Text, nullable=False)  # CREDIT / DEBIT
     reason = Column(Text)
+    
+    settlement_status = Column(Text, default='unsettled')  # unsettled | settled
 
     created_on = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())

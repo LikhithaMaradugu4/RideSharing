@@ -2,6 +2,7 @@ from sqlalchemy import Column, BigInteger, String, ForeignKey, Numeric, TIMESTAM
 from sqlalchemy.orm import relationship
 from .base import Base
 from .mixins import AuditMixin, StatusMixin
+from sqlalchemy import Boolean, DateTime
 
 class DriverProfile(Base, AuditMixin):
     __tablename__ = "driver_profile"
@@ -14,6 +15,11 @@ class DriverProfile(Base, AuditMixin):
     rating = Column(Numeric(3,2), default=5.00)
     alternate_phone_number = Column(String(15), nullable=True)
     allowed_vehicle_categories = Column(ARRAY(String), nullable=True)
+
+    # For blocking/unblocking driver based on wallet balance or other reasons
+    is_blocked = Column(Boolean, default=False, nullable=False)
+    blocked_reason = Column(String, nullable=True)
+
 
 
 class Fleet(Base, AuditMixin, StatusMixin):
