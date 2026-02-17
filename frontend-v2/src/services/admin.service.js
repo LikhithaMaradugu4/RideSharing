@@ -1,8 +1,8 @@
 import tokenStorage from './tokenStorage';
 
-const API_BASE_URL = 'http://localhost:8000/api/admin';
-const PLATFORM_BASE_URL = 'http://localhost:8000/api/v2/platform-admin';
-const USER_AUTH_BASE_URL = 'http://localhost:8000/auth';
+const API_BASE_URL = 'http://192.168.1.241:8000/api/admin';
+const PLATFORM_BASE_URL = 'http://192.168.1.241:8000/api/v2/platform-admin';
+const USER_AUTH_BASE_URL = 'http://192.168.1.241:8000/auth';
 const PLATFORM_SESSION_KEY = 'platform_session_id';
 
 // Safety guard: Prevent admin API calls outside /admin routes

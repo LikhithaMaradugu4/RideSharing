@@ -1,11 +1,11 @@
 // OTP Auth Service for Phase-2 JWT
 import tokenStorage from './tokenStorage';
 
-const API_BASE_URL = 'http://localhost:8000/api/v2/auth';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 const authService = {
   sendOtp: async (phoneNumber) => {
-    const res = await fetch(`${API_BASE_URL}/send-otp`, {
+    const res = await fetch(`${API_BASE_URL}/auth/send-otp`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ phone_number: phoneNumber })
@@ -18,7 +18,7 @@ const authService = {
   },
 
   verifyOtp: async (phoneNumber, otpCode) => {
-    const res = await fetch(`${API_BASE_URL}/verify-otp`, {
+    const res = await fetch(`${API_BASE_URL}/auth/verify-otp`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ phone_number: phoneNumber, otp_code: otpCode })
@@ -39,7 +39,7 @@ const authService = {
       throw new Error('No refresh token available');
     }
 
-    const res = await fetch(`${API_BASE_URL}/refresh`, {
+    const res = await fetch(`${API_BASE_URL}/auth/refresh`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ refresh_token: refreshToken })

@@ -13,6 +13,8 @@ class PlatformLedger(Base):
     amount = Column(Numeric(12,2), nullable=False)
     entry_type = Column(Text, nullable=False)  # CREDIT / DEBIT
     reason = Column(Text)
+    
+    settlement_status = Column(Text, default='unsettled')  # unsettled | settled
 
     created_on = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
 
@@ -28,6 +30,8 @@ class TenantLedger(Base):
     amount = Column(Numeric(12,2), nullable=False)
     entry_type = Column(Text, nullable=False)
     reason = Column(Text)
+    
+    settlement_status = Column(Text, default='unsettled')  # unsettled | settled
 
     created_on = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
 
@@ -43,6 +47,8 @@ class FleetLedger(Base):
     amount = Column(Numeric(12,2), nullable=False)
     entry_type = Column(Text, nullable=False)
     reason = Column(Text)
+    
+    settlement_status = Column(Text, default='unsettled')  # unsettled | settled
 
     created_on = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
 

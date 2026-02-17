@@ -3,7 +3,9 @@
  */
 import authService from './auth.service';
 
-const API_BASE_URL = 'http://localhost:8000/api/v2';
+// const API_BASE_URL = 'http://localhost:8000/api/v2';// const API_BASE_URL = 'http://localhost:8000/api/v2';
+const API_BASE_URL = 'http://192.168.1.241:8000/api/v2'; // Local network IP for testing on mobile
+//const API_BASE_URL = 'http://lo:8000/api/v2'; // Default API base URL
 
 const userService = {
   /**

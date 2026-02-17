@@ -2,7 +2,7 @@ import axios from "axios";
 
 // Backend exposes routes directly (no /api/v1 prefix)
 const api = axios.create({
-  baseURL: "http://localhost:8000",
+  baseURL: "http://192.168.1.241:8000",
   timeout: 10000,
 });
 

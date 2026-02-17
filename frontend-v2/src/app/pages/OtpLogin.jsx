@@ -55,6 +55,14 @@ function OtpLogin() {
       // Determine masking based on response or local input
       const displayPhone = res.phone_number || fullPhoneNumber;
       setMessage(`OTP sent to ${displayPhone}`);
+      // Log full response for debugging and explicitly log OTP when available.
+      // Only show OTP in console during development or on localhost to avoid leaking in production.
+      const isLocalhost = window && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+      if (res && res.debug_otp) {
+        if (isLocalhost || import.meta.env.DEV) {
+          console.log('Debug OTP (for testing):', res.debug_otp);
+        }
+      }
       setStep('otp');
     } catch (err) {
       setError(err.message || 'Failed to send OTP');

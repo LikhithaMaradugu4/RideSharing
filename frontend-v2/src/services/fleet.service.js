@@ -3,7 +3,7 @@
  */
 import authService from './auth.service';
 
-const API_BASE_URL = 'http://localhost:8000/api/v2';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 const getValidToken = async () => {
   return await authService.getValidToken();

@@ -118,6 +118,111 @@ def get_driver_all_wallets(
     }
 
 
+@router.get("/driver/earnings")
+def get_driver_earnings(
+    currency: str = Query(default='INR'),
+    from_date: Optional[str] = Query(default=None, description="From date (YYYY-MM-DD)"),
+    to_date: Optional[str] = Query(default=None, description="To date (YYYY-MM-DD)"),
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_jwt_user)
+):
+    """
+    Get driver's total earnings from completed trips.
+    
+    Auth: JWT Bearer Token
+    
+    Returns: SUM(trip.driver_earning) for completed trips
+    Wallet balance is NOT used - it represents outstanding debt.
+    """
+    driver_id = current_user.get("user_id")
+    
+    # Query completed trips
+    query = (
+        db.query(Trip)
+        .filter(
+            Trip.driver_id == driver_id,
+            Trip.status == 'COMPLETED',
+            Trip.currency == currency
+        )
+    )
+    
+    # Optional date filtering
+    if from_date:
+        try:
+            from datetime import datetime
+            start_date = datetime.strptime(from_date, '%Y-%m-%d')
+            query = query.filter(Trip.completed_at >= start_date)
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Invalid from_date format (use YYYY-MM-DD)")
+    
+    if to_date:
+        try:
+            from datetime import datetime
+            end_date = datetime.strptime(to_date, '%Y-%m-%d')
+            query = query.filter(Trip.completed_at <= end_date)
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Invalid to_date format (use YYYY-MM-DD)")
+    
+    trips = query.all()
+    
+    # Calculate totals
+    total_earnings = Decimal('0.00')
+    total_fare = Decimal('0.00')
+    total_platform_fee = Decimal('0.00')
+    total_tenant_commission = Decimal('0.00')
+    total_fleet_commission = Decimal('0.00')
+    trip_count = 0
+    
+    trip_details = []
+    for trip in trips:
+        trip_earning = Decimal(str(trip.driver_earning or 0))
+        fare = Decimal(str(trip.fare_amount or 0))
+        platform = Decimal(str(trip.platform_fee or 0))
+        tenant = Decimal(str(trip.tenant_commission or 0))
+        fleet = Decimal(str(trip.fleet_commission or 0))
+        
+        total_earnings += trip_earning
+        total_fare += fare
+        total_platform_fee += platform
+        total_tenant_commission += tenant
+        total_fleet_commission += fleet
+        trip_count += 1
+        
+        trip_details.append({
+            'trip_id': trip.trip_id,
+            'fare_amount': float(fare),
+            'driver_earning': float(trip_earning),
+            'platform_fee': float(platform),
+            'tenant_commission': float(tenant),
+            'fleet_commission': float(fleet),
+            'payment_status': trip.payment_status,
+            'settlement_status': trip.settlement_status,
+            'completed_at': trip.completed_at.isoformat() if trip.completed_at else None
+        })
+    
+    # Get wallet balance (for reference - shows outstanding debt)
+    wallet = WalletService.get_driver_wallet(db, driver_id, currency)
+    
+    return {
+        'driver_id': driver_id,
+        'currency': currency,
+        'summary': {
+            'total_earnings': float(total_earnings),
+            'total_fare': float(total_fare),
+            'total_platform_fee': float(total_platform_fee),
+            'total_tenant_commission': float(total_tenant_commission),
+            'total_fleet_commission': float(total_fleet_commission),
+            'total_commission': float(total_platform_fee + total_tenant_commission + total_fleet_commission),
+        },
+        'trip_count': trip_count,
+        'wallet_balance': float(wallet.balance) if wallet else 0.0,
+        'wallet_note': 'Negative balance = driver owes platform. Zero = settled. Use settlement endpoint to pay back commission.',
+        'from_date': from_date,
+        'to_date': to_date,
+        'trips': trip_details[:20]  # Limit to 20 most recent for response size
+    }
+
+
 @router.get("/driver/ledger")
 def get_driver_ledger(
     currency: str = Query(default='INR'),
@@ -255,15 +360,11 @@ def create_payout_request(
     current_user: dict = Depends(get_jwt_user)
 ):
     """
-    Request a payout/settlement.
+    Request a payout/settlement (trip-based).
     
     Auth: JWT Bearer Token
     
-    Settlement types:
-    - single: Settle single ledger entry
-    - batch: Settle specific entries
-    - full: Settle all unsettled entries
-    
+    Settles all unsettled DEBIT entries for the specified trips.
     Settlement is IMMEDIATE - no admin approval required.
     """
     driver_id = current_user.get("user_id")
@@ -272,8 +373,7 @@ def create_payout_request(
         result = PayoutService.process_settlement(
             db=db,
             driver_id=driver_id,
-            settlement_type=request_data.settlement_type,
-            entry_ids=request_data.entry_ids,
+            trip_ids=request_data.trip_ids,
             currency=request_data.currency
         )
         
@@ -282,9 +382,13 @@ def create_payout_request(
         return {
             'success': True,
             'payout_request_id': result['payout_request_id'],
-            'total_amount': result['total_amount'],
+            'settlement_amount': result['settlement_amount'],
             'entries_settled': result['entries_settled'],
-            'message': 'Settlement processed immediately'
+            'trips_settled': result['trips_settled'],
+            'old_balance': result['old_balance'],
+            'new_balance': result['new_balance'],
+            'is_blocked': result['is_blocked'],
+            'message': result['message']
         }
     except HTTPException:
         db.rollback()

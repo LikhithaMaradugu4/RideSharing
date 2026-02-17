@@ -6,8 +6,8 @@ from decimal import Decimal
 
 from app.models.trips import Trip
 from app.models.payments import Payment, DriverWallet
-from app.models.ledger import DriverLedger
-from app.models.fleet import DriverProfile
+from app.models.ledger import DriverLedger, PlatformLedger, TenantLedger, FleetLedger
+from app.models.fleet import DriverProfile, Vehicle
 
 
 # =============================================================================
@@ -93,10 +93,15 @@ class PaymentService:
         
         CASH-ONLY LOGIC:
         1. Validate trip (exists, status=COMPLETED, mode=CASH, not already paid)
-        2. Insert DEBIT ledger entries for commissions ONLY
-        3. Update wallet: balance -= total_commission
-        4. Update trip: payment_status='paid', settlement_status='unsettled'
-        5. Apply blocking rule if balance < MAX_NEGATIVE_LIMIT
+        2. Get fleet_id from vehicle (if applicable)
+        3. Lock driver wallet (SELECT FOR UPDATE)
+        4. Insert DEBIT ledger entries for driver (commission amounts)
+        5. Insert CREDIT ledger entries for platform/tenant/fleet (receivables)
+        6. Update wallet: balance -= total_commission
+        7. Update trip: payment_status='paid', settlement_status='unsettled'
+        8. Update payment record status
+        9. Apply blocking rule if balance < MAX_NEGATIVE_LIMIT
+        10. Commit transaction
         
         NO EARNING CREDIT ENTRY - driver keeps cash physically.
         """
@@ -127,19 +132,21 @@ class PaymentService:
             raise HTTPException(status_code=400, detail="Payment already confirmed")
 
         # 2️⃣ Get commission values from trip
-        platform_fee = Decimal(trip.platform_fee or 0)
-        tenant_commission = Decimal(trip.tenant_commission or 0)
-        fleet_commission = Decimal(trip.fleet_commission or 0)
+        platform_fee = Decimal(str(trip.platform_fee or 0))
+        tenant_commission = Decimal(str(trip.tenant_commission or 0))
+        fleet_commission = Decimal(str(trip.fleet_commission or 0))
 
-        total_commission = (
-            platform_fee +
-            tenant_commission +
-            fleet_commission
-        )
-
+        total_commission = platform_fee + tenant_commission + fleet_commission
         currency = trip.currency or "INR"
 
-        # 3️⃣ Lock driver wallet row (SELECT FOR UPDATE)
+        # 3️⃣ Get fleet_id from vehicle (if applicable)
+        fleet_id = None
+        if trip.vehicle_id:
+            vehicle = db.query(Vehicle).filter(Vehicle.vehicle_id == trip.vehicle_id).first()
+            if vehicle and vehicle.fleet_id:
+                fleet_id = vehicle.fleet_id
+
+        # 4️⃣ Lock driver wallet row (SELECT FOR UPDATE)
         wallet = (
             db.query(DriverWallet)
             .filter(
@@ -170,15 +177,15 @@ class PaymentService:
                 .first()
             )
 
-        # 4️⃣ Insert DEBIT ledger entries (commission only)
-        # ❌ DO NOT INSERT EARNING CREDIT ENTRY
+        # 5️⃣ Insert DEBIT ledger entries for DRIVER (commission amounts)
+        # ❌ DO NOT INSERT EARNING CREDIT ENTRY - driver keeps cash physically
 
         if platform_fee > 0:
             db.add(DriverLedger(
                 driver_id=driver_id,
                 trip_id=trip.trip_id,
                 currency=currency,
-                amount=platform_fee,
+                amount=float(platform_fee),
                 entry_type="DEBIT",
                 reason=f"Platform commission for trip {trip.trip_id}",
                 settlement_status="unsettled"
@@ -189,7 +196,7 @@ class PaymentService:
                 driver_id=driver_id,
                 trip_id=trip.trip_id,
                 currency=currency,
-                amount=tenant_commission,
+                amount=float(tenant_commission),
                 entry_type="DEBIT",
                 reason=f"Tenant commission for trip {trip.trip_id}",
                 settlement_status="unsettled"
@@ -200,27 +207,60 @@ class PaymentService:
                 driver_id=driver_id,
                 trip_id=trip.trip_id,
                 currency=currency,
-                amount=fleet_commission,
+                amount=float(fleet_commission),
                 entry_type="DEBIT",
                 reason=f"Fleet commission for trip {trip.trip_id}",
                 settlement_status="unsettled"
             ))
 
-        # 5️⃣ Update wallet balance (driver owes commission)
-        wallet.balance -= total_commission
+        # 6️⃣ Insert CREDIT ledger entries for Platform/Tenant/Fleet (RECEIVABLES)
+        # These track amounts owed TO these entities BY the driver
+        # settlement_status tracks whether driver has paid this back
 
-        # 6️⃣ Update trip status
+        if platform_fee > 0:
+            db.add(PlatformLedger(
+                trip_id=trip.trip_id,
+                currency=currency,
+                amount=float(platform_fee),
+                entry_type="CREDIT",
+                reason=f"Platform commission receivable for trip {trip.trip_id}"
+            ))
+
+        if tenant_commission > 0 and trip.tenant_id:
+            db.add(TenantLedger(
+                tenant_id=trip.tenant_id,
+                trip_id=trip.trip_id,
+                currency=currency,
+                amount=float(tenant_commission),
+                entry_type="CREDIT",
+                reason=f"Tenant commission receivable for trip {trip.trip_id}"
+            ))
+
+        if fleet_commission > 0 and fleet_id:
+            db.add(FleetLedger(
+                fleet_id=fleet_id,
+                trip_id=trip.trip_id,
+                currency=currency,
+                amount=float(fleet_commission),
+                entry_type="CREDIT",
+                reason=f"Fleet commission receivable for trip {trip.trip_id}"
+            ))
+
+        # 7️⃣ Update wallet balance (driver owes commission - goes negative)
+        wallet.balance = float(Decimal(str(wallet.balance)) - total_commission)
+
+        # 8️⃣ Update trip status
         trip.payment_status = "paid"
         trip.settlement_status = "unsettled"
 
-        # Update payment record if exists
+        # 9️⃣ Update payment record if exists
         payment = PaymentService.get_payment_for_trip(db, trip_id)
         if payment:
             payment.status = "SUCCESS"
             payment.confirmed_at = datetime.now(timezone.utc)
 
-        # 7️⃣ Apply blocking rule
-        if wallet.balance < MAX_NEGATIVE_LIMIT:
+        # 🔟 Apply blocking rule if balance exceeds limit
+        if Decimal(str(wallet.balance)) < MAX_NEGATIVE_LIMIT:
             driver_profile = (
                 db.query(DriverProfile)
                 .filter(DriverProfile.driver_id == driver_id)
@@ -245,5 +285,11 @@ class PaymentService:
                 "total_commission": float(total_commission)
             },
             "wallet_balance": float(wallet.balance),
-            "currency": currency
+            "currency": currency,
+            "ledger_entries_created": {
+                "driver_ledger": True,
+                "platform_ledger": platform_fee > 0,
+                "tenant_ledger": tenant_commission > 0 and trip.tenant_id is not None,
+                "fleet_ledger": fleet_commission > 0 and fleet_id is not None
+            }
         }

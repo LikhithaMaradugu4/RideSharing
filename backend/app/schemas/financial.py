@@ -140,9 +140,8 @@ class PayoutRequest(BaseModel):
 
 
 class PayoutRequestCreate(BaseModel):
-    """Create payout/settlement request."""
-    settlement_type: Literal['single', 'batch', 'full']
-    entry_ids: Optional[List[int]] = None  # Required for single/batch
+    """Create payout/settlement request (trip-based)."""
+    trip_ids: List[int]  # Trip IDs to settle
     currency: str = 'INR'
 
 

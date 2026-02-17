@@ -3,6 +3,7 @@ Phase-2 JWT authentication schemas
 """
 
 from pydantic import BaseModel
+from typing import Optional
 
 
 # OTP Request/Response
@@ -13,6 +14,7 @@ class SendOTPRequest(BaseModel):
 class SendOTPResponse(BaseModel):
     message: str
     phone_number: str
+    debug_otp: Optional[str] = None
 
 
 class VerifyOTPRequest(BaseModel):

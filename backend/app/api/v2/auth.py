@@ -6,6 +6,8 @@ OTP-based login with access + refresh tokens
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 import random
+import logging
+import os
 from typing import Optional
 
 from app.core.database import SessionLocal
@@ -29,6 +31,12 @@ from app.utils.jwt_utils import (
 )
 from app.api.deps.jwt_auth import get_current_user
 
+
+# Setup logging
+logger = logging.getLogger(__name__)
+
+# Control OTP display via environment variable
+SHOW_OTP_IN_LOG = os.getenv("SHOW_OTP_IN_LOG", "true").lower() == "true"
 
 router = APIRouter(prefix="/auth", tags=["Phase-2 Auth"])
 
@@ -98,12 +106,22 @@ def send_otp(data: SendOTPRequest, db: Session = Depends(get_db)):
     # Store in Redis
     OTPStore.store_otp(phone, otp_code)
 
-    # In production: Send via SMS gateway
-    print(f"[DEV MODE] OTP for {phone}: {otp_code}")
+    # Log OTP (controlled by SHOW_OTP_IN_LOG environment variable)
+    if SHOW_OTP_IN_LOG:
+        logger.info(f" OTP GENERATED | Phone: {phone} | OTP: {otp_code}")
+        print(f"\n{'='*60}")
+        print(f"🔐 OTP FOR TESTING")
+        print(f"{'='*60}")
+        print(f"Phone: {phone}")
+        print(f"OTP Code: {otp_code}")
+        print(f"{'='*60}\n")
+    else:
+        logger.info(f"✓ OTP sent to {phone} (display disabled)")
 
     return SendOTPResponse(
         message="OTP sent successfully",
-        phone_number=phone
+        phone_number=phone,
+        debug_otp=otp_code if SHOW_OTP_IN_LOG else None
     )
 
 
