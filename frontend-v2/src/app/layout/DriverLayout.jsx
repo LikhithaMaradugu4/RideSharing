@@ -69,6 +69,14 @@ function DriverLayout({ children, driverProfile }) {
           </Link>
 
           <Link 
+            to="/app/driver/earnings" 
+            className={`nav-link ${isActive('/app/driver/earnings')}`}
+          >
+            <span className="nav-icon"><Icons.Wallet size={20} /></span>
+            <span className="nav-label">Earnings</span>
+          </Link>
+
+          <Link 
             to="/app/profile" 
             className={`nav-link ${isActive('/app/profile')}`}
           >

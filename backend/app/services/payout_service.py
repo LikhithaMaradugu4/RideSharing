@@ -51,23 +51,6 @@ class PayoutService:
         """
         Process settlement for CASH-ONLY system (trip-based).
         
-        Settlement Flow:
-        1) Validate trip_ids not empty
-        2) Verify driver exists
-        3) Fetch all unsettled DEBIT entries for the given trip_ids
-        4) Validate all entries are DEBIT type and currency matches
-        5) Calculate settlement_amount = sum of debit amounts
-        6) Validate settlement_amount > 0
-        7) Lock wallet row (SELECT FOR UPDATE)
-        8) Check wallet.balance: if >= 0, throw "Nothing to settle"
-        9) Insert CREDIT settlement entry
-        10) Update wallet: balance += settlement_amount (reduces debt)
-        11) Mark original DEBIT entries as settled
-        12) Mark trips as settled
-        13) Apply unblocking rule if balance >= MAX_NEGATIVE_LIMIT
-        14) Create payout_request and payout_request_item records
-        15) Return success response
-        
         Args:
             db: Database session (with transaction)
             driver_id: Driver ID
@@ -76,10 +59,6 @@ class PayoutService:
         
         Returns:
             Settlement result dict
-        
-        Raises:
-            HTTPException 400: No entries to settle, nothing to settle, currency mismatch
-            HTTPException 404: Driver not found
         """
         if not trip_ids:
             raise HTTPException(
@@ -111,18 +90,10 @@ class PayoutService:
         if not entries:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"No unsettled DEBIT entries found for the specified trips"
+                detail="No unsettled DEBIT entries found for the specified trips"
             )
         
-        # Step 3: Validate all entries are same currency (should be by query filter, but be safe)
-        currencies = set(e.currency for e in entries)
-        if len(currencies) > 1:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Entries have mixed currencies (should not happen)"
-            )
-        
-        # Step 4: Calculate settlement amount
+        # Step 3: Calculate settlement amount
         settlement_amount = sum(Decimal(str(e.amount)) for e in entries)
         
         if settlement_amount <= 0:
@@ -131,7 +102,7 @@ class PayoutService:
                 detail="Settlement amount must be positive"
             )
         
-        # Step 5: Lock wallet row
+        # Step 4: Lock wallet row
         wallet = (
             db.query(DriverWallet)
             .filter(
@@ -150,14 +121,14 @@ class PayoutService:
         
         current_balance = Decimal(str(wallet.balance))
         
-        # Step 6: Check if there's anything to settle
+        # Step 5: Check if there's anything to settle
         if current_balance >= 0:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"Nothing to settle - wallet balance is {current_balance} (must be negative)"
             )
         
-        # Step 7: Create settlement entry (CREDIT to offset debits)
+        # Step 6: Create settlement entry (CREDIT to offset debits)
         settlement_entry = DriverLedger(
             driver_id=driver_id,
             trip_id=None,
@@ -170,17 +141,17 @@ class PayoutService:
         db.add(settlement_entry)
         db.flush()
         
-        # Step 8: Update wallet balance (CREDIT increases balance, reduces debt)
+        # Step 7: Update wallet balance (CREDIT increases balance, reduces debt)
         new_balance = current_balance + settlement_amount
         wallet.balance = float(new_balance)
         wallet.updated_on = datetime.now(timezone.utc)
         
-        # Step 9: Mark original driver ledger entries as settled
+        # Step 8: Mark original driver ledger entries as settled
+        entry_ids = [e.entry_id for e in entries]
         for entry in entries:
             entry.settlement_status = 'settled'
         
-        # Step 9b: Mark corresponding platform/tenant/fleet ledger entries as settled
-        # These were created during cash confirmation and need to be marked when driver pays
+        # Step 9: Mark corresponding platform/tenant/fleet ledger entries as settled
         platform_entries_settled = 0
         tenant_entries_settled = 0
         fleet_entries_settled = 0
@@ -222,11 +193,47 @@ class PayoutService:
         # Step 10: Mark trips as settled
         settled_trip_count = 0
         for trip_id in trip_ids:
-            # Check if ALL ledger entries for this trip are now settled
+            # Check if ALL driver ledger entries for this trip are now settled
             unsettled_count = (
                 db.query(DriverLedger)
                 .filter(
                     DriverLedger.trip_id == trip_id,
+                    DriverLedger.settlement_status == 'unsettled'
+                )
+                .count()
+            )
+            
+            if unsettled_count == 0:
+                trip = db.query(Trip).filter(Trip.trip_id == trip_id).first()
+                if trip:
+                    trip.settlement_status = 'settled'
+                    settled_trip_count += 1
+        
+        # Step 11: Apply unblocking rule
+        is_blocked = new_balance < MAX_NEGATIVE_LIMIT
+        driver.is_blocked = is_blocked
+        if not is_blocked:
+            driver.blocked_reason = None
+        
+        # Step 12: Create payout request record
+        payout_request = PayoutRequest(
+            driver_id=driver_id,
+            total_amount=float(settlement_amount),
+            payout_type='trip_batch',
+            status='completed',
+            processed_on=datetime.now(timezone.utc)
+        )
+        db.add(payout_request)
+        db.flush()
+        
+        # Step 13: Create payout request items for each ledger entry
+        for entry_id in entry_ids:
+            item = PayoutRequestItem(
+                payout_request_id=payout_request.id,
+                ledger_id=entry_id
+            )
+            db.add(item)
+        
         db.flush()
         
         return {
@@ -249,46 +256,6 @@ class PayoutService:
             'currency': currency,
             'is_blocked': is_blocked,
             'message': f"Settlement successful: {len(entry_ids)} driver entries settled, {settled_trip_count} trips settled, driver {'blocked' if is_blocked else 'unblocked'}"
-        }
-        # Step 12: Create payout request record
-        from app.models.financial import PayoutRequest, PayoutRequestItem
-        
-        payout_request = PayoutRequest(
-            driver_id=driver_id,
-            total_amount=float(settlement_amount),
-            payout_type='trip_batch',
-            status='completed',
-            processed_on=datetime.now(timezone.utc)
-            # currency will use default 'INR' from model - database may not have this column yet
-        )
-        db.add(payout_request)
-        db.flush()
-        
-        # Step 13: Create payout request items for each ledger entry
-        entry_ids = [e.entry_id for e in entries]
-        for entry_id in entry_ids:
-            item = PayoutRequestItem(
-                payout_request_id=payout_request.id,
-                ledger_id=entry_id
-            )
-            db.add(item)
-        
-        db.flush()
-        
-        return {
-            'success': True,
-            'payout_request_id': payout_request.id,
-            'settlement_entry_id': settlement_entry.entry_id,
-            'driver_id': driver_id,
-            'trips_processed': len(trip_ids),
-            'trips_settled': settled_trip_count,
-            'entries_settled': len(entry_ids),
-            'settlement_amount': float(settlement_amount),
-            'old_balance': float(current_balance),
-            'new_balance': float(new_balance),
-            'currency': currency,
-            'is_blocked': is_blocked,
-            'message': f"Settlement successful: {len(entry_ids)} entries settled, {settled_trip_count} trips settled, driver {'blocked' if is_blocked else 'unblocked'}"
         }
     
     @staticmethod

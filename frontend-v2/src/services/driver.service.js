@@ -474,6 +474,110 @@ const driverService = {
     });
 
     return handleResponse(response, 'Failed to confirm cash payment');
+  },
+
+  // =====================================================
+  // Financial / Earnings / Settlement Methods
+  // =====================================================
+
+  /**
+   * Get driver's wallet balance and summary.
+   * Returns current wallet balance (negative = owes commission)
+   */
+  getWallet: async (token, currency = 'INR') => {
+    const validToken = await getValidToken(token);
+    const response = await fetch(`${API_BASE_URL}/financial/driver/wallet?currency=${currency}`, {
+      method: 'GET',
+      headers: buildHeaders(validToken)
+    });
+
+    return handleResponse(response, 'Failed to fetch wallet');
+  },
+
+  /**
+   * Get driver's earnings from completed trips.
+   * Returns trip details with earnings breakdown.
+   */
+  getEarnings: async (token, currency = 'INR', fromDate = null, toDate = null) => {
+    const validToken = await getValidToken(token);
+    let url = `${API_BASE_URL}/financial/driver/earnings?currency=${currency}`;
+    if (fromDate) url += `&from_date=${fromDate}`;
+    if (toDate) url += `&to_date=${toDate}`;
+    
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: buildHeaders(validToken)
+    });
+
+    return handleResponse(response, 'Failed to fetch earnings');
+  },
+
+  /**
+   * Get driver's ledger history.
+   * Shows all debit/credit entries.
+   */
+  getLedger: async (token, currency = 'INR', page = 1, pageSize = 20) => {
+    const validToken = await getValidToken(token);
+    const response = await fetch(
+      `${API_BASE_URL}/financial/driver/ledger?currency=${currency}&page=${page}&page_size=${pageSize}`,
+      {
+        method: 'GET',
+        headers: buildHeaders(validToken)
+      }
+    );
+
+    return handleResponse(response, 'Failed to fetch ledger');
+  },
+
+  /**
+   * Get unsettled trips that can be settled.
+   * Returns trips with payment_status=paid and settlement_status=unsettled.
+   */
+  getUnsettledTrips: async (token, currency = 'INR') => {
+    const validToken = await getValidToken(token);
+    const response = await fetch(`${API_BASE_URL}/financial/driver/unsettled-trips?currency=${currency}`, {
+      method: 'GET',
+      headers: buildHeaders(validToken)
+    });
+
+    return handleResponse(response, 'Failed to fetch unsettled trips');
+  },
+
+  /**
+   * Settle selected trips.
+   * Driver pays back commission for selected trips.
+   * @param {string} token - Auth token
+   * @param {number[]} tripIds - Array of trip IDs to settle
+   * @param {string} currency - Currency code (default: INR)
+   */
+  settleTrips: async (token, tripIds, currency = 'INR') => {
+    const validToken = await getValidToken(token);
+    const response = await fetch(`${API_BASE_URL}/financial/driver/payout-request`, {
+      method: 'POST',
+      headers: buildHeaders(validToken),
+      body: JSON.stringify({
+        trip_ids: tripIds,
+        currency: currency
+      })
+    });
+
+    return handleResponse(response, 'Failed to settle trips');
+  },
+
+  /**
+   * Get payout/settlement history.
+   */
+  getPayoutHistory: async (token, page = 1, pageSize = 20) => {
+    const validToken = await getValidToken(token);
+    const response = await fetch(
+      `${API_BASE_URL}/financial/driver/payout-requests?page=${page}&page_size=${pageSize}`,
+      {
+        method: 'GET',
+        headers: buildHeaders(validToken)
+      }
+    );
+
+    return handleResponse(response, 'Failed to fetch payout history');
   }
 };
 
