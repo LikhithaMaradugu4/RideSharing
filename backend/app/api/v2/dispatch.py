@@ -21,7 +21,9 @@ from app.models.fleet import DriverProfile
 from app.models.trips import Trip
 from app.models.dispatch import DispatchAttempt
 from app.models.operations import DriverShift
+from app.models.vehicle import Vehicle
 from app.services.payment_service import PaymentService
+from app.services.commission_service import CommissionService
 from app.schemas.dispatch import (
     DriverDispatchNotification,
     DispatchAttemptResponse
@@ -419,6 +421,63 @@ def complete_trip(
         trip.settlement_status = "unsettled"
 
         print(f"DEBUG: Updated trip status to COMPLETED")
+        
+        # ==========================================
+        # COMMISSION CALCULATION (MANDATORY)
+        # ==========================================
+        print("===== BEFORE COMMISSION CALCULATION =====")
+        print(f"trip.fare_amount: {trip.fare_amount}")
+        print(f"trip.tenant_id: {trip.tenant_id}")
+        print(f"trip.city_id: {trip.city_id}")
+        print(f"trip.currency: {trip.currency}")
+        print(f"vehicle_category: {trip.fare_snapshot.get('vehicle_category') if trip.fare_snapshot else None}")
+        print("==========================================")
+        
+        # Step A: Get vehicle to check fleet association
+        vehicle = None
+        has_fleet = False
+        if trip.vehicle_id:
+            vehicle = db.query(Vehicle).filter(Vehicle.vehicle_id == trip.vehicle_id).first()
+            if vehicle and vehicle.fleet_id is not None:
+                has_fleet = True
+        
+        print(f"has_fleet: {has_fleet}")
+        
+        # Step B: Calculate commission split using CommissionService
+        split = CommissionService.calculate_fare_split(
+            db=db,
+            total_fare=Decimal(str(trip.fare_amount)),
+            tenant_id=trip.tenant_id,
+            city_id=trip.city_id,
+            vehicle_category=trip.fare_snapshot.get("vehicle_category") if trip.fare_snapshot else None,
+            has_fleet=has_fleet,
+            currency=trip.currency
+        )
+        
+        print("===== COMMISSION SPLIT RESULT =====")
+        print(f"Split result: {split}")
+        print(f"Type: {type(split)}")
+        print("===================================")
+        
+        # Step C: Store commission snapshot in trip (before confirm_cash runs)
+        trip.platform_fee = split["platform_commission"]
+        trip.tenant_commission = split["tenant_commission"]
+        trip.fleet_commission = split["fleet_commission"]
+        trip.driver_earning = split["driver_earning"]
+        
+        # Step D: Safety validation
+        if trip.platform_fee is None:
+            raise Exception("Commission calculation failed: platform_fee is None")
+        
+        # Step E: Debug logging
+        print(f"=== TRIP {trip.trip_id} COMMISSION CALCULATION ===")
+        print(f"Fare: {trip.fare_amount}")
+        print(f"Platform: {trip.platform_fee}")
+        print(f"Tenant: {trip.tenant_commission}")
+        print(f"Fleet: {trip.fleet_commission}")
+        print(f"Driver earning: {trip.driver_earning}")
+        print(f"Has fleet: {has_fleet}")
+        print("=" * 50)
         
         # Set driver shift back to ONLINE
         shift_update_result = db.query(DriverShift).filter(

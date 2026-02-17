@@ -121,9 +121,11 @@ class CommissionService:
             config = query.first()
             
             if config:
+                print(f"✓ Found config: type={commission_type}, tenant={t_id}, city={c_id}, vehicle={v_cat}, percentage={config.percentage}")
                 return Decimal(str(config.percentage))
         
         # No config found, return 0
+        print(f"✗ No config found for: type={commission_type}, tenant_id={tenant_id}, city_id={city_id}, vehicle_category={vehicle_category}")
         return Decimal('0')
     
     @staticmethod
@@ -184,10 +186,24 @@ class CommissionService:
         """
         F = Decimal(str(total_fare))
         
+        print("===== INSIDE calculate_fare_split =====")
+        print(f"total_fare: {F}")
+        print(f"tenant_id: {tenant_id}")
+        print(f"city_id: {city_id}")
+        print(f"vehicle_category: {vehicle_category}")
+        print(f"has_fleet: {has_fleet}")
+        print(f"currency: {currency}")
+        
         # Get rates from DB
         rates = CommissionService.get_all_commission_rates(
             db, tenant_id, city_id, vehicle_category, currency
         )
+        
+        print(f"Rates fetched: {rates}")
+        print(f"platform_percentage: {rates['platform_percentage']}")
+        print(f"tenant_percentage: {rates['tenant_percentage']}")
+        print(f"fleet_percentage: {rates['fleet_percentage']}")
+        print("=======================================")
         
         # Calculate commissions from total fare
         platform_commission = (F * rates['platform_percentage']).quantize(Decimal('0.01'))
