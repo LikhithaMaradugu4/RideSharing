@@ -98,7 +98,7 @@ def admin_login(
         value=session_id,
         httponly=True,
         max_age=7 * 24 * 60 * 60,  # 7 days
-        samesite="lax"
+        samesite="lax"  # Works with HTTP when same site
     )
     
     # Determine admin type

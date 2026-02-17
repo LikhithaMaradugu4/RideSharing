@@ -77,6 +77,62 @@ const driverService = {
   },
 
   /**
+   * Get driver's application status with all documents.
+   * Returns application status, documents with statuses, can_resubmit flag.
+   */
+  getMyApplication: async (token) => {
+    try {
+      const validToken = await getValidToken(token);
+      const response = await fetch(`${API_BASE_URL}/driver/application`, {
+        method: 'GET',
+        headers: buildHeaders(validToken)
+      });
+
+      return await handleResponse(response, 'Failed to fetch application status');
+    } catch (error) {
+      if (error.status === 404) {
+        return null;
+      }
+      throw error;
+    }
+  },
+
+  /**
+   * Re-upload a rejected document.
+   * @param {string} token - Auth token
+   * @param {string} documentType - Type of document (DRIVING_LICENSE, AADHAAR, etc.)
+   * @param {File} file - The file to upload
+   */
+  reuploadDocument: async (token, documentType, file) => {
+    const validToken = await getValidToken(token);
+    const formData = new FormData();
+    formData.append('document_file', file);
+
+    const response = await fetch(`${API_BASE_URL}/driver/documents/${documentType}/reupload`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${validToken}`
+      },
+      body: formData
+    });
+
+    return handleResponse(response, 'Failed to reupload document');
+  },
+
+  /**
+   * Resubmit application after fixing all rejected documents.
+   */
+  resubmitApplication: async (token) => {
+    const validToken = await getValidToken(token);
+    const response = await fetch(`${API_BASE_URL}/driver/resubmit`, {
+      method: 'POST',
+      headers: buildHeaders(validToken)
+    });
+
+    return handleResponse(response, 'Failed to resubmit application');
+  },
+
+  /**
    * Retrieve the authenticated driver's profile.
    */
   getMyProfile: async (token) => {

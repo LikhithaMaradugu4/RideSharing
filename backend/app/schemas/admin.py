@@ -190,6 +190,29 @@ class DriverDocumentResponse(BaseModel):
     document_number: str
     file_url: Optional[str]
     verification_status: str
+    rejection_reason: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+
+class DriverDocumentReviewRequest(BaseModel):
+    """Request body for reviewing individual driver document"""
+    status: str  # APPROVED or REJECTED
+    rejection_reason: Optional[str] = None
+
+
+class DriverDocumentDetailResponse(BaseModel):
+    """Detailed document response with rejection info"""
+    document_id: int
+    document_type: str
+    document_number: str
+    file_url: Optional[str]
+    verification_status: str
+    rejection_reason: Optional[str] = None
+    verified_by: Optional[int] = None
+    verified_on: Optional[datetime] = None
+    can_review: bool = True
 
     class Config:
         from_attributes = True

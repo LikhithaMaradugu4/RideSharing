@@ -14,6 +14,7 @@ import DriverDispatches from './app/pages/DriverDispatches'
 import DriverVehicles from './app/pages/DriverVehicles'
 import DriverFleets from './app/pages/DriverFleets'
 import DriverEarnings from './app/pages/DriverEarnings'
+import DriverApplicationStatus from './app/pages/DriverApplicationStatus'
 import RiderDashboard from './app/pages/RiderDashboard'
 import RiderTripStatus from './app/pages/RiderTripStatus'
 import TripPlanning from './app/pages/TripPlanning'
@@ -95,6 +96,11 @@ function App() {
         <Route
           path="/app/driver/earnings"
           element={<ProtectedRoute><DriverEarnings /></ProtectedRoute>}
+        />
+
+        <Route
+          path="/app/driver/application-status"
+          element={<ProtectedRoute><DriverApplicationStatus /></ProtectedRoute>}
         />
 
         {/* Rider Routes */}

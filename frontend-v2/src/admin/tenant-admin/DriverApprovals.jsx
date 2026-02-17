@@ -8,6 +8,11 @@ const DriverApprovals = () => {
   const [error, setError] = useState('');
   const [expandedDriver, setExpandedDriver] = useState(null);
   const [approvalData, setApprovalData] = useState({});
+  
+  // Document review state
+  const [reviewingDoc, setReviewingDoc] = useState(null);
+  const [rejectReason, setRejectReason] = useState('');
+  const [reviewLoading, setReviewLoading] = useState(false);
 
   useEffect(() => {
     loadPendingDrivers();
@@ -35,11 +40,51 @@ const DriverApprovals = () => {
 
   const loadDocuments = async (driverId) => {
     try {
-      const docs = await adminService.getDriverDocuments(driverId);
+      // Use detailed endpoint for document review capability
+      const docs = await adminService.getDriverDocumentsDetailed(driverId);
       return docs;
     } catch (err) {
       console.error('Failed to load documents:', err);
-      return [];
+      // Fallback to basic endpoint
+      try {
+        const basicDocs = await adminService.getDriverDocuments(driverId);
+        return basicDocs;
+      } catch {
+        return [];
+      }
+    }
+  };
+
+  // Handle document review (approve/reject)
+  const handleDocumentReview = async (driverId, documentId, status) => {
+    if (status === 'REJECTED' && !rejectReason.trim()) {
+      alert('Please provide a rejection reason');
+      return;
+    }
+
+    try {
+      setReviewLoading(true);
+      await adminService.reviewDriverDocument(driverId, documentId, {
+        status,
+        rejection_reason: status === 'REJECTED' ? rejectReason : undefined
+      });
+      
+      // Refresh documents
+      const docs = await loadDocuments(driverId);
+      setExpandedDriver(prev => ({ ...prev, documents: docs }));
+      
+      // Refresh drivers list (status might have changed)
+      loadPendingDrivers();
+      
+      // Reset modal
+      setReviewingDoc(null);
+      setRejectReason('');
+      
+      alert(`Document ${status.toLowerCase()} successfully`);
+    } catch (err) {
+      alert(err.message || 'Failed to review document');
+    } finally {
+      setReviewLoading(false);
     }
   };
 
@@ -172,19 +217,46 @@ const DriverApprovals = () => {
                         {expandedDriver.documents && expandedDriver.documents.length > 0 ? (
                           <div className="documents-list">
                             {expandedDriver.documents.map((doc) => (
-                              <div key={doc.document_id} className="document-item">
+                              <div key={doc.document_id} className={`document-item doc-status-${(doc.verification_status || 'pending').toLowerCase()}`}>
                                 <div className="doc-icon">
                                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><polyline points="13 2 13 9 20 9"></polyline></svg>
                                 </div>
                                 <div className="doc-info">
                                   <span className="doc-type">{doc.document_type}</span>
-                                  <span className="doc-number">{doc.document_number}</span>
+                                  <span className={`doc-verification-status status-${(doc.verification_status || 'pending').toLowerCase()}`}>
+                                    {doc.verification_status || 'PENDING'}
+                                  </span>
+                                  {doc.rejection_reason && (
+                                    <span className="doc-rejection-reason">Reason: {doc.rejection_reason}</span>
+                                  )}
                                 </div>
-                                {doc.file_url && (
-                                  <a href={doc.file_url} target="_blank" rel="noopener noreferrer" className="doc-link" title="View Document">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
-                                  </a>
-                                )}
+                                <div className="doc-actions">
+                                  {doc.file_url && (
+                                    <a href={doc.file_url.startsWith('http') ? doc.file_url : `/${doc.file_url}`} target="_blank" rel="noopener noreferrer" className="doc-link" title="View Document">
+                                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+                                    </a>
+                                  )}
+                                  {(doc.can_review !== false && doc.verification_status !== 'APPROVED') && (
+                                    <>
+                                      <button 
+                                        className="doc-btn doc-btn-approve"
+                                        onClick={() => handleDocumentReview(driver.driver_id, doc.document_id, 'APPROVED')}
+                                        disabled={reviewLoading}
+                                        title="Approve Document"
+                                      >
+                                        ✓
+                                      </button>
+                                      <button 
+                                        className="doc-btn doc-btn-reject"
+                                        onClick={() => setReviewingDoc({ driverId: driver.driver_id, doc })}
+                                        disabled={reviewLoading}
+                                        title="Reject Document"
+                                      >
+                                        ✕
+                                      </button>
+                                    </>
+                                  )}
+                                </div>
                               </div>
                             ))}
                           </div>
@@ -262,6 +334,45 @@ const DriverApprovals = () => {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* Document Rejection Modal */}
+      {reviewingDoc && (
+        <div className="modal-overlay" onClick={() => setReviewingDoc(null)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <h3>Reject Document</h3>
+            <p className="modal-subtitle">
+              Document: <strong>{reviewingDoc.doc.document_type}</strong>
+            </p>
+            <div className="modal-form">
+              <label>Rejection Reason *</label>
+              <textarea
+                value={rejectReason}
+                onChange={(e) => setRejectReason(e.target.value)}
+                placeholder="Please provide a clear reason for rejection..."
+                rows={4}
+              />
+            </div>
+            <div className="modal-actions">
+              <button 
+                className="btn-cancel" 
+                onClick={() => {
+                  setReviewingDoc(null);
+                  setRejectReason('');
+                }}
+              >
+                Cancel
+              </button>
+              <button 
+                className="btn-reject"
+                onClick={() => handleDocumentReview(reviewingDoc.driverId, reviewingDoc.doc.document_id, 'REJECTED')}
+                disabled={reviewLoading || !rejectReason.trim()}
+              >
+                {reviewLoading ? 'Rejecting...' : 'Reject Document'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

@@ -617,3 +617,25 @@ truncate
  fleet_ledger
 restart identity cascade;
 
+CREATE TABLE payout_request (
+    id BIGSERIAL PRIMARY KEY,
+    
+    driver_id BIGINT NOT NULL REFERENCES app_user(user_id),
+    
+    total_amount NUMERIC(12,2) NOT NULL,
+    currency CHAR(3) NOT NULL DEFAULT 'INR',
+    
+    payout_type TEXT NOT NULL,  -- 'trip_batch' | 'full' | 'single'
+    
+    status TEXT DEFAULT 'requested',
+    -- requested | approved | rejected | processing | completed
+    
+    payment_reference TEXT NULL,  -- bank/UPI transaction ID
+    
+    processed_by BIGINT NULL REFERENCES app_user(user_id),
+    processed_on TIMESTAMPTZ NULL,
+    
+    created_on TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    
+    FOREIGN KEY (driver_id) REFERENCES app_user(user_id)
+);

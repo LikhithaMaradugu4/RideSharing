@@ -396,6 +396,44 @@ const adminService = {
     return response.json();
   },
 
+  /**
+   * Get detailed driver documents with rejection info and review capability.
+   */
+  getDriverDocumentsDetailed: async (driverId) => {
+    const response = await fetch(`${API_BASE_URL}/drivers/${driverId}/documents/detailed`, {
+      credentials: 'include'
+    });
+    
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || 'Failed to fetch driver documents');
+    }
+    
+    return response.json();
+  },
+
+  /**
+   * Review (approve/reject) an individual driver document.
+   * @param {number} driverId - Driver ID
+   * @param {number} documentId - Document ID
+   * @param {object} data - { status: 'APPROVED' | 'REJECTED', rejection_reason?: string }
+   */
+  reviewDriverDocument: async (driverId, documentId, data) => {
+    const response = await fetch(`${API_BASE_URL}/drivers/${driverId}/documents/${documentId}/review`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(data)
+    });
+    
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || 'Failed to review document');
+    }
+    
+    return response.json();
+  },
+
   // Fleet Management (Tenant Admin)
   getPendingFleets: async () => {
     const response = await fetch(`${API_BASE_URL}/fleets/pending`, {

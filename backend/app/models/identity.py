@@ -61,6 +61,7 @@ class UserKYC(Base, AuditMixin):
     document_number = Column(String(100), nullable=False)
     file_url = Column(String, nullable=True)
     verification_status = Column(String, ForeignKey("lu_approval_status.status_code"), nullable=False)
+    rejection_reason = Column(String, nullable=True)  # Reason for rejection (if rejected)
 
     verified_by = Column(BigInteger)
     verified_on = Column(TIMESTAMP(timezone=True))

@@ -353,6 +353,73 @@ def get_driver_trips_financial(
     }
 
 
+@router.get("/driver/unsettled-trips")
+def get_driver_unsettled_trips(
+    currency: str = Query(default='INR'),
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_jwt_user)
+):
+    """
+    Get driver's unsettled trips that can be settled.
+    
+    Auth: JWT Bearer Token
+    
+    Returns trips with:
+    - payment_status = 'PAID' (cash collected from rider)
+    - settlement_status = 'unsettled' (commission not paid back to platform)
+    - Has unsettled DEBIT ledger entries
+    """
+    driver_id = current_user.get("user_id")
+    
+    # Query unsettled trips
+    trips = (
+        db.query(Trip)
+        .filter(
+            Trip.driver_id == driver_id,
+            Trip.status == 'COMPLETED',
+            Trip.payment_status == 'PAID',
+            Trip.settlement_status == 'unsettled',
+            Trip.currency == currency
+        )
+        .order_by(Trip.completed_at.desc())
+        .all()
+    )
+    
+    # Build response with trip details
+    trip_list = []
+    total_commission = Decimal('0.00')
+    
+    for trip in trips:
+        # Calculate total commission for this trip
+        platform_fee = Decimal(str(trip.platform_fee or 0))
+        tenant_commission = Decimal(str(trip.tenant_commission or 0))
+        fleet_commission = Decimal(str(trip.fleet_commission or 0))
+        trip_commission = platform_fee + tenant_commission + fleet_commission
+        
+        total_commission += trip_commission
+        
+        trip_list.append({
+            'trip_id': trip.trip_id,
+            'fare_amount': float(trip.fare_amount or 0),
+            'driver_earning': float(trip.driver_earning or 0),
+            'platform_fee': float(platform_fee),
+            'tenant_commission': float(tenant_commission),
+            'fleet_commission': float(fleet_commission),
+            'total_commission': float(trip_commission),
+            'currency': trip.currency,
+            'payment_mode': trip.payment_mode,
+            'completed_at': trip.completed_at.isoformat() if trip.completed_at else None
+        })
+    
+    return {
+        'driver_id': driver_id,
+        'currency': currency,
+        'total_commission_due': float(total_commission),
+        'trip_count': len(trip_list),
+        'trips': trip_list
+    }
+
+
 @router.post("/driver/payout-request")
 def create_payout_request(
     request_data: PayoutRequestCreate,
@@ -479,7 +546,7 @@ def get_tenant_drivers_financial_summary(
     ]
     """
     # Verify user is tenant admin
-    if current_user.role not in ['tenant_admin', 'super_admin']:
+    if current_user.role not in ['TENANT_ADMIN', 'SUPER_ADMIN']:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only tenant admins can access this endpoint"
@@ -523,7 +590,7 @@ def get_tenant_driver_financial_details(
     Auth: Session (x_session_id header)
     """
     # Verify user is tenant admin
-    if current_user.role not in ['tenant_admin', 'super_admin']:
+    if current_user.role not in ['TENANT_ADMIN', 'SUPER_ADMIN']:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only tenant admins can access this endpoint"
