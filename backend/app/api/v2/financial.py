@@ -440,7 +440,7 @@ def get_driver_payout_requests(
         'page_size': page_size,
         'requests': [
             {
-                'request_id': r.request_id,
+                'request_id': r.id,
                 'total_amount': float(r.total_amount),
                 'currency': r.currency,
                 'status': r.status,

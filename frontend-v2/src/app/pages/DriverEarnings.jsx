@@ -44,7 +44,7 @@ const DriverEarnings = () => {
       setLoading(true);
       setError(null);
       
-      const token = authService.getAccessToken();
+      const token = await authService.getValidToken();
       if (!token) {
         navigate('/login');
         return;
@@ -114,7 +114,7 @@ const DriverEarnings = () => {
       setError(null);
       setSuccessMessage(null);
 
-      const token = authService.getAccessToken();
+      const token = await authService.getValidToken();
       const result = await driverService.settleTrips(token, selectedTripIds);
 
       setSuccessMessage(

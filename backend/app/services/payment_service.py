@@ -7,7 +7,8 @@ from decimal import Decimal
 from app.models.trips import Trip
 from app.models.payments import Payment, DriverWallet
 from app.models.ledger import DriverLedger, PlatformLedger, TenantLedger, FleetLedger
-from app.models.fleet import DriverProfile, Vehicle
+from app.models.fleet import DriverProfile
+from app.models.vehicle import Vehicle
 
 
 # =============================================================================

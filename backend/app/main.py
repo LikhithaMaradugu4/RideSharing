@@ -23,16 +23,19 @@ app = FastAPI(lifespan=lifespan)
 # Add CORS middleware FIRST, before any routes
 app.add_middleware(
     CORSMiddleware,
-    
-    #allow_origins=["http://localhost:3000", "http://localhost:5173", "http://localhost:5174"],  # React app and Vite ports
-        #allow_origins=["http://localhost:3000", "http://localhost:5173", "http://localhost:5174"],  # React app and Vite ports
-    allow_origins=["http://localhost:5173",
+    allow_origins=[
+        "http://localhost:5173",
         "http://127.0.0.1:5173",
-        "http://192.168.1.241:5173",],  # Allow all origins for testing; restrict in production
+        "http://192.168.1.241:5173",
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://192.168.1.241:3000",
+    ],
     allow_credentials=True,
-    allow_methods=["*"],  # allows POST, GET, OPTIONS, etc.
-    allow_headers=["*"],  # allows X-Session-ID
-
+    allow_methods=["*"],
+    allow_headers=["*"],
+    expose_headers=["*"],
+    max_age=3600,
 )
 
 """ # 👇 AFTER app is created"http://localhost:5173",
