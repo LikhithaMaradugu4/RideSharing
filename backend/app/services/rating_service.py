@@ -54,15 +54,8 @@ class RatingService:
                 detail="Rating is only allowed after successful rider payment",
             )
 
-        # 4. Validate driver settlement
-        settlement_ok = (trip.settlement_status or "").lower() in (
-            "settled", "success", "completed",
-        )
-        if not settlement_ok:
-            raise HTTPException(
-                status_code=400,
-                detail="Rating is only allowed after driver settlement is complete",
-            )
+        # 4. Settlement check removed — drivers should be able to rate
+        #    immediately after cash is received, independent of settlement.
 
         # 5. Rater must be rider or driver of the trip
         if rater_user_id == trip.rider_id:
@@ -216,10 +209,7 @@ class RatingService:
         if not payment_ok:
             return {"can_rate": False, "has_rated": False, "trip_id": trip_id, "reason": "Payment not completed"}
 
-        # Settlement must be done
-        settlement_ok = (trip.settlement_status or "").lower() in ("settled", "success", "completed")
-        if not settlement_ok:
-            return {"can_rate": False, "has_rated": False, "trip_id": trip_id, "reason": "Settlement pending"}
+        # Settlement check removed — rating is independent of driver settlement
 
         # Already rated?
         existing = (

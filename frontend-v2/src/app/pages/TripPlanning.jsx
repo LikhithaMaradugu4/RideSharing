@@ -7,13 +7,20 @@ import tokenStorage from '../../services/tokenStorage';
 import Icons from '../../components/Icons';
 import './TripPlanning.css';
 
-// Fix Leaflet default marker icons
+// Fix Leaflet default marker icons (use CDN with fallback)
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
   iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
+
+// Reusable SVG marker factory (no external images needed)
+const createMarkerSvg = (color) => `
+  <svg width="25" height="41" viewBox="0 0 25 41" xmlns="http://www.w3.org/2000/svg">
+    <path d="M12.5 0C5.6 0 0 5.6 0 12.5C0 21.9 12.5 41 12.5 41S25 21.9 25 12.5C25 5.6 19.4 0 12.5 0z" fill="${color}" stroke="#fff" stroke-width="1.5"/>
+    <circle cx="12.5" cy="12.5" r="5.5" fill="#fff"/>
+  </svg>`;
 
 // Reverse geocoding using Nominatim (OpenStreetMap)
 const reverseGeocode = async (lat, lng) => {
@@ -64,23 +71,21 @@ const MapComponent = ({
   const activeMarkerRef = useRef(null);
   const otherMarkerRef = useRef(null);
 
-  // Custom icons
-  const pickupIcon = new L.Icon({
-    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png',
-    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+  // Custom icons using inline SVG (no external PNGs needed)
+  const pickupIcon = L.divIcon({
+    html: createMarkerSvg('#22c55e'),
+    className: '',
     iconSize: [25, 41],
     iconAnchor: [12, 41],
     popupAnchor: [1, -34],
-    shadowSize: [41, 41]
   });
 
-  const dropIcon = new L.Icon({
-    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
-    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+  const dropIcon = L.divIcon({
+    html: createMarkerSvg('#ef4444'),
+    className: '',
     iconSize: [25, 41],
     iconAnchor: [12, 41],
     popupAnchor: [1, -34],
-    shadowSize: [41, 41]
   });
 
   // Initialize map
