@@ -462,7 +462,7 @@ function DriverDashboard() {
         setShiftStatus(null);
       }
     } catch (err) {
-      // Provide helpful error messages✅ No null shift crashes - Start shift is idempotent
+      // Provide helpful error messages No null shift crashes - Start shift is idempotent
 // Automatic shift creation - Eligible drivers get new shift immediately after ending old one
 //Continuous dispatch availability - Drivers stay online unless ineligible
 // Clean state management - ONE active shift per driver maintained

@@ -72,7 +72,7 @@ function FleetTrips() {
   if (loading && trips.length === 0) {
     return (
       <div className="fleet-trips-container">
-        <div style={{padding: '50px'}}><div className="loading-spinner"></div></div>
+        <div style={{padding: '50px', textAlign: 'center', color: '#666'}}>Loading trips...</div>
       </div>
     );
   }

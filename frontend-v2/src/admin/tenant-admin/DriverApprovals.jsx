@@ -142,7 +142,6 @@ const DriverApprovals = () => {
   if (loading) {
     return (
       <div className="loading-state">
-        <div className="spinner"></div>
         <p>Loading pending drivers...</p>
       </div>
     );

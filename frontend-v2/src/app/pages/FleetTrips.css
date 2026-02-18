@@ -248,8 +248,6 @@
   color: #6b7280;
 }
 .empty-icon { font-size: 48px; display: block; margin-bottom: 16px; color: #d1d5db; }
-.loading-spinner { border: 3px solid #f3f3f3; border-top: 3px solid #3498db; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 0 auto; }
-@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
 /* Mobile Tweaks */
 @media (max-width: 600px) {

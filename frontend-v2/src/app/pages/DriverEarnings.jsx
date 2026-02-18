@@ -15,6 +15,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import driverService from '../../services/driver.service';
 import authService from '../../services/auth.service';
+import Icons from '../../components/Icons';
 import './DriverEarnings.css';
 
 const DriverEarnings = () => {
@@ -155,7 +156,7 @@ const DriverEarnings = () => {
   if (loading) {
     return (
       <div className="driver-earnings-page">
-        <div className="loading-spinner">Loading...</div>
+        <div className="loading-state">Loading...</div>
       </div>
     );
   }
@@ -163,22 +164,22 @@ const DriverEarnings = () => {
   return (
     <div className="driver-earnings-page">
       <header className="earnings-header">
-        <h1>💰 Earnings & Settlement</h1>
+        <h1><Icons.MoneyBag size={22} style={{verticalAlign: 'middle', marginRight: '6px'}} />Earnings & Settlement</h1>
         <button className="refresh-btn" onClick={loadData} disabled={loading}>
-          🔄 Refresh
+          <Icons.Refresh size={14} style={{verticalAlign: 'middle', marginRight: '4px'}} /> Refresh
         </button>
       </header>
 
       {/* Messages */}
       {error && (
         <div className="alert alert-error">
-          ❌ {error}
+          <Icons.XCircle size={14} style={{verticalAlign: 'middle', marginRight: '4px'}} /> {error}
           <button onClick={() => setError(null)}>×</button>
         </div>
       )}
       {successMessage && (
         <div className="alert alert-success">
-          ✅ {successMessage}
+          <Icons.CheckCircle size={14} style={{verticalAlign: 'middle', marginRight: '4px'}} /> {successMessage}
           <button onClick={() => setSuccessMessage(null)}>×</button>
         </div>
       )}
@@ -194,8 +195,8 @@ const DriverEarnings = () => {
             </span>
             <small>
               {(wallet?.balance || 0) < 0 
-                ? '⚠️ You owe this amount to platform' 
-                : '✅ No outstanding dues'}
+                ? <><Icons.Warning size={14} style={{verticalAlign: 'middle', marginRight: '2px'}} /> You owe this amount to platform</>
+                : <><Icons.CheckCircle size={14} style={{verticalAlign: 'middle', marginRight: '2px'}} /> No outstanding dues</>}
             </small>
           </div>
           <div className="wallet-item">
@@ -245,7 +246,7 @@ const DriverEarnings = () => {
           <div className="unsettled-section">
             {unsettledTrips.length === 0 ? (
               <div className="empty-state">
-                <p>🎉 No unsettled trips! You're all settled up.</p>
+                <p><Icons.Party size={16} style={{verticalAlign: 'middle', marginRight: '4px'}} /> No unsettled trips! You're all settled up.</p>
               </div>
             ) : (
               <>

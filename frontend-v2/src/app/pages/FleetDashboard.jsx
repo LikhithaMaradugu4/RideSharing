@@ -50,7 +50,6 @@ function FleetDashboard() {
     return (
       <div className="fleet-dashboard">
         <div className="loading-state">
-          <div className="loading-spinner"></div>
           <span>Loading fleet details...</span>
         </div>
       </div>

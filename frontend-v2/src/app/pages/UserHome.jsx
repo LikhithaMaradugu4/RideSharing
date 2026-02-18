@@ -73,6 +73,12 @@ function UserHome() {
   const fleetOwnerStatus = capabilities.fleet_owner?.approval_status;
   const isApprovedFleetOwner = fleetOwnerExists && fleetOwnerStatus === 'APPROVED';
 
+  // Determine driver application status (submitted but not yet approved)
+  const hasPendingDriverApp = driverExists && (driverStatus === 'PENDING' || driverStatus === 'PARTIALLY_REJECTED' || driverStatus === 'REJECTED');
+
+  // Determine fleet application status (submitted but not yet approved)
+  const hasPendingFleetApp = fleetOwnerExists && (fleetOwnerStatus === 'PENDING' || fleetOwnerStatus === 'PARTIALLY_REJECTED' || fleetOwnerStatus === 'REJECTED');
+
   // Determine primary identity
   const isDriver = isApprovedDriver;
   const isFleetOwner = isApprovedFleetOwner;
@@ -109,21 +115,89 @@ function UserHome() {
               </div>
             </button>
 
-            <div className="divider"><span>Or join the team</span></div>
+            {/* Driver Application Status (if submitted) */}
+            {hasPendingDriverApp && (
+              <div className="driver-app-status-card">
+                <div className="app-status-row">
+                  <Icons.CarSide size={18} />
+                  <span className="app-status-label">Driver Application</span>
+                  <span className={`app-status-badge ${
+                    driverStatus === 'PENDING' ? 'status-pending' :
+                    driverStatus === 'PARTIALLY_REJECTED' ? 'status-partial' :
+                    'status-rejected'
+                  }`}>
+                    {driverStatus === 'PENDING' ? 'Under Review' :
+                     driverStatus === 'PARTIALLY_REJECTED' ? 'Action Needed' :
+                     'Rejected'}
+                  </span>
+                </div>
+                <p className="app-status-desc">
+                  {driverStatus === 'PENDING'
+                    ? 'Your application is being reviewed. We\'ll notify you once it\'s approved.'
+                    : driverStatus === 'PARTIALLY_REJECTED'
+                    ? 'Some documents need attention. Please review and resubmit.'
+                    : 'Your application was not approved. You may reapply.'}
+                </p>
+                <button
+                  className="btn-app-status"
+                  onClick={() => navigate('/app/driver/application-status')}
+                >
+                  View Application
+                </button>
+              </div>
+            )}
+
+            {/* Fleet Application Status (if submitted) */}
+            {hasPendingFleetApp && (
+              <div className="driver-app-status-card">
+                <div className="app-status-row">
+                  <Icons.Building size={18} />
+                  <span className="app-status-label">Fleet Application</span>
+                  <span className={`app-status-badge ${
+                    fleetOwnerStatus === 'PENDING' ? 'status-pending' :
+                    fleetOwnerStatus === 'PARTIALLY_REJECTED' ? 'status-partial' :
+                    'status-rejected'
+                  }`}>
+                    {fleetOwnerStatus === 'PENDING' ? 'Under Review' :
+                     fleetOwnerStatus === 'PARTIALLY_REJECTED' ? 'Action Needed' :
+                     'Rejected'}
+                  </span>
+                </div>
+                <p className="app-status-desc">
+                  {fleetOwnerStatus === 'PENDING'
+                    ? 'Your fleet application is being reviewed. We\'ll notify you once it\'s approved.'
+                    : fleetOwnerStatus === 'PARTIALLY_REJECTED'
+                    ? 'Some documents need attention. Please review and resubmit.'
+                    : 'Your fleet application was not approved. You may reapply.'}
+                </p>
+                <button
+                  className="btn-app-status"
+                  onClick={() => navigate('/app/fleet/application-status')}
+                >
+                  View Application
+                </button>
+              </div>
+            )}
+
+            <div className="divider"><span>{(hasPendingDriverApp || hasPendingFleetApp) ? 'More options' : 'Or join the team'}</span></div>
 
             <div className="onboarding-grid">
-              <button onClick={() => navigate('/driver-tenant-selection')} className="onboarding-option">
-                <span className="option-icon">
-                  <Icons.DollarSign size={24} />
-                </span>
-                <span>Drive & Earn</span>
-              </button>
-              <button onClick={() => navigate('/fleet-owner-tenant-selection')} className="onboarding-option">
-                <span className="option-icon">
-                  <Icons.Building size={24} />
-                </span>
-                <span>Manage Fleet</span>
-              </button>
+              {!hasPendingDriverApp && (
+                <button onClick={() => navigate('/driver-tenant-selection')} className="onboarding-option">
+                  <span className="option-icon">
+                    <Icons.DollarSign size={24} />
+                  </span>
+                  <span>Drive & Earn</span>
+                </button>
+              )}
+              {!hasPendingFleetApp && (
+                <button onClick={() => navigate('/fleet-owner-tenant-selection')} className="onboarding-option">
+                  <span className="option-icon">
+                    <Icons.Building size={24} />
+                  </span>
+                  <span>Manage Fleet</span>
+                </button>
+              )}
             </div>
           </div>
         )}

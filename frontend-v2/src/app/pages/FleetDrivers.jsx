@@ -136,7 +136,7 @@ function FleetDrivers() {
       <span className="badge badge-success">Active</span>;
   };
 
-  if (loading) return <div className="fleet-drivers-container"><div style={{padding:'50px'}}><div className="loading-spinner"></div></div></div>;
+  if (loading) return <div className="fleet-drivers-container"><div style={{padding:'50px', textAlign:'center', color:'#666'}}>Loading drivers...</div></div>;
 
   return (
     <div className="fleet-drivers-container">

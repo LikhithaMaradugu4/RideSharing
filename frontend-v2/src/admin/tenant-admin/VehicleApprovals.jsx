@@ -84,7 +84,6 @@ const VehicleApprovals = () => {
     return (
       <div className="vehicle-approvals-container">
         <div className="loading-state">
-          <div className="spinner"></div>
           <p>Loading pending vehicles...</p>
         </div>
       </div>

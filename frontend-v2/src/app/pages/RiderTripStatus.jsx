@@ -1,56 +1,57 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import riderService from '../../services/rider.service';
+import Icons from '../../components/Icons';
 import './RiderTripStatus.css';
 
 // Status messages and colors
 const STATUS_CONFIG = {
   REQUESTED: {
     message: 'Finding a driver for you...',
-    icon: '🔍',
+    icon: <Icons.Search size={28} />,
     color: '#6366f1',
     showCancel: true
   },
   DISPATCHING: {
     message: 'Looking for nearby drivers...',
-    icon: '📡',
+    icon: <Icons.Broadcast size={28} />,
     color: '#8b5cf6',
     showCancel: true
   },
   ASSIGNED: {
     message: 'Driver assigned! They are on their way.',
-    icon: '🚗',
+    icon: <Icons.Sedan size={28} />,
     color: '#22c55e',
     showCancel: true
   },
   DRIVER_EN_ROUTE: {
     message: 'Driver is heading to your pickup location.',
-    icon: '🛣️',
+    icon: <Icons.Road size={28} />,
     color: '#22c55e',
     showCancel: true
   },
   ARRIVED: {
     message: 'Driver has arrived at your pickup location!',
-    icon: '📍',
+    icon: <Icons.MapPin size={28} />,
     color: '#f59e0b',
     showCancel: false,
     showOTP: true
   },
   PICKED_UP: {
     message: 'You are on your way!',
-    icon: '🚀',
+    icon: <Icons.Rocket size={28} />,
     color: '#3b82f6',
     showCancel: false
   },
   IN_PROGRESS: {
     message: 'Trip in progress...',
-    icon: '🛤️',
+    icon: <Icons.Route size={28} />,
     color: '#3b82f6',
     showCancel: false
   },
   COMPLETED: {
     message: 'Trip completed! Please pay the driver.',
-    icon: '💵',
+    icon: <Icons.Cash size={28} />,
     color: '#22c55e',
     showCancel: false,
     isFinal: true,
@@ -58,21 +59,21 @@ const STATUS_CONFIG = {
   },
   PAID: {
     message: 'Payment received. Thank you for riding with us!',
-    icon: '✅',
+    icon: <Icons.CheckCircle size={28} />,
     color: '#22c55e',
     showCancel: false,
     isFinal: true
   },
   CANCELLED: {
     message: 'This trip has been cancelled.',
-    icon: '❌',
+    icon: <Icons.XCircle size={28} />,
     color: '#ef4444',
     showCancel: false,
     isFinal: true
   },
   FAILED: {
     message: 'Sorry, no drivers are available right now.',
-    icon: '😔',
+    icon: <Icons.SadFace size={28} />,
     color: '#ef4444',
     showCancel: false,
     isFinal: true
@@ -209,7 +210,6 @@ function RiderTripStatus() {
     return (
       <div className="trip-status-page">
         <div className="loading-state">
-          <div className="spinner"></div>
           <span>Loading trip details...</span>
         </div>
       </div>
@@ -232,7 +232,7 @@ function RiderTripStatus() {
 
         {error && (
           <div className="error-banner">
-            <span>⚠️ {error}</span>
+            <span><Icons.Warning size={16} style={{verticalAlign: 'middle', marginRight: '4px'}} />{error}</span>
             <button onClick={() => setError(null)}>×</button>
           </div>
         )}
@@ -273,13 +273,13 @@ function RiderTripStatus() {
             textAlign: 'center',
             color: 'white'
           }}>
-            <h3 style={{ margin: '0 0 8px 0', fontSize: '20px' }}>🔐 Your Pickup OTP</h3>
+            <h3 style={{ margin: '0 0 8px 0', fontSize: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}><Icons.LockKey size={20} /> Your Pickup OTP</h3>
             <p style={{ margin: '0 0 20px 0', opacity: 0.9, fontSize: '14px' }}>
               Share this code with your driver to start the trip
             </p>
             
             {otpLoading ? (
-              <div style={{ fontSize: '16px', padding: '20px' }}>⏳ Generating OTP...</div>
+              <div style={{ fontSize: '16px', padding: '20px' }}><Icons.Hourglass size={16} style={{verticalAlign: 'middle', marginRight: '4px'}} /> Generating OTP...</div>
             ) : (otp || trip?.pickup_otp) ? (
               <div style={{
                 background: 'white',
@@ -324,7 +324,7 @@ function RiderTripStatus() {
         {/* Driver Info - When assigned */}
         {trip?.driver && (trip.status === 'ASSIGNED' || trip.status === 'DRIVER_EN_ROUTE' || trip.status === 'ARRIVED' || trip.status === 'PICKED_UP' || trip.status === 'IN_PROGRESS') && (
           <div className="driver-info-section">
-            <h3>🧑‍✈️ Your Driver</h3>
+            <h3><Icons.Driver size={20} style={{verticalAlign: 'middle', marginRight: '6px'}} />Your Driver</h3>
             <div className="driver-card">
               <div className="driver-avatar">
                 {trip.driver.full_name?.charAt(0) || 'D'}
@@ -332,7 +332,7 @@ function RiderTripStatus() {
               <div className="driver-details">
                 <span className="driver-name">{trip.driver.full_name || 'Driver'}</span>
                 <span className="driver-phone">
-                  📞 {formatPhoneNumber(trip.driver.phone_number)}
+                  <Icons.Phone size={14} style={{verticalAlign: 'middle', marginRight: '4px'}} />{formatPhoneNumber(trip.driver.phone_number)}
                 </span>
               </div>
             </div>
@@ -341,8 +341,8 @@ function RiderTripStatus() {
             {trip.vehicle && (
               <div className="vehicle-info">
                 <span className="vehicle-type">
-                  {trip.vehicle.vehicle_category === 'BIKE' ? '🏍️' : 
-                   trip.vehicle.vehicle_category === 'AUTO' ? '🛺' : '🚗'}
+                  {trip.vehicle.vehicle_category === 'BIKE' ? <Icons.Motorcycle size={18} /> : 
+                   trip.vehicle.vehicle_category === 'AUTO' ? <Icons.AutoRickshaw size={18} /> : <Icons.Sedan size={18} />}
                   {' '}{trip.vehicle.vehicle_category || 'Vehicle'}
                 </span>
                 <span className="vehicle-number">
@@ -356,7 +356,7 @@ function RiderTripStatus() {
         {/* Trip Details */}
         {trip && (
           <div className="trip-details-section">
-            <h3>📋 Trip Details</h3>
+            <h3><Icons.Clipboard size={18} style={{verticalAlign: 'middle', marginRight: '6px'}} />Trip Details</h3>
             <div className="trip-details-card">
               <div className="detail-row">
                 <span className="detail-label">
@@ -416,7 +416,7 @@ function RiderTripStatus() {
         {/* Completed Trip Summary with CASH Payment UI */}
         {trip?.status === 'COMPLETED' && (
           <div className="trip-summary">
-            <h3>🎉 Trip Completed!</h3>
+            <h3><Icons.Party size={20} style={{verticalAlign: 'middle', marginRight: '6px'}} />Trip Completed!</h3>
             
             {/* Cash Payment Card */}
             <div style={{
@@ -428,7 +428,7 @@ function RiderTripStatus() {
               textAlign: 'center'
             }}>
               <div style={{ fontSize: '14px', opacity: 0.9, marginBottom: '8px' }}>
-                💵 Pay driver directly (cash / UPI)
+                <Icons.Cash size={16} style={{verticalAlign: 'middle', marginRight: '4px'}} /> Pay driver directly (cash / UPI)
               </div>
               <div style={{ fontSize: '36px', fontWeight: '700', marginBottom: '8px' }}>
                 ₹{trip.fare_amount ? parseFloat(trip.fare_amount).toFixed(0) : (trip.estimated_fare ? parseFloat(trip.estimated_fare).toFixed(0) : '--')}
@@ -456,7 +456,7 @@ function RiderTripStatus() {
               color: '#92400e',
               textAlign: 'center'
             }}>
-              ℹ️ In-app payments are under development. Cash payments supported.
+              <Icons.Info size={14} style={{verticalAlign: 'middle', marginRight: '4px'}} /> In-app payments are under development. Cash payments supported.
             </div>
             
             <div className="summary-card">
@@ -470,7 +470,7 @@ function RiderTripStatus() {
               </div>
               <div className="summary-row">
                 <span>Payment Method</span>
-                <span style={{ color: '#22c55e', fontWeight: '600' }}>💵 Cash</span>
+                <span style={{ color: '#22c55e', fontWeight: '600' }}><Icons.Cash size={14} style={{verticalAlign: 'middle', marginRight: '4px'}} />Cash</span>
               </div>
             </div>
             
@@ -488,7 +488,7 @@ function RiderTripStatus() {
         {/* PAID Trip Summary */}
         {trip?.status === 'PAID' && (
           <div className="trip-summary">
-            <h3>✅ Payment Complete</h3>
+            <h3><Icons.CheckCircle size={18} style={{verticalAlign: 'middle', marginRight: '6px'}} color="#22c55e" />Payment Complete</h3>
             <div className="summary-card">
               <div className="summary-row">
                 <span>Trip Fare</span>

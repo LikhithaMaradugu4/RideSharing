@@ -137,7 +137,6 @@ function FleetAssignments() {
     return (
       <div className="fleet-assignments">
         <div className="loading-state">
-          <div className="loading-spinner"></div>
           <p>Loading assignments...</p>
         </div>
       </div>

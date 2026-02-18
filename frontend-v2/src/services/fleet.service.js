@@ -112,6 +112,48 @@ const fleetService = {
     }
   },
 
+  // ==================== Fleet Application Status ====================
+
+  /**
+   * Get fleet application status with all documents.
+   * Returns fleet info, documents with statuses, can_resubmit flag.
+   */
+  getMyApplication: async (token) => {
+    const response = await fetch(`${API_BASE_URL}/fleet/application`, {
+      method: 'GET',
+      headers: buildHeaders(token)
+    });
+    return handleResponse(response, 'Failed to get fleet application');
+  },
+
+  /**
+   * Re-upload a rejected fleet document.
+   */
+  reuploadDocument: async (token, documentType, file) => {
+    const formData = new FormData();
+    formData.append('document_file', file);
+
+    const response = await fetch(`${API_BASE_URL}/fleet/documents/${documentType}/reupload`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      },
+      body: formData
+    });
+    return handleResponse(response, 'Failed to reupload document');
+  },
+
+  /**
+   * Resubmit fleet application after fixing all rejected documents.
+   */
+  resubmitApplication: async (token) => {
+    const response = await fetch(`${API_BASE_URL}/fleet/resubmit`, {
+      method: 'POST',
+      headers: buildHeaders(token)
+    });
+    return handleResponse(response, 'Failed to resubmit application');
+  },
+
   // ==================== Driver Management ====================
 
   /**

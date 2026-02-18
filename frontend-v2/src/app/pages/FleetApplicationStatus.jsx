@@ -1,10 +1,10 @@
 /**
- * DriverApplicationStatus.jsx
+ * FleetApplicationStatus.jsx
  * 
- * Driver Application Status Page with Document Management
+ * Fleet Application Status Page with Document Management
  * 
  * Features:
- * - Show application status
+ * - Show fleet application status
  * - Display all documents with their verification status
  * - Allow re-upload of rejected documents
  * - Manual resubmit button when all rejected docs are fixed
@@ -12,12 +12,12 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import driverService from '../../services/driver.service';
+import fleetService from '../../services/fleet.service';
 import authService from '../../services/auth.service';
 import Icons from '../../components/Icons';
-import './DriverApplicationStatus.css';
+import './FleetApplicationStatus.css';
 
-const DriverApplicationStatus = () => {
+const FleetApplicationStatus = () => {
   const navigate = useNavigate();
   
   // State
@@ -40,13 +40,13 @@ const DriverApplicationStatus = () => {
         return;
       }
 
-      const data = await driverService.getMyApplication(token);
+      const data = await fleetService.getMyApplication(token);
       setApplication(data);
       
     } catch (err) {
-      console.error('Error loading application:', err);
+      console.error('Error loading fleet application:', err);
       if (err.status === 404) {
-        setError('No application found. Please apply first.');
+        setError('No fleet application found. Please apply first.');
       } else {
         setError(err.message || 'Failed to load application data');
       }
@@ -69,10 +69,10 @@ const DriverApplicationStatus = () => {
       setSuccessMessage(null);
       
       const token = await authService.getValidToken();
-      await driverService.reuploadDocument(token, documentType, file);
+      await fleetService.reuploadDocument(token, documentType, file);
       
-      setSuccessMessage(`${documentType.replace('_', ' ')} uploaded successfully`);
-      await loadApplication(); // Refresh data
+      setSuccessMessage(`${documentType.replace(/_/g, ' ')} uploaded successfully`);
+      await loadApplication();
       
     } catch (err) {
       console.error('Error uploading document:', err);
@@ -90,9 +90,8 @@ const DriverApplicationStatus = () => {
       setSuccessMessage(null);
       
       const token = await authService.getValidToken();
-      await driverService.resubmitApplication(token);
+      await fleetService.resubmitApplication(token);
       
-      // Navigate back to home — status will now show as PENDING
       navigate('/app/home');
       
     } catch (err) {
@@ -121,19 +120,19 @@ const DriverApplicationStatus = () => {
 
   if (loading) {
     return (
-      <div className="application-status-page">
-        <div className="loading">Loading application data...</div>
+      <div className="fleet-application-status-page">
+        <div className="loading">Loading fleet application data...</div>
       </div>
     );
   }
 
   if (!application) {
     return (
-      <div className="application-status-page">
+      <div className="fleet-application-status-page">
         <div className="no-application">
-          <h2>No Application Found</h2>
-          <p>You haven't submitted a driver application yet.</p>
-          <button onClick={() => navigate('/driver/apply')} className="btn-primary">
+          <h2>No Fleet Application Found</h2>
+          <p>You haven't submitted a fleet owner application yet.</p>
+          <button onClick={() => navigate('/fleet-owner-tenant-selection')} className="btn-primary">
             Apply Now
           </button>
         </div>
@@ -142,8 +141,8 @@ const DriverApplicationStatus = () => {
   }
 
   return (
-    <div className="application-status-page">
-      <h1>Application Status</h1>
+    <div className="fleet-application-status-page">
+      <h1>Fleet Application Status</h1>
 
       {/* Messages */}
       {error && <div className="alert alert-error">{error}</div>}
@@ -152,7 +151,7 @@ const DriverApplicationStatus = () => {
       {/* Application Overview */}
       <div className="application-overview">
         <div className="overview-header">
-          <h2>Driver Application</h2>
+          <h2>Fleet Application</h2>
           <span className={`status-badge ${getStatusClass(application.approval_status)}`}>
             {application.approval_status}
           </span>
@@ -160,12 +159,12 @@ const DriverApplicationStatus = () => {
         
         <div className="overview-details">
           <div className="detail-item">
-            <label>Driver ID:</label>
-            <span>{application.driver_id}</span>
+            <label>Fleet ID:</label>
+            <span>{application.fleet_id}</span>
           </div>
           <div className="detail-item">
-            <label>Driver Type:</label>
-            <span>{application.driver_type}</span>
+            <label>Fleet Name:</label>
+            <span>{application.fleet_name}</span>
           </div>
           <div className="detail-item">
             <label>Tenant ID:</label>
@@ -188,13 +187,13 @@ const DriverApplicationStatus = () => {
         
         {application.approval_status === 'PENDING' && (
           <div className="status-message info">
-            <strong><Icons.Hourglass size={16} style={{verticalAlign: 'middle', marginRight: '4px'}} /> Under Review.</strong> Your application is being reviewed by the admin.
+            <strong><Icons.Hourglass size={16} style={{verticalAlign: 'middle', marginRight: '4px'}} /> Under Review.</strong> Your fleet application is being reviewed by the admin.
           </div>
         )}
         
         {application.approval_status === 'APPROVED' && (
           <div className="status-message success">
-            <strong><Icons.CheckCircle size={16} style={{verticalAlign: 'middle', marginRight: '4px'}} /> Approved!</strong> You can now start accepting rides.
+            <strong><Icons.CheckCircle size={16} style={{verticalAlign: 'middle', marginRight: '4px'}} /> Approved!</strong> Your fleet is ready. You can manage operations from the fleet dashboard.
           </div>
         )}
       </div>
@@ -278,4 +277,4 @@ const DriverApplicationStatus = () => {
   );
 };
 
-export default DriverApplicationStatus;
+export default FleetApplicationStatus;

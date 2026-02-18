@@ -129,7 +129,7 @@ class TenantAdminService:
             .join(AppUser, DriverProfile.driver_id == AppUser.user_id)
             .filter(
                 DriverProfile.tenant_id == tenant_id,
-                DriverProfile.approval_status == "PENDING"
+                DriverProfile.approval_status.in_(["PENDING", "PARTIALLY_REJECTED"])
             )
             .all()
         )
@@ -344,7 +344,7 @@ class TenantAdminService:
             db.query(Fleet)
             .filter(
                 Fleet.tenant_id == tenant_id,
-                Fleet.approval_status == "PENDING",
+                Fleet.approval_status.in_(["PENDING", "PARTIALLY_REJECTED"]),
                 Fleet.fleet_type == "BUSINESS"
             )
             .all()
@@ -352,8 +352,13 @@ class TenantAdminService:
 
         result = []
         for fleet in fleets:
-            docs = list(fleet.documents) if hasattr(fleet, "documents") else []
-            result.append((fleet, docs))
+            all_docs = list(fleet.documents) if hasattr(fleet, "documents") else []
+            # Only return the latest document per type (re-uploads create new records)
+            doc_by_type = {}
+            for doc in all_docs:
+                if doc.document_type not in doc_by_type or doc.document_id > doc_by_type[doc.document_type].document_id:
+                    doc_by_type[doc.document_type] = doc
+            result.append((fleet, list(doc_by_type.values())))
 
         return result
 

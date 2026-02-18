@@ -1,8 +1,13 @@
 import tokenStorage from './tokenStorage';
 
-const API_BASE_URL = 'http://192.168.1.241:8000/api/admin';
-const PLATFORM_BASE_URL = 'http://192.168.1.241:8000/api/v2/platform-admin';
-const USER_AUTH_BASE_URL = 'http://192.168.1.241:8000/auth';
+//const API_BASE_URL = 'http://192.168.1.241:8000/api/admin';
+//const PLATFORM_BASE_URL = 'http://192.168.1.241:8000/api/v2/platform-admin';
+//const USER_AUTH_BASE_URL = 'http://192.168.1.241:8000/auth';
+//const PLATFORM_SESSION_KEY = 'platform_session_id';
+
+const API_BASE_URL = 'http://192.168.1.43:8000/api/admin';
+const PLATFORM_BASE_URL = 'http://192.168.1.43:8000/api/v2/platform-admin';
+const USER_AUTH_BASE_URL = 'http://192.168.1.43:8000/auth';
 const PLATFORM_SESSION_KEY = 'platform_session_id';
 
 // Safety guard: Prevent admin API calls outside /admin routes
@@ -492,6 +497,36 @@ const adminService = {
     
     return response.json();
   },
+
+  getFleetDocumentsDetailed: async (fleetId) => {
+    const response = await fetch(`${API_BASE_URL}/fleets/${fleetId}/documents/detailed`, {
+      credentials: 'include'
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || 'Failed to fetch fleet documents');
+    }
+
+    return response.json();
+  },
+
+  reviewFleetDocument: async (fleetId, documentId, data) => {
+    const response = await fetch(`${API_BASE_URL}/fleets/${fleetId}/documents/${documentId}/review`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(data)
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || 'Failed to review fleet document');
+    }
+
+    return response.json();
+  },
+
   // Vehicle Management (Tenant Admin)
   getPendingVehicles: async () => {
     const response = await fetch(`${API_BASE_URL}/vehicles/pending-approval`, {

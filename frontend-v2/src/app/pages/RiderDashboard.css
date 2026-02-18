@@ -17,19 +17,6 @@
   color: #64748b;
 }
 
-.loading-spinner {
-  width: 40px;
-  height: 40px;
-  border: 3px solid #e2e8f0;
-  border-top-color: #6366f1;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
 /* Header */
 .rider-header {
   display: flex;
@@ -94,7 +81,7 @@
   flex-direction: column;
   align-items: center;
   padding: 30px 20px;
-  gap: 25px;
+  gap: 20px;
   overflow-y: auto;
 }
 
@@ -111,10 +98,11 @@
   color: #1e293b;
 }
 
-.greeting-subtitle {
-  margin: 8px 0 0;
-  font-size: 1rem;
-  color: #64748b;
+.greeting-tagline {
+  margin: 6px 0 0;
+  font-size: 0.85rem;
+  color: #94a3b8;
+  font-weight: 400;
 }
 
 /* Primary CTA - Book a Ride */
@@ -179,33 +167,6 @@
   font-size: 1.5rem;
   font-weight: 300;
   opacity: 0.8;
-}
-
-/* Info Cards */
-.info-cards {
-  display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
-  justify-content: center;
-}
-
-.info-card {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 16px;
-  background: white;
-  border-radius: 25px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-}
-
-.info-icon {
-  font-size: 1rem;
-}
-
-.info-text {
-  font-size: 0.85rem;
-  color: #64748b;
 }
 
 /* Quick Actions */
@@ -305,8 +266,8 @@
     font-size: 1.5rem;
   }
   
-  .greeting-subtitle {
-    font-size: 0.95rem;
+  .greeting-tagline {
+    font-size: 0.8rem;
   }
   
   .btn-book-ride {

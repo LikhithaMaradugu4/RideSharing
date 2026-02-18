@@ -184,6 +184,239 @@ def get_my_fleet(
     )
 
 
+# ==================== Fleet Application Status & Document Management ====================
+
+@router.get("/application")
+def get_fleet_application(
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Get fleet application status with all documents.
+    
+    Returns:
+    - Fleet info + approval status
+    - All documents with status, rejection_reason, can_reupload
+    - can_resubmit: true if PARTIALLY_REJECTED and no docs are REJECTED
+    """
+    from app.models.fleet import Fleet, FleetDocument
+    
+    user_id = current_user.get("user_id")
+    
+    fleet = db.query(Fleet).filter(Fleet.owner_user_id == user_id).first()
+    if not fleet:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No fleet application found"
+        )
+    
+    all_documents = db.query(FleetDocument).filter(FleetDocument.fleet_id == fleet.fleet_id).all()
+    
+    # Only use the latest document per type (re-uploads create new records)
+    doc_by_type = {}
+    for doc in all_documents:
+        if doc.document_type not in doc_by_type or doc.document_id > doc_by_type[doc.document_type].document_id:
+            doc_by_type[doc.document_type] = doc
+    
+    doc_list = []
+    has_rejected_docs = False
+    
+    for doc in doc_by_type.values():
+        can_reupload = (
+            doc.verification_status == "REJECTED" and 
+            fleet.approval_status in ["PARTIALLY_REJECTED", "REJECTED"]
+        )
+        if doc.verification_status == "REJECTED":
+            has_rejected_docs = True
+            
+        doc_list.append({
+            "document_id": doc.document_id,
+            "document_type": doc.document_type,
+            "file_url": doc.file_url,
+            "verification_status": doc.verification_status,
+            "rejection_reason": doc.rejection_reason,
+            "can_reupload": can_reupload,
+            "verified_by": doc.verified_by,
+            "verified_on": doc.verified_on.isoformat() if doc.verified_on else None
+        })
+    
+    can_resubmit = (
+        fleet.approval_status == "PARTIALLY_REJECTED" and 
+        not has_rejected_docs and
+        len(doc_list) > 0
+    )
+    
+    return {
+        "fleet_id": fleet.fleet_id,
+        "fleet_name": fleet.fleet_name,
+        "tenant_id": fleet.tenant_id,
+        "approval_status": fleet.approval_status,
+        "documents": doc_list,
+        "can_resubmit": can_resubmit
+    }
+
+
+@router.post("/documents/{document_type}/reupload")
+async def reupload_fleet_document(
+    document_type: str,
+    document_file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Re-upload a rejected fleet document.
+    
+    Validation:
+    - Fleet must be PARTIALLY_REJECTED or REJECTED
+    - The document must have been REJECTED
+    
+    Behavior:
+    - Creates new document entry (preserves history)
+    - New document status = PENDING
+    """
+    from app.models.fleet import Fleet, FleetDocument
+    
+    user_id = current_user.get("user_id")
+    
+    fleet = db.query(Fleet).filter(Fleet.owner_user_id == user_id).first()
+    if not fleet:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No fleet application found"
+        )
+    
+    if fleet.approval_status == "APPROVED":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot reupload documents for approved fleet"
+        )
+    
+    if fleet.approval_status not in ["PARTIALLY_REJECTED", "REJECTED"]:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Can only reupload documents when application is rejected"
+        )
+    
+    # Find the latest document of this type
+    existing_doc = (
+        db.query(FleetDocument)
+        .filter(
+            FleetDocument.fleet_id == fleet.fleet_id,
+            FleetDocument.document_type == document_type.upper()
+        )
+        .order_by(FleetDocument.document_id.desc())
+        .first()
+    )
+    
+    if not existing_doc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"No existing {document_type} document found"
+        )
+    
+    if existing_doc.verification_status != "REJECTED":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Document {document_type} is not rejected. Current status: {existing_doc.verification_status}"
+        )
+    
+    # Save the new file
+    user_dir = FLEET_UPLOAD_DIR / str(user_id)
+    user_dir.mkdir(parents=True, exist_ok=True)
+    
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    file_ext = os.path.splitext(document_file.filename)[1]
+    filename = f"{document_type.lower()}_{timestamp}{file_ext}"
+    file_path = user_dir / filename
+    
+    with open(file_path, "wb") as buffer:
+        shutil.copyfileobj(document_file.file, buffer)
+    
+    relative_path = f"uploads/fleet_documents/{user_id}/{filename}"
+    
+    # Create new document record (keep old one for history)
+    new_doc = FleetDocument(
+        fleet_id=fleet.fleet_id,
+        document_type=document_type.upper(),
+        file_url=relative_path,
+        verification_status="PENDING",
+        rejection_reason=None
+    )
+    db.add(new_doc)
+    db.commit()
+    db.refresh(new_doc)
+    
+    return {
+        "message": f"Document {document_type} re-uploaded successfully",
+        "document_id": new_doc.document_id,
+        "verification_status": new_doc.verification_status
+    }
+
+
+@router.post("/resubmit")
+def resubmit_fleet_application(
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Resubmit fleet application after fixing all rejected documents.
+    
+    Validation:
+    - Fleet must be PARTIALLY_REJECTED
+    - No document should currently have REJECTED status
+    
+    Behavior:
+    - Sets fleet.approval_status → PENDING
+    """
+    from app.models.fleet import Fleet, FleetDocument
+    
+    user_id = current_user.get("user_id")
+    
+    fleet = db.query(Fleet).filter(Fleet.owner_user_id == user_id).first()
+    if not fleet:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No fleet application found"
+        )
+    
+    if fleet.approval_status != "PARTIALLY_REJECTED":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Fleet status must be PARTIALLY_REJECTED to resubmit. Current: {fleet.approval_status}"
+        )
+    
+    # Check if latest documents per type still have REJECTED status
+    all_docs = db.query(FleetDocument).filter(FleetDocument.fleet_id == fleet.fleet_id).all()
+    if not all_docs:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No documents found for fleet application"
+        )
+    
+    # Get latest document per type
+    doc_by_type = {}
+    for doc in all_docs:
+        if doc.document_type not in doc_by_type or doc.document_id > doc_by_type[doc.document_type].document_id:
+            doc_by_type[doc.document_type] = doc
+    
+    rejected_latest = [d for d in doc_by_type.values() if d.verification_status == "REJECTED"]
+    if rejected_latest:
+        rejected_types = [doc.document_type for doc in rejected_latest]
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Cannot resubmit. These documents are still rejected: {', '.join(rejected_types)}"
+        )
+    
+    fleet.approval_status = "PENDING"
+    db.commit()
+    
+    return {
+        "message": "Fleet application resubmitted successfully",
+        "fleet_id": fleet.fleet_id,
+        "approval_status": fleet.approval_status
+    }
+
+
 # ==================== Fleet Owner Driver Management ====================
 
 @router.post("/drivers/invite")

@@ -199,6 +199,81 @@
 .loading { color: white; display: flex; justify-content: center; align-items: center; height: 100vh; }
 .error-message { background: #fee2e2; color: #991b1b; padding: 20px; border-radius: 12px; text-align: center; margin-bottom: 10px; }
 
+/* Driver Application Status Card */
+.driver-app-status-card {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 16px 18px;
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.app-status-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #475569;
+}
+
+.app-status-label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #1e293b;
+  flex: 1;
+}
+
+.app-status-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 20px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.status-pending {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.status-partial {
+  background: #ffedd5;
+  color: #c2410c;
+}
+
+.status-rejected {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.app-status-desc {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #64748b;
+  line-height: 1.4;
+}
+
+.btn-app-status {
+  align-self: flex-start;
+  padding: 8px 18px;
+  background: var(--primary);
+  border: none;
+  border-radius: 8px;
+  color: white;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-app-status:hover {
+  background: var(--primary-hover);
+  transform: translateY(-1px);
+}
+
 @media (max-width: 480px) {
   .user-home-card { padding: 32px 20px; border-radius: 0; min-height: 100vh; }
 }

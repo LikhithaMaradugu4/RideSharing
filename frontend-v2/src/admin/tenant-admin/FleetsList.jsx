@@ -54,7 +54,6 @@ const FleetsList = () => {
   if (loading) {
     return (
       <div className="loading-state">
-        <div className="spinner"></div>
         <p>Loading approved fleets...</p>
       </div>
     )

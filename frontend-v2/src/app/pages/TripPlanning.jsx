@@ -4,6 +4,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import riderService from '../../services/rider.service';
 import tokenStorage from '../../services/tokenStorage';
+import Icons from '../../components/Icons';
 import './TripPlanning.css';
 
 // Fix Leaflet default marker icons
@@ -144,8 +145,8 @@ const MapComponent = ({
     
     marker.bindPopup(
       selectingType === 'pickup' 
-        ? '<b>📍 Pickup Location</b><br/>Drag to adjust' 
-        : '<b>🎯 Drop-off Location</b><br/>Drag to adjust'
+        ? '<b><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2" style="vertical-align:middle;margin-right:4px"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Pickup Location</b><br/>Drag to adjust' 
+        : '<b><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" style="vertical-align:middle;margin-right:4px"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>Drop-off Location</b><br/>Drag to adjust'
     ).openPopup();
     
     marker.on('dragend', (e) => {
@@ -192,9 +193,15 @@ const MapComponent = ({
 
 // Vehicle category icons
 const vehicleIcons = {
-  BIKE: '🏍️',
-  AUTO: '🛺',
-  SEDAN: '🚗'
+  BIKE: <Icons.Motorcycle size={28} />,
+  AUTO: <Icons.AutoRickshaw size={28} />,
+  SEDAN: <Icons.Sedan size={28} />
+};
+
+const vehicleIconsSmall = {
+  BIKE: <Icons.Motorcycle size={18} />,
+  AUTO: <Icons.AutoRickshaw size={18} />,
+  SEDAN: <Icons.Sedan size={18} />
 };
 
 function TripPlanning() {
@@ -415,7 +422,7 @@ function TripPlanning() {
             marginBottom: '16px',
             boxShadow: '0 2px 8px rgba(0,0,0,0.08)'
           }}>
-            <h3 style={{ margin: '0 0 16px 0', fontSize: '16px', color: '#374151' }}>📍 Trip Details</h3>
+            <h3 style={{ margin: '0 0 16px 0', fontSize: '16px', color: '#374151', display: 'flex', alignItems: 'center', gap: '6px' }}><Icons.MapPin size={18} color="#6366f1" /> Trip Details</h3>
             
             {/* Pickup Location */}
             <div style={{
@@ -427,7 +434,7 @@ function TripPlanning() {
               marginBottom: '12px',
               border: pickupLocation ? '2px solid #22c55e' : '2px solid #e5e7eb'
             }}>
-              <span style={{ fontSize: '28px', marginRight: '14px' }}>📍</span>
+              <span style={{ marginRight: '14px', display: 'inline-flex' }}><Icons.MapPin size={28} color="#22c55e" /></span>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: '12px', color: '#16a34a', fontWeight: '700', marginBottom: '4px' }}>PICKUP</div>
                 <div style={{ 
@@ -455,7 +462,7 @@ function TripPlanning() {
                   whiteSpace: 'nowrap'
                 }}
               >
-                {pickupLocation ? '✏️ Change' : '🗺️ Select'}
+                {pickupLocation ? <><Icons.Edit size={14} style={{verticalAlign: 'middle', marginRight: '4px'}} /> Change</> : <><Icons.Map size={14} style={{verticalAlign: 'middle', marginRight: '4px'}} /> Select</>}
               </button>
             </div>
             
@@ -483,7 +490,7 @@ function TripPlanning() {
               borderRadius: '12px',
               border: dropLocation ? '2px solid #ef4444' : '2px solid #e5e7eb'
             }}>
-              <span style={{ fontSize: '28px', marginRight: '14px' }}>🎯</span>
+              <span style={{ marginRight: '14px', display: 'inline-flex' }}><Icons.Target size={28} color="#ef4444" /></span>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: '12px', color: '#dc2626', fontWeight: '700', marginBottom: '4px' }}>DROP-OFF</div>
                 <div style={{ 
@@ -511,7 +518,7 @@ function TripPlanning() {
                   whiteSpace: 'nowrap'
                 }}
               >
-                {dropLocation ? '✏️ Change' : '🗺️ Select'}
+                {dropLocation ? <><Icons.Edit size={14} style={{verticalAlign: 'middle', marginRight: '4px'}} /> Change</> : <><Icons.Map size={14} style={{verticalAlign: 'middle', marginRight: '4px'}} /> Select</>}
               </button>
             </div>
           </div>
@@ -528,7 +535,7 @@ function TripPlanning() {
               justifyContent: 'space-between',
               alignItems: 'center'
             }}>
-              <span>⚠️ {error}</span>
+              <span><Icons.Warning size={16} style={{verticalAlign: 'middle', marginRight: '4px'}} />{error}</span>
               <button 
                 onClick={() => setError(null)}
                 style={{ background: 'none', border: 'none', color: '#dc2626', cursor: 'pointer', fontSize: '20px' }}
@@ -555,7 +562,7 @@ function TripPlanning() {
                 marginBottom: '16px'
               }}
             >
-              {estimatingFares ? '⏳ Getting Fare Estimates...' : '💰 Get Fare Estimates'}
+              {estimatingFares ? <><Icons.Hourglass size={16} style={{verticalAlign: 'middle', marginRight: '4px'}} /> Getting Fare Estimates...</> : <><Icons.MoneyBag size={16} style={{verticalAlign: 'middle', marginRight: '4px'}} /> Get Fare Estimates</>}
             </button>
           )}
 
@@ -567,7 +574,7 @@ function TripPlanning() {
               padding: '20px',
               boxShadow: '0 2px 8px rgba(0,0,0,0.08)'
             }}>
-              <h3 style={{ margin: '0 0 16px 0', fontSize: '16px', color: '#374151' }}>🚗 Choose Your Ride</h3>
+              <h3 style={{ margin: '0 0 16px 0', fontSize: '16px', color: '#374151', display: 'flex', alignItems: 'center', gap: '6px' }}><Icons.Sedan size={18} /> Choose Your Ride</h3>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 {fareEstimates.map((estimate) => {
                   const hasNearbyDrivers = estimate.nearby_drivers_count > 0;
@@ -591,8 +598,8 @@ function TripPlanning() {
                       opacity: isDisabled ? 0.6 : 1
                     }}
                   >
-                    <span style={{ fontSize: '32px', marginRight: '14px', opacity: isDisabled ? 0.5 : 1 }}>
-                      {vehicleIcons[estimate.category] || '🚗'}
+                    <span style={{ marginRight: '14px', opacity: isDisabled ? 0.5 : 1, display: 'inline-flex' }}>
+                      {vehicleIcons[estimate.category] || <Icons.Sedan size={28} />}
                     </span>
                     <div style={{ flex: 1 }}>
                       <div style={{ fontWeight: '600', color: isDisabled ? '#9ca3af' : '#374151', fontSize: '15px' }}>
@@ -603,12 +610,12 @@ function TripPlanning() {
                       </div>
                       {/* Nearby drivers indicator */}
                       {hasNearbyDrivers ? (
-                        <div style={{ fontSize: '12px', color: '#22c55e', fontWeight: '600', marginTop: '4px' }}>
-                          🟢 {estimate.nearby_drivers_count} driver{estimate.nearby_drivers_count !== 1 ? 's' : ''} nearby
+                        <div style={{ fontSize: '12px', color: '#22c55e', fontWeight: '600', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <Icons.GreenDot size={10} /> {estimate.nearby_drivers_count} driver{estimate.nearby_drivers_count !== 1 ? 's' : ''} nearby
                         </div>
                       ) : (
-                        <div style={{ fontSize: '12px', color: '#9ca3af', fontWeight: '500', marginTop: '4px' }}>
-                          ⚪ No drivers nearby
+                        <div style={{ fontSize: '12px', color: '#9ca3af', fontWeight: '500', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <Icons.GrayDot size={10} /> No drivers nearby
                         </div>
                       )}
                     </div>
@@ -617,8 +624,8 @@ function TripPlanning() {
                         ₹{estimate.final_fare?.toFixed(0)}
                       </div>
                       {estimate.surge_multiplier > 1 && (
-                        <div style={{ fontSize: '11px', color: '#f59e0b', fontWeight: '600' }}>
-                          ⚡ {estimate.surge_multiplier}x
+                        <div style={{ fontSize: '11px', color: '#f59e0b', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '2px' }}>
+                          <Icons.Flash size={12} color="#f59e0b" /> {estimate.surge_multiplier}x
                         </div>
                       )}
                     </div>
@@ -653,7 +660,7 @@ function TripPlanning() {
               padding: '20px',
               boxShadow: '0 2px 8px rgba(0,0,0,0.08)'
             }}>
-              <h3 style={{ margin: '0 0 16px 0', fontSize: '16px', color: '#374151' }}>✅ Confirm Booking</h3>
+              <h3 style={{ margin: '0 0 16px 0', fontSize: '16px', color: '#374151', display: 'flex', alignItems: 'center', gap: '6px' }}><Icons.CheckCircle size={18} color="#22c55e" /> Confirm Booking</h3>
               
               <div style={{
                 background: '#f9fafb',
@@ -663,7 +670,7 @@ function TripPlanning() {
               }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
                   <span style={{ color: '#6b7280' }}>Vehicle</span>
-                  <span style={{ fontWeight: '600' }}>{vehicleIcons[selectedVehicle]} {selectedVehicle}</span>
+                  <span style={{ fontWeight: '600', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>{vehicleIconsSmall[selectedVehicle]} {selectedVehicle}</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
                   <span style={{ color: '#6b7280' }}>Distance</span>
@@ -694,7 +701,7 @@ function TripPlanning() {
                   cursor: booking ? 'default' : 'pointer'
                 }}
               >
-                {booking ? '⏳ Booking Your Ride...' : '🚀 Confirm & Book'}
+                {booking ? <><Icons.Hourglass size={16} style={{verticalAlign: 'middle', marginRight: '4px'}} /> Booking Your Ride...</> : <><Icons.Rocket size={16} style={{verticalAlign: 'middle', marginRight: '4px'}} /> Confirm & Book</>}
               </button>
               
               <button 
@@ -754,7 +761,7 @@ function TripPlanning() {
             >
               ← Back
             </button>
-            <span style={{ fontSize: '24px' }}>{selectingType === 'pickup' ? '📍' : '🎯'}</span>
+            <span style={{ display: 'inline-flex' }}>{selectingType === 'pickup' ? <Icons.MapPin size={24} /> : <Icons.Target size={24} />}</span>
             <span style={{ fontWeight: '600', fontSize: '16px' }}>
               {selectingType === 'pickup' ? 'Select Pickup Location' : 'Select Drop-off Location'}
             </span>
@@ -790,7 +797,7 @@ function TripPlanning() {
                 alignItems: 'center',
                 gap: '8px'
               }}>
-                <span>👆</span> Drag the pin to adjust location
+                <Icons.HandPointer size={16} style={{flexShrink: 0}} /> Drag the pin to adjust location
               </div>
             )}
             
@@ -824,7 +831,7 @@ function TripPlanning() {
                 fontSize: '14px',
                 zIndex: 500
               }}>
-                ⏳ Getting address...
+                <Icons.Hourglass size={14} style={{verticalAlign: 'middle', marginRight: '4px'}} /> Getting address...
               </div>
             )}
           </div>

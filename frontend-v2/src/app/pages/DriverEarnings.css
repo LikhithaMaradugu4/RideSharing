@@ -452,7 +452,7 @@
 }
 
 /* Loading */
-.loading-spinner {
+.loading-state {
   display: flex;
   justify-content: center;
   align-items: center;

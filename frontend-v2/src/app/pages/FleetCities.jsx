@@ -105,7 +105,6 @@ function FleetCities() {
     return (
       <div className="fleet-cities">
         <div className="loading-state">
-          <div className="loading-spinner"></div>
           <span>Loading cities...</span>
         </div>
       </div>

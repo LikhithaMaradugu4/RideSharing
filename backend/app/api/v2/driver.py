@@ -220,13 +220,19 @@ def get_my_application(
         )
 
     # Get all KYC documents for this user
-    documents = db.query(UserKYC).filter(UserKYC.user_id == user_id).all()
+    all_documents = db.query(UserKYC).filter(UserKYC.user_id == user_id).all()
+    
+    # Only use the latest document per type (re-uploads create new records)
+    doc_by_type = {}
+    for doc in all_documents:
+        if doc.document_type not in doc_by_type or doc.kyc_id > doc_by_type[doc.document_type].kyc_id:
+            doc_by_type[doc.document_type] = doc
     
     # Build document list with can_reupload flag
     doc_list = []
     has_rejected_docs = False
     
-    for doc in documents:
+    for doc in doc_by_type.values():
         can_reupload = (
             doc.verification_status == "REJECTED" and 
             profile.approval_status in ["PARTIALLY_REJECTED", "REJECTED"]
@@ -400,29 +406,26 @@ def resubmit_application(
             detail=f"Application status must be PARTIALLY_REJECTED to resubmit. Current: {profile.approval_status}"
         )
     
-    # Check if any documents are still REJECTED
-    rejected_docs = (
-        db.query(UserKYC)
-        .filter(
-            UserKYC.user_id == user_id,
-            UserKYC.verification_status == "REJECTED"
-        )
-        .all()
-    )
-    
-    if rejected_docs:
-        rejected_types = [doc.document_type for doc in rejected_docs]
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Cannot resubmit. These documents are still rejected: {', '.join(rejected_types)}"
-        )
-    
-    # Get all documents to check there's at least one
+    # Check if latest documents per type still have REJECTED status
     all_docs = db.query(UserKYC).filter(UserKYC.user_id == user_id).all()
     if not all_docs:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="No documents found for application"
+        )
+    
+    # Get latest document per type
+    doc_by_type = {}
+    for doc in all_docs:
+        if doc.document_type not in doc_by_type or doc.kyc_id > doc_by_type[doc.document_type].kyc_id:
+            doc_by_type[doc.document_type] = doc
+    
+    rejected_latest = [d for d in doc_by_type.values() if d.verification_status == "REJECTED"]
+    if rejected_latest:
+        rejected_types = [doc.document_type for doc in rejected_latest]
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Cannot resubmit. These documents are still rejected: {', '.join(rejected_types)}"
         )
     
     # Update application status to PENDING for review

@@ -1,0 +1,361 @@
+/**
+ * FleetApplicationStatus.css
+ * Styles for Fleet Application Status Page
+ * (Mirrors DriverApplicationStatus.css)
+ */
+
+.fleet-application-status-page {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.fleet-application-status-page h1 {
+  margin-bottom: 20px;
+  color: #333;
+}
+
+/* Alerts */
+.fleet-application-status-page .alert {
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+}
+
+.fleet-application-status-page .alert-error {
+  background-color: #fee2e2;
+  color: #dc2626;
+  border: 1px solid #fca5a5;
+}
+
+.fleet-application-status-page .alert-success {
+  background-color: #dcfce7;
+  color: #16a34a;
+  border: 1px solid #86efac;
+}
+
+/* Loading & No Application */
+.fleet-application-status-page .loading,
+.fleet-application-status-page .no-application {
+  text-align: center;
+  padding: 60px 20px;
+}
+
+.fleet-application-status-page .no-application h2 {
+  margin-bottom: 16px;
+  color: #666;
+}
+
+.fleet-application-status-page .no-application p {
+  margin-bottom: 24px;
+  color: #888;
+}
+
+/* Application Overview */
+.fleet-application-status-page .application-overview {
+  background: #fff;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 24px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.fleet-application-status-page .overview-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.fleet-application-status-page .overview-header h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  color: #333;
+}
+
+/* Status Badges */
+.fleet-application-status-page .status-badge {
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.fleet-application-status-page .status-approved {
+  background-color: #dcfce7;
+  color: #16a34a;
+}
+
+.fleet-application-status-page .status-rejected {
+  background-color: #fee2e2;
+  color: #dc2626;
+}
+
+.fleet-application-status-page .status-partial {
+  background-color: #fef3c7;
+  color: #d97706;
+}
+
+.fleet-application-status-page .status-pending {
+  background-color: #e0e7ff;
+  color: #4f46e5;
+}
+
+/* Overview Details */
+.fleet-application-status-page .overview-details {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.fleet-application-status-page .detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.fleet-application-status-page .detail-item label {
+  font-size: 0.75rem;
+  color: #888;
+  text-transform: uppercase;
+}
+
+.fleet-application-status-page .detail-item span {
+  font-size: 1rem;
+  color: #333;
+  font-weight: 500;
+}
+
+/* Status Messages */
+.fleet-application-status-page .status-message {
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-top: 16px;
+}
+
+.fleet-application-status-page .status-message.warning {
+  background-color: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fcd34d;
+}
+
+.fleet-application-status-page .status-message.error {
+  background-color: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #fca5a5;
+}
+
+.fleet-application-status-page .status-message.info {
+  background-color: #e0e7ff;
+  color: #3730a3;
+  border: 1px solid #a5b4fc;
+}
+
+.fleet-application-status-page .status-message.success {
+  background-color: #dcfce7;
+  color: #166534;
+  border: 1px solid #86efac;
+}
+
+/* Documents Section */
+.fleet-application-status-page .documents-section {
+  margin-bottom: 24px;
+}
+
+.fleet-application-status-page .documents-section h3 {
+  margin-bottom: 16px;
+  color: #333;
+}
+
+.fleet-application-status-page .documents-list {
+  display: grid;
+  gap: 16px;
+}
+
+/* Document Card */
+.fleet-application-status-page .document-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  border-left: 4px solid #ddd;
+}
+
+.fleet-application-status-page .document-card.status-approved {
+  border-left-color: #16a34a;
+}
+
+.fleet-application-status-page .document-card.status-rejected {
+  border-left-color: #dc2626;
+}
+
+.fleet-application-status-page .document-card.status-pending {
+  border-left-color: #4f46e5;
+}
+
+.fleet-application-status-page .document-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.fleet-application-status-page .doc-type {
+  font-weight: 600;
+  color: #333;
+}
+
+.fleet-application-status-page .doc-status {
+  font-size: 0.75rem;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-weight: 500;
+}
+
+.fleet-application-status-page .document-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.fleet-application-status-page .view-link {
+  color: #4f46e5;
+  text-decoration: none;
+  font-size: 0.875rem;
+}
+
+.fleet-application-status-page .view-link:hover {
+  text-decoration: underline;
+}
+
+.fleet-application-status-page .rejection-reason {
+  background-color: #fee2e2;
+  padding: 10px 12px;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  color: #991b1b;
+}
+
+/* Reupload Section */
+.fleet-application-status-page .reupload-section {
+  margin-top: 8px;
+}
+
+.fleet-application-status-page .reupload-label {
+  display: inline-block;
+  cursor: pointer;
+}
+
+.fleet-application-status-page .reupload-label input[type="file"] {
+  display: none;
+}
+
+.fleet-application-status-page .btn-reupload {
+  display: inline-block;
+  padding: 8px 16px;
+  background-color: #f59e0b;
+  color: #fff;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+
+.fleet-application-status-page .btn-reupload:hover {
+  background-color: #d97706;
+}
+
+/* Resubmit Section */
+.fleet-application-status-page .resubmit-section {
+  text-align: center;
+  padding: 24px;
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  border-radius: 12px;
+  margin-bottom: 24px;
+}
+
+.fleet-application-status-page .btn-resubmit {
+  padding: 14px 32px;
+  background-color: #fff;
+  color: #d97706;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.fleet-application-status-page .btn-resubmit:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+.fleet-application-status-page .btn-resubmit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.fleet-application-status-page .resubmit-hint {
+  margin-top: 12px;
+  color: rgba(255,255,255,0.9);
+  font-size: 0.875rem;
+}
+
+/* Actions */
+.fleet-application-status-page .actions {
+  margin-top: 24px;
+}
+
+/* Buttons */
+.fleet-application-status-page .btn-primary {
+  padding: 12px 24px;
+  background-color: #f59e0b;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.fleet-application-status-page .btn-primary:hover {
+  background-color: #d97706;
+}
+
+.fleet-application-status-page .btn-secondary {
+  padding: 10px 20px;
+  background-color: #f3f4f6;
+  color: #374151;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.fleet-application-status-page .btn-secondary:hover {
+  background-color: #e5e7eb;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .fleet-application-status-page {
+    padding: 16px;
+  }
+  
+  .fleet-application-status-page .overview-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  
+  .fleet-application-status-page .document-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+}

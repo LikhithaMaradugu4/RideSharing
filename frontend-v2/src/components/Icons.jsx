@@ -326,6 +326,263 @@ const Icons = {
       <path d="M10 22h4"></path>
     </svg>
   ),
+
+  // --- Additional icons for emoji replacements ---
+
+  Motorcycle: ({ size = 24, color = 'currentColor', ...props }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <circle cx="5" cy="17" r="3"></circle>
+      <circle cx="19" cy="17" r="3"></circle>
+      <path d="M9 17h6"></path>
+      <path d="M19 14l-3-7h-3l-1 3H8l-3 4"></path>
+      <path d="M13 7l2-3h2"></path>
+    </svg>
+  ),
+
+  AutoRickshaw: ({ size = 24, color = 'currentColor', ...props }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <circle cx="7" cy="18" r="2"></circle>
+      <circle cx="19" cy="18" r="2"></circle>
+      <path d="M3 18V9l3-5h4l2 3h7l2 3v8"></path>
+      <path d="M12 7v9"></path>
+      <path d="M5 16h14"></path>
+    </svg>
+  ),
+
+  Sedan: ({ size = 24, color = 'currentColor', ...props }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <path d="M5 17h14v-5l-2-4H7l-2 4v5z"></path>
+      <circle cx="7.5" cy="17" r="2"></circle>
+      <circle cx="16.5" cy="17" r="2"></circle>
+      <path d="M5 12h14"></path>
+      <path d="M9 8l1-3h4l1 3"></path>
+    </svg>
+  ),
+
+  Target: ({ size = 24, color = 'currentColor', ...props }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <circle cx="12" cy="12" r="10"></circle>
+      <circle cx="12" cy="12" r="6"></circle>
+      <circle cx="12" cy="12" r="2"></circle>
+    </svg>
+  ),
+
+  Map: ({ size = 24, color = 'currentColor', ...props }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon>
+      <line x1="8" y1="2" x2="8" y2="18"></line>
+      <line x1="16" y1="6" x2="16" y2="22"></line>
+    </svg>
+  ),
+
+  Edit: ({ size = 24, color = 'currentColor', ...props }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+    </svg>
+  ),
+
+  GreenDot: ({ size = 24, color = '#22c55e', ...props }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill={color} {...props}>
+      <circle cx="12" cy="12" r="6"></circle>
+    </svg>
+  ),
+
+  GrayDot: ({ size = 24, color = '#9ca3af', ...props }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill={color} {...props}>
+      <circle cx="12" cy="12" r="6"></circle>
+    </svg>
+  ),
+
+  MoneyBag: ({ size = 24, color = 'currentColor', ...props }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <path d="M12 2l2 4h-4l2-4z"></path>
+      <path d="M6 8c0 0-2 2-2 7s4 7 8 7 8-2 8-7-2-7-2-7H6z"></path>
+      <path d="M14.5 13.5c0-.83-.67-1.5-1.5-1.5h-2c-.83 0-1.5.67-1.5 1.5s.67 1.5 1.5 1.5h2c.83 0 1.5.67 1.5 1.5s-.67 1.5-1.5 1.5h-2c-.83 0-1.5-.67-1.5-1.5"></path>
+      <line x1="12" y1="11" x2="12" y2="19"></line>
+    </svg>
+  ),
+
+  Cash: ({ size = 24, color = 'currentColor', ...props }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <rect x="2" y="6" width="20" height="12" rx="2"></rect>
+      <circle cx="12" cy="12" r="3"></circle>
+      <path d="M2 10h2M20 10h2M2 14h2M20 14h2"></path>
+    </svg>
+  ),
+
+  HandPointer: ({ size = 24, color = 'currentColor', ...props }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <path d="M12 2v6M12 2L9 5M12 2l3 3"></path>
+      <path d="M8 14V8a2 2 0 0 1 4 0v3"></path>
+      <path d="M12 11v-1a2 2 0 0 1 4 0v2"></path>
+      <path d="M16 12a2 2 0 0 1 4 0v3a8 8 0 0 1-8 8h-1a8 8 0 0 1-5.66-2.34"></path>
+      <path d="M6 16l-2-2"></path>
+    </svg>
+  ),
+
+  Broadcast: ({ size = 24, color = 'currentColor', ...props }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <circle cx="12" cy="12" r="2"></circle>
+      <path d="M16.24 7.76a6 6 0 0 1 0 8.49"></path>
+      <path d="M7.76 16.24a6 6 0 0 1 0-8.49"></path>
+      <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
+      <path d="M4.93 19.07a10 10 0 0 1 0-14.14"></path>
+    </svg>
+  ),
+
+  Road: ({ size = 24, color = 'currentColor', ...props }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <path d="M4 19L8 5"></path>
+      <path d="M16 5l4 14"></path>
+      <path d="M12 6v2M12 11v2M12 16v2"></path>
+    </svg>
+  ),
+
+  Route: ({ size = 24, color = 'currentColor', ...props }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <circle cx="6" cy="19" r="3"></circle>
+      <circle cx="18" cy="5" r="3"></circle>
+      <path d="M6 16V8a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v8a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4z"></path>
+    </svg>
+  ),
+
+  Refresh: ({ size = 24, color = 'currentColor', ...props }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <polyline points="23 4 23 10 17 10"></polyline>
+      <polyline points="1 20 1 14 7 14"></polyline>
+      <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10"></path>
+      <path d="M20.49 15a9 9 0 0 1-14.85 3.36L1 14"></path>
+    </svg>
+  ),
+
+  Upload: ({ size = 24, color = 'currentColor', ...props }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <polyline points="16 16 12 12 8 16"></polyline>
+      <line x1="12" y1="12" x2="12" y2="21"></line>
+      <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"></path>
+    </svg>
+  ),
+
+  Driver: ({ size = 24, color = 'currentColor', ...props }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <circle cx="12" cy="8" r="4"></circle>
+      <path d="M6 8h12"></path>
+      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+      <path d="M8 4l4-2 4 2"></path>
+    </svg>
+  ),
+
+  SadFace: ({ size = 24, color = 'currentColor', ...props }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <circle cx="12" cy="12" r="10"></circle>
+      <path d="M16 16s-1.5-2-4-2-4 2-4 2"></path>
+      <line x1="9" y1="9" x2="9.01" y2="9"></line>
+      <line x1="15" y1="9" x2="15.01" y2="9"></line>
+    </svg>
+  ),
+
+  CarSide: ({ size = 24, color = 'currentColor', ...props }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <path d="M19 17h2V12l-3-5H6L3 12v5h2"></path>
+      <circle cx="7.5" cy="17" r="2"></circle>
+      <circle cx="16.5" cy="17" r="2"></circle>
+      <path d="M3 12h18"></path>
+    </svg>
+  ),
+
+  LockKey: ({ size = 24, color = 'currentColor', ...props }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+      <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+      <circle cx="12" cy="16" r="1"></circle>
+      <path d="M12 17v2"></path>
+    </svg>
+  ),
+
+  // Country Flags
+  FlagUS: (props) => (
+    <svg width="24" height="16" viewBox="0 0 24 16" style={{borderRadius: 2, display: 'block', flexShrink: 0}} {...props}>
+      <rect width="24" height="16" fill="#B22234"/>
+      <rect y="1.23" width="24" height="1.23" fill="#fff"/>
+      <rect y="3.69" width="24" height="1.23" fill="#fff"/>
+      <rect y="6.15" width="24" height="1.23" fill="#fff"/>
+      <rect y="8.62" width="24" height="1.23" fill="#fff"/>
+      <rect y="11.08" width="24" height="1.23" fill="#fff"/>
+      <rect y="13.54" width="24" height="1.23" fill="#fff"/>
+      <rect width="9.6" height="8.62" fill="#3C3B6E"/>
+    </svg>
+  ),
+  FlagIN: (props) => (
+    <svg width="24" height="16" viewBox="0 0 24 16" style={{borderRadius: 2, display: 'block', flexShrink: 0}} {...props}>
+      <rect width="24" height="5.33" fill="#FF9933"/>
+      <rect y="5.33" width="24" height="5.33" fill="#fff"/>
+      <rect y="10.67" width="24" height="5.33" fill="#138808"/>
+      <circle cx="12" cy="8" r="1.6" fill="none" stroke="#000080" strokeWidth="0.4"/>
+    </svg>
+  ),
+  FlagGB: (props) => (
+    <svg width="24" height="16" viewBox="0 0 24 16" style={{borderRadius: 2, display: 'block', flexShrink: 0}} {...props}>
+      <rect width="24" height="16" fill="#012169"/>
+      <path d="M0,0 L24,16 M24,0 L0,16" stroke="#fff" strokeWidth="2.5"/>
+      <path d="M0,0 L24,16 M24,0 L0,16" stroke="#C8102E" strokeWidth="1.2"/>
+      <path d="M12,0 V16 M0,8 H24" stroke="#fff" strokeWidth="4"/>
+      <path d="M12,0 V16 M0,8 H24" stroke="#C8102E" strokeWidth="2.2"/>
+    </svg>
+  ),
+  FlagCA: (props) => (
+    <svg width="24" height="16" viewBox="0 0 24 16" style={{borderRadius: 2, display: 'block', flexShrink: 0}} {...props}>
+      <rect width="6" height="16" fill="#FF0000"/>
+      <rect x="6" width="12" height="16" fill="#fff"/>
+      <rect x="18" width="6" height="16" fill="#FF0000"/>
+      <path d="M12,3 L12.8,6 L11.2,6 Z M12,3 L10.5,7.5 L12,6.8 L13.5,7.5 Z" fill="#FF0000"/>
+      <rect x="11.4" y="7" width="1.2" height="3" fill="#FF0000"/>
+    </svg>
+  ),
+  FlagAU: (props) => (
+    <svg width="24" height="16" viewBox="0 0 24 16" style={{borderRadius: 2, display: 'block', flexShrink: 0}} {...props}>
+      <rect width="24" height="16" fill="#00008B"/>
+      <rect width="12" height="8" fill="#00008B"/>
+      <path d="M0,0 L12,8 M12,0 L0,8" stroke="#fff" strokeWidth="1.5"/>
+      <path d="M0,0 L12,8 M12,0 L0,8" stroke="#C8102E" strokeWidth="0.7"/>
+      <path d="M6,0 V8 M0,4 H12" stroke="#fff" strokeWidth="2.5"/>
+      <path d="M6,0 V8 M0,4 H12" stroke="#C8102E" strokeWidth="1.3"/>
+      <circle cx="6" cy="12" r="1.2" fill="#fff"/>
+      <circle cx="18" cy="5" r="0.6" fill="#fff"/>
+      <circle cx="20" cy="9" r="0.6" fill="#fff"/>
+      <circle cx="17" cy="11" r="0.6" fill="#fff"/>
+      <circle cx="15" cy="8" r="0.6" fill="#fff"/>
+    </svg>
+  ),
+  FlagDE: (props) => (
+    <svg width="24" height="16" viewBox="0 0 24 16" style={{borderRadius: 2, display: 'block', flexShrink: 0}} {...props}>
+      <rect width="24" height="5.33" fill="#000"/>
+      <rect y="5.33" width="24" height="5.33" fill="#DD0000"/>
+      <rect y="10.67" width="24" height="5.33" fill="#FFCC00"/>
+    </svg>
+  ),
+  FlagJP: (props) => (
+    <svg width="24" height="16" viewBox="0 0 24 16" style={{borderRadius: 2, display: 'block', flexShrink: 0}} {...props}>
+      <rect width="24" height="16" fill="#fff"/>
+      <circle cx="12" cy="8" r="4.8" fill="#BC002D"/>
+    </svg>
+  ),
+};
+
+// Map country code to flag component
+Icons.CountryFlag = ({ code, ...props }) => {
+  const flagMap = {
+    US: Icons.FlagUS,
+    IN: Icons.FlagIN,
+    GB: Icons.FlagGB,
+    CA: Icons.FlagCA,
+    AU: Icons.FlagAU,
+    DE: Icons.FlagDE,
+    JP: Icons.FlagJP,
+  };
+  const Flag = flagMap[code];
+  if (!Flag) return <svg width="24" height="16" viewBox="0 0 24 16" style={{borderRadius: 2, display: 'block', flexShrink: 0}} {...props}><rect width="24" height="16" fill="#ccc"/></svg>;
+  return <Flag {...props} />;
 };
 
 export default Icons;

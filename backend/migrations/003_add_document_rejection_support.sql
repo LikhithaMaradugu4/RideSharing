@@ -11,3 +11,4 @@ ON CONFLICT (status_code) DO NOTHING;
 
 -- Comment for documentation
 COMMENT ON COLUMN user_kyc.rejection_reason IS 'Reason provided when document is rejected by tenant admin';
+

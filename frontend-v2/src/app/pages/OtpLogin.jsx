@@ -2,25 +2,27 @@ import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import authService from '../../services/auth.service';
 import tokenStorage from '../../services/tokenStorage';
+import Icons from '../../components/Icons';
 import './OtpLogin.css';
 
-// Simple list of countries - In a real app, this might come from a library or API
 const COUNTRIES = [
-  { code: 'US', dial_code: '+1', flag: '🇺🇸' },
-  { code: 'IN', dial_code: '+91', flag: '🇮🇳' },
-  { code: 'GB', dial_code: '+44', flag: '🇬🇧' },
-  { code: 'CA', dial_code: '+1', flag: '🇨🇦' },
-  { code: 'AU', dial_code: '+61', flag: '🇦🇺' },
-  { code: 'DE', dial_code: '+49', flag: '🇩🇪' },
-  { code: 'JP', dial_code: '+81', flag: '🇯🇵' },
+  { code: 'US', dial_code: '+1' },
+  { code: 'IN', dial_code: '+91' },
+  { code: 'GB', dial_code: '+44' },
+  { code: 'CA', dial_code: '+1' },
+  { code: 'AU', dial_code: '+61' },
+  { code: 'DE', dial_code: '+49' },
+  { code: 'JP', dial_code: '+81' },
 ];
 
 function OtpLogin() {
   const navigate = useNavigate();
   
-  // Phone State
-  const [countryCode, setCountryCode] = useState('+91');
+  // Phone State - track by country code (not dial_code) to handle US/CA both being +1
+  const [selectedCountry, setSelectedCountry] = useState('IN');
   const [localPhone, setLocalPhone] = useState('');
+
+  const countryCode = COUNTRIES.find(c => c.code === selectedCountry)?.dial_code || '+91';
   
   // OTP State (Array of 6 strings)
   const [otp, setOtp] = useState(new Array(6).fill(""));
@@ -31,8 +33,23 @@ function OtpLogin() {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   
+  // Country dropdown
+  const [countryOpen, setCountryOpen] = useState(false);
+  const countryRef = useRef(null);
+
   // Refs to control focus movement
   const otpBoxReference = useRef([]);
+
+  // Close country dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (countryRef.current && !countryRef.current.contains(e.target)) {
+        setCountryOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   // --- Phone Logic ---
 
@@ -169,24 +186,41 @@ function OtpLogin() {
             <label htmlFor="phone">Phone Number</label>
             
             <div className="phone-input-group">
-                <select 
-                    className="country-select"
-                    value={countryCode}
-                    onChange={(e) => setCountryCode(e.target.value)}
+                <div className="country-select-custom" ref={countryRef}>
+                  <button
+                    type="button"
+                    className="country-select-btn"
+                    onClick={() => !loading && setCountryOpen(!countryOpen)}
                     disabled={loading}
-                >
-                    {COUNTRIES.map((c) => (
-                        <option key={c.code} value={c.dial_code}>
-                            {c.flag} {c.dial_code}
-                        </option>
-                    ))}
-                </select>
+                  >
+                    <Icons.CountryFlag code={selectedCountry} />
+                    <span className="country-dial">{countryCode}</span>
+                    <svg width="10" height="6" viewBox="0 0 10 6" fill="none" style={{marginLeft: 2, flexShrink: 0}}>
+                      <path d="M1 1L5 5L9 1" stroke="#64748b" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </button>
+                  {countryOpen && (
+                    <div className="country-dropdown">
+                      {COUNTRIES.map((c) => (
+                        <div
+                          key={c.code}
+                          className={`country-option${c.code === selectedCountry ? ' selected' : ''}`}
+                          onClick={() => { setSelectedCountry(c.code); setCountryOpen(false); }}
+                        >
+                          <Icons.CountryFlag code={c.code} />
+                          <span className="country-option-code">{c.code}</span>
+                          <span className="country-option-dial">{c.dial_code}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
                 <input
                     type="tel"
                     className="phone-input"
                     placeholder="555 000 0000"
                     value={localPhone}
-                    onChange={(e) => setLocalPhone(e.target.value.replace(/\D/g, ''))} // Only numbers
+                    onChange={(e) => setLocalPhone(e.target.value.replace(/\D/g, ''))}
                     disabled={loading}
                 />
             </div>

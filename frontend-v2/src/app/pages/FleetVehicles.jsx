@@ -83,7 +83,6 @@ function FleetVehicles() {
     return (
       <div className="fleet-vehicles">
         <div className="loading-state">
-          <div className="loading-spinner"></div>
           <span>Loading vehicles...</span>
         </div>
       </div>

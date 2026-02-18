@@ -218,6 +218,27 @@ class DriverDocumentDetailResponse(BaseModel):
         from_attributes = True
 
 
+class FleetDocumentReviewRequest(BaseModel):
+    """Request body for reviewing individual fleet document"""
+    status: str  # APPROVED or REJECTED
+    rejection_reason: Optional[str] = None
+
+
+class FleetDocumentDetailResponse(BaseModel):
+    """Detailed fleet document response with rejection info"""
+    document_id: int
+    document_type: str
+    file_url: str
+    verification_status: str
+    rejection_reason: Optional[str] = None
+    verified_by: Optional[int] = None
+    verified_on: Optional[datetime] = None
+    can_review: bool = True
+
+    class Config:
+        from_attributes = True
+
+
 class VehicleDocumentAdminResponse(BaseModel):
     document_id: int
     document_type: str

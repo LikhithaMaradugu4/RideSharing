@@ -55,6 +55,7 @@ class FleetDocument(Base, AuditMixin):
     document_type = Column(String(50), nullable=False)
     file_url = Column(Text, nullable=False)
     verification_status = Column(String, ForeignKey("lu_approval_status.status_code"), nullable=False)
+    rejection_reason = Column(Text, nullable=True)
     verified_by = Column(BigInteger, ForeignKey("app_user.user_id"), nullable=True)
     verified_on = Column(TIMESTAMP(timezone=True), nullable=True)
 

@@ -182,13 +182,14 @@ def get_driver_documents_detailed(
     - can_review: True if document can be reviewed (not already APPROVED)
     """
     current_user = admin_data["user"]
+    tenant_id = TenantAdminService._get_admin_tenant(db, current_user)
     
     # Verify driver belongs to admin's tenant
     driver = (
         db.query(DriverProfile)
         .filter(
             DriverProfile.driver_id == driver_id,
-            DriverProfile.tenant_id == current_user.tenant_id
+            DriverProfile.tenant_id == tenant_id
         )
         .first()
     )
@@ -199,7 +200,13 @@ def get_driver_documents_detailed(
             detail="Driver not found or not in your tenant"
         )
     
-    documents = db.query(UserKYC).filter(UserKYC.user_id == driver_id).all()
+    all_documents = db.query(UserKYC).filter(UserKYC.user_id == driver_id).all()
+    
+    # Only return the latest document per type (re-uploads create new records)
+    doc_by_type = {}
+    for doc in all_documents:
+        if doc.document_type not in doc_by_type or doc.kyc_id > doc_by_type[doc.document_type].kyc_id:
+            doc_by_type[doc.document_type] = doc
     
     return [
         DriverDocumentDetailResponse(
@@ -213,7 +220,7 @@ def get_driver_documents_detailed(
             verified_on=doc.verified_on,
             can_review=doc.verification_status != "APPROVED"
         )
-        for doc in documents
+        for doc in doc_by_type.values()
     ]
 
 
@@ -240,6 +247,7 @@ def review_driver_document(
     """
     current_user = admin_data["user"]
     admin_user_id = current_user.user_id
+    tenant_id = TenantAdminService._get_admin_tenant(db, current_user)
     
     # Validate status value
     if request.status not in ["APPROVED", "REJECTED"]:
@@ -260,7 +268,7 @@ def review_driver_document(
         db.query(DriverProfile)
         .filter(
             DriverProfile.driver_id == driver_id,
-            DriverProfile.tenant_id == current_user.tenant_id
+            DriverProfile.tenant_id == tenant_id
         )
         .first()
     )

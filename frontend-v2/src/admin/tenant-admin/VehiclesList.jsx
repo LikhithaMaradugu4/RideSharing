@@ -54,7 +54,6 @@ const VehiclesList = () => {
   if (loading) {
     return (
       <div className="loading-state">
-        <div className="spinner"></div>
         <p>Loading approved vehicles...</p>
       </div>
     );

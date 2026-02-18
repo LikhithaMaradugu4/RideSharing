@@ -96,7 +96,6 @@ function RiderDashboard() {
     return (
       <div className="rider-dashboard">
         <div className="loading-state">
-          <div className="loading-spinner"></div>
           <span>Loading...</span>
         </div>
       </div>
@@ -125,9 +124,9 @@ function RiderDashboard() {
         {/* Greeting Section */}
         <div className="greeting-section">
           <h2 className="greeting-text">
-            {getGreeting()}{getFirstName() ? `, ${getFirstName()}` : ''}! 👋
+            {getGreeting()}{getFirstName() ? `, ${getFirstName()}` : ''}!
           </h2>
-          <p className="greeting-subtitle">Where would you like to go today?</p>
+          <p className="greeting-tagline">Book rides instantly and travel safely.</p>
         </div>
 
         {/* Primary CTA - Book a Ride */}
@@ -142,18 +141,6 @@ function RiderDashboard() {
             </div>
             <span className="btn-arrow">→</span>
           </button>
-        </div>
-
-        {/* Quick Stats */}
-        <div className="info-cards">
-          <div className="info-card">
-            <span className="info-icon"><Icons.MapPin size={24} /></span>
-            <span className="info-text">Available in your area</span>
-          </div>
-          <div className="info-card">
-            <span className="info-icon"><Icons.Flash size={24} /></span>
-            <span className="info-text">Fast pickup times</span>
-          </div>
         </div>
 
         {/* Quick Actions */}
@@ -181,7 +168,7 @@ function RiderDashboard() {
               className="btn-partner"
               onClick={() => navigate('/driver-tenant-selection')}
             >
-              <span className="partner-icon">🚘</span>
+              <span className="partner-icon"><Icons.CarSide size={20} /></span>
               <span className="partner-text">Drive with us</span>
             </button>
             
@@ -191,8 +178,8 @@ function RiderDashboard() {
                 className="btn-partner"
                 onClick={() => navigate('/fleet-owner-tenant-selection')}
               >
-                <span className="partner-icon">🏢</span>
-                <span className="partner-text">Fleet Partner</span>
+              <span className="partner-icon"><Icons.Building size={20} /></span>
+              <span className="partner-text">Fleet Partner</span>
               </button>
             )}
             
@@ -202,7 +189,7 @@ function RiderDashboard() {
                 className="btn-partner"
                 onClick={() => navigate('/fleet-dashboard')}
               >
-                <span className="partner-icon">🏢</span>
+                <span className="partner-icon"><Icons.Building size={20} /></span>
                 <span className="partner-text">Go to Fleet Dashboard</span>
               </button>
             )}
@@ -211,14 +198,14 @@ function RiderDashboard() {
           {/* Show pending fleet status */}
           {fleetData && fleetData.approval_status === 'PENDING' && (
             <p style={{color: '#f59e0b', marginTop: '0.5rem', fontSize: '0.9rem'}}>
-              ⏳ Your fleet application is under review
+              <Icons.Hourglass size={14} style={{verticalAlign: 'middle', marginRight: '4px'}} /> Your fleet application is under review
             </p>
           )}
           
           {/* Show rejected fleet status */}
           {fleetData && fleetData.approval_status === 'REJECTED' && (
             <p style={{color: '#ef4444', marginTop: '0.5rem', fontSize: '0.9rem'}}>
-              ❌ Your fleet application was rejected
+              <Icons.XCircle size={14} style={{verticalAlign: 'middle', marginRight: '4px'}} /> Your fleet application was rejected
             </p>
           )}
         </div>
