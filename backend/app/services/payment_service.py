@@ -129,7 +129,7 @@ class PaymentService:
         if trip.payment_mode != "CASH":
             raise HTTPException(status_code=400, detail="Trip is not cash payment")
 
-        if trip.payment_status == "paid":
+        if trip.payment_status in ("paid", "PAID"):
             raise HTTPException(status_code=400, detail="Payment already confirmed")
 
         # 2️⃣ Get commission values from trip
@@ -251,7 +251,7 @@ class PaymentService:
         wallet.balance = float(Decimal(str(wallet.balance)) - total_commission)
 
         # 8️⃣ Update trip status
-        trip.payment_status = "paid"
+        trip.payment_status = "PAID"
         trip.settlement_status = "unsettled"
 
         # 9️⃣ Update payment record if exists

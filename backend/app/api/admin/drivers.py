@@ -18,7 +18,7 @@ from app.schemas.admin import (
     DriverDocumentDetailResponse
 )
 from app.models.identity import UserKYC
-from app.models.fleet import DriverProfile
+from app.models.fleet import DriverProfile, Fleet, FleetDriver
 
 
 router = APIRouter(prefix="/drivers", tags=[" Tenant Admin - Drivers"])
@@ -329,6 +329,38 @@ def review_driver_document(
         
         if all_approved:
             driver.approval_status = "APPROVED"
+            
+            # For individual drivers, create INDIVIDUAL fleet + fleet_driver if not exists
+            existing_fleet = (
+                db.query(Fleet)
+                .filter(
+                    Fleet.owner_user_id == driver_id,
+                    Fleet.fleet_type == "INDIVIDUAL"
+                )
+                .first()
+            )
+            
+            if not existing_fleet:
+                fleet = Fleet(
+                    owner_user_id=driver_id,
+                    tenant_id=driver.tenant_id,
+                    fleet_name=f"Driver {driver_id} Fleet",
+                    fleet_type="INDIVIDUAL",
+                    approval_status="APPROVED",
+                    status="ACTIVE",
+                    created_by=admin_user_id
+                )
+                db.add(fleet)
+                db.flush()  # Get fleet_id
+                
+                fleet_driver = FleetDriver(
+                    fleet_id=fleet.fleet_id,
+                    driver_id=driver_id,
+                    start_date=datetime.now(timezone.utc),
+                    end_date=None,
+                    created_by=admin_user_id
+                )
+                db.add(fleet_driver)
     
     db.commit()
     

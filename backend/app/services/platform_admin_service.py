@@ -1,15 +1,25 @@
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
-from datetime import datetime
+from datetime import datetime, timezone as tz
 
-from app.models.core import Tenant
+from app.models.core import Tenant, Country, City
+from app.models.pricing import FareConfig
+from app.models.financial import CommissionConfig
 from app.models.tenant import TenantAdmin, TenantDocument
 from app.models.identity import AppUser
 from app.schemas.platform_admin import (
     TenantCreateRequest,
     TenantUpdateStatusRequest,
     TenantAdminAssignRequest,
-    TenantDocumentUploadRequest
+    TenantDocumentUploadRequest,
+    CountryCreateRequest,
+    CountryUpdateRequest,
+    CityCreateRequest,
+    CityUpdateRequest,
+    FareConfigCreateRequest,
+    FareConfigUpdateRequest,
+    CommissionConfigCreateRequest,
+    CommissionConfigUpdateRequest,
 )
 
 
@@ -390,3 +400,412 @@ class PlatformAdminService:
             )
         
         return document
+
+    # ==================== COUNTRY MANAGEMENT ====================
+
+    @staticmethod
+    def _require_platform_admin(user: AppUser):
+        if user.role != "PLATFORM_ADMIN":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only platform admins can perform this action"
+            )
+
+    @staticmethod
+    def create_country(db: Session, user: AppUser, data: CountryCreateRequest) -> Country:
+        PlatformAdminService._require_platform_admin(user)
+
+        code = data.country_code.upper()
+        existing = db.query(Country).filter(Country.country_code == code).first()
+        if existing:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"Country code '{code}' already exists"
+            )
+
+        country = Country(
+            country_code=code,
+            name=data.name,
+            phone_code=data.phone_code,
+            default_timezone=data.default_timezone,
+            default_currency=data.default_currency.upper(),
+            created_by=user.user_id,
+        )
+        db.add(country)
+        db.commit()
+        db.refresh(country)
+        return country
+
+    @staticmethod
+    def list_countries(db: Session, user: AppUser) -> list:
+        PlatformAdminService._require_platform_admin(user)
+        return db.query(Country).order_by(Country.name).all()
+
+    @staticmethod
+    def update_country(db: Session, user: AppUser, country_code: str, data: CountryUpdateRequest) -> Country:
+        PlatformAdminService._require_platform_admin(user)
+
+        country = db.query(Country).filter(Country.country_code == country_code.upper()).first()
+        if not country:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Country not found")
+
+        if data.name is not None:
+            country.name = data.name
+        if data.phone_code is not None:
+            country.phone_code = data.phone_code
+        if data.default_timezone is not None:
+            country.default_timezone = data.default_timezone
+        if data.default_currency is not None:
+            country.default_currency = data.default_currency.upper()
+
+        country.updated_by = user.user_id
+        country.updated_on = datetime.now(tz.utc)
+        db.commit()
+        db.refresh(country)
+        return country
+
+    # ==================== CITY MANAGEMENT ====================
+
+    @staticmethod
+    def create_city(db: Session, user: AppUser, data: CityCreateRequest) -> City:
+        PlatformAdminService._require_platform_admin(user)
+
+        country = db.query(Country).filter(Country.country_code == data.country_code.upper()).first()
+        if not country:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Country code does not exist")
+
+        city = City(
+            country_code=data.country_code.upper(),
+            name=data.name,
+            timezone=data.timezone,
+            currency=data.currency.upper(),
+            boundary_geojson=data.boundary_geojson or "{}",
+            is_active=True,
+            created_by=user.user_id,
+        )
+        db.add(city)
+        db.commit()
+        db.refresh(city)
+        return city
+
+    @staticmethod
+    def list_cities(db: Session, user: AppUser, country_code: str = None) -> list:
+        PlatformAdminService._require_platform_admin(user)
+
+        q = db.query(City)
+        if country_code:
+            q = q.filter(City.country_code == country_code.upper())
+        return q.order_by(City.name).all()
+
+    @staticmethod
+    def update_city(db: Session, user: AppUser, city_id: int, data: CityUpdateRequest) -> City:
+        PlatformAdminService._require_platform_admin(user)
+
+        city = db.query(City).filter(City.city_id == city_id).first()
+        if not city:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="City not found")
+
+        if data.name is not None:
+            city.name = data.name
+        if data.timezone is not None:
+            city.timezone = data.timezone
+        if data.currency is not None:
+            city.currency = data.currency.upper()
+        if data.boundary_geojson is not None:
+            city.boundary_geojson = data.boundary_geojson
+        if data.is_active is not None:
+            city.is_active = data.is_active
+
+        city.updated_by = user.user_id
+        city.updated_on = datetime.now(tz.utc)
+        db.commit()
+        db.refresh(city)
+        return city
+
+    # ==================== FARE CONFIG MANAGEMENT ====================
+
+    @staticmethod
+    def create_fare_config(db: Session, user: AppUser, data: FareConfigCreateRequest) -> FareConfig:
+        PlatformAdminService._require_platform_admin(user)
+
+        # Validate city exists
+        city = db.query(City).filter(City.city_id == data.city_id).first()
+        if not city:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="City not found")
+
+        # Validate currency matches city
+        if data.currency.upper() != city.currency.upper():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Currency must match city currency ({city.currency})"
+            )
+
+        # Validate date range
+        if data.effective_to and data.effective_from >= data.effective_to:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="effective_from must be before effective_to"
+            )
+
+        # Check for overlapping fare configs
+        from sqlalchemy import and_, or_
+        overlap_q = db.query(FareConfig).filter(
+            FareConfig.city_id == data.city_id,
+            FareConfig.vehicle_category == data.vehicle_category.upper(),
+        )
+        # Overlap condition: existing.effective_from < new.effective_to AND existing.effective_to > new.effective_from
+        if data.effective_to:
+            overlap_q = overlap_q.filter(
+                FareConfig.effective_from < data.effective_to,
+                or_(
+                    FareConfig.effective_to.is_(None),
+                    FareConfig.effective_to > data.effective_from
+                )
+            )
+        else:
+            # New config has no end date — overlaps if existing has no end or ends after new start
+            overlap_q = overlap_q.filter(
+                or_(
+                    FareConfig.effective_to.is_(None),
+                    FareConfig.effective_to > data.effective_from
+                )
+            )
+
+        existing_overlap = overlap_q.first()
+        if existing_overlap:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Overlapping fare config exists for this city + vehicle category + date range"
+            )
+
+        fare = FareConfig(
+            city_id=data.city_id,
+            vehicle_category=data.vehicle_category.upper(),
+            currency=data.currency.upper(),
+            base_fare=data.base_fare,
+            per_km_rate=data.per_km_rate,
+            per_min_rate=data.per_min_rate,
+            minimum_fare=data.minimum_fare,
+            booking_fee=data.booking_fee,
+            surge_allowed=data.surge_allowed,
+            night_charge_pct=data.night_charge_pct,
+            effective_from=data.effective_from,
+            effective_to=data.effective_to,
+            created_by=user.user_id,
+        )
+        db.add(fare)
+        db.commit()
+        db.refresh(fare)
+        return fare
+
+    @staticmethod
+    def list_fare_configs(db: Session, user: AppUser, city_id: int = None, vehicle_category: str = None) -> list:
+        PlatformAdminService._require_platform_admin(user)
+
+        q = db.query(FareConfig)
+        if city_id:
+            q = q.filter(FareConfig.city_id == city_id)
+        if vehicle_category:
+            q = q.filter(FareConfig.vehicle_category == vehicle_category.upper())
+        return q.order_by(FareConfig.effective_from.desc()).all()
+
+    @staticmethod
+    def deactivate_fare_config(db: Session, user: AppUser, fare_config_id: int) -> FareConfig:
+        PlatformAdminService._require_platform_admin(user)
+
+        fare = db.query(FareConfig).filter(FareConfig.fare_config_id == fare_config_id).first()
+        if not fare:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Fare config not found")
+
+        if fare.effective_to is not None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Fare config already has an end date"
+            )
+
+        fare.effective_to = datetime.now(tz.utc)
+        db.commit()
+        db.refresh(fare)
+        return fare
+
+    @staticmethod
+    def update_fare_config(db: Session, user: AppUser, fare_config_id: int, data: FareConfigUpdateRequest) -> FareConfig:
+        PlatformAdminService._require_platform_admin(user)
+
+        fare = db.query(FareConfig).filter(FareConfig.fare_config_id == fare_config_id).first()
+        if not fare:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Fare config not found")
+
+        if data.base_fare is not None:
+            fare.base_fare = data.base_fare
+        if data.per_km_rate is not None:
+            fare.per_km_rate = data.per_km_rate
+        if data.per_min_rate is not None:
+            fare.per_min_rate = data.per_min_rate
+        if data.minimum_fare is not None:
+            fare.minimum_fare = data.minimum_fare
+        if data.booking_fee is not None:
+            fare.booking_fee = data.booking_fee
+        if data.surge_allowed is not None:
+            fare.surge_allowed = data.surge_allowed
+        if data.night_charge_pct is not None:
+            fare.night_charge_pct = data.night_charge_pct
+        if data.effective_from is not None:
+            fare.effective_from = data.effective_from
+        if data.effective_to is not None:
+            fare.effective_to = data.effective_to
+
+        db.commit()
+        db.refresh(fare)
+        return fare
+
+    # ==================== COMMISSION CONFIG MANAGEMENT ====================
+
+    @staticmethod
+    def create_commission_config(db: Session, user: AppUser, data: CommissionConfigCreateRequest) -> CommissionConfig:
+        PlatformAdminService._require_platform_admin(user)
+
+        # Validate city
+        city = db.query(City).filter(City.city_id == data.city_id).first()
+        if not city:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="City not found")
+
+        # Validate currency
+        if data.currency.upper() != city.currency.upper():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Currency must match city currency ({city.currency})"
+            )
+
+        # Validate commission_type
+        ctype = data.commission_type.upper()
+        if ctype not in ("FIXED", "PERCENTAGE"):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="commission_type must be FIXED or PERCENTAGE"
+            )
+
+        if ctype == "FIXED" and not data.fixed_amount:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="fixed_amount is required when commission_type is FIXED"
+            )
+        if ctype == "PERCENTAGE" and not data.percentage:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="percentage is required when commission_type is PERCENTAGE"
+            )
+
+        # Validate date range
+        if data.effective_to and data.effective_from >= data.effective_to:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="effective_from must be before effective_to"
+            )
+
+        # Check for overlapping configs
+        from sqlalchemy import or_
+        overlap_q = db.query(CommissionConfig).filter(
+            CommissionConfig.city_id == data.city_id,
+            CommissionConfig.vehicle_category == data.vehicle_category.upper(),
+            CommissionConfig.is_active == True,
+        )
+        if data.effective_to:
+            overlap_q = overlap_q.filter(
+                CommissionConfig.effective_from < data.effective_to,
+                or_(
+                    CommissionConfig.effective_to.is_(None),
+                    CommissionConfig.effective_to > data.effective_from
+                )
+            )
+        else:
+            overlap_q = overlap_q.filter(
+                or_(
+                    CommissionConfig.effective_to.is_(None),
+                    CommissionConfig.effective_to > data.effective_from
+                )
+            )
+
+        if overlap_q.first():
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Overlapping commission config exists for this city + vehicle category + date range"
+            )
+
+        cc = CommissionConfig(
+            commission_type=ctype,
+            city_id=data.city_id,
+            vehicle_category=data.vehicle_category.upper(),
+            fixed_amount=data.fixed_amount or 0,
+            percentage=data.percentage or 0,
+            currency=data.currency.upper(),
+            is_active=True,
+            effective_from=data.effective_from,
+            effective_to=data.effective_to,
+            created_by=user.user_id,
+        )
+        db.add(cc)
+        db.commit()
+        db.refresh(cc)
+        return cc
+
+    @staticmethod
+    def list_commission_configs(db: Session, user: AppUser, city_id: int = None, vehicle_category: str = None) -> list:
+        PlatformAdminService._require_platform_admin(user)
+
+        q = db.query(CommissionConfig).filter(CommissionConfig.is_active == True)
+        if city_id:
+            q = q.filter(CommissionConfig.city_id == city_id)
+        if vehicle_category:
+            q = q.filter(CommissionConfig.vehicle_category == vehicle_category.upper())
+        return q.order_by(CommissionConfig.effective_from.desc()).all()
+
+    @staticmethod
+    def update_commission_config(db: Session, user: AppUser, config_id: int, data: CommissionConfigUpdateRequest) -> CommissionConfig:
+        PlatformAdminService._require_platform_admin(user)
+
+        cc = db.query(CommissionConfig).filter(CommissionConfig.id == config_id).first()
+        if not cc:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Commission config not found")
+
+        if data.commission_type is not None:
+            ctype = data.commission_type.upper()
+            if ctype not in ("FIXED", "PERCENTAGE"):
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="commission_type must be FIXED or PERCENTAGE")
+            cc.commission_type = ctype
+        if data.fixed_amount is not None:
+            cc.fixed_amount = data.fixed_amount
+        if data.percentage is not None:
+            cc.percentage = data.percentage
+        if data.effective_from is not None:
+            cc.effective_from = data.effective_from
+        if data.effective_to is not None:
+            cc.effective_to = data.effective_to
+
+        cc.updated_by = user.user_id
+        cc.updated_on = datetime.now(tz.utc)
+        db.commit()
+        db.refresh(cc)
+        return cc
+
+    @staticmethod
+    def deactivate_commission_config(db: Session, user: AppUser, config_id: int) -> CommissionConfig:
+        PlatformAdminService._require_platform_admin(user)
+
+        cc = db.query(CommissionConfig).filter(CommissionConfig.id == config_id).first()
+        if not cc:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Commission config not found")
+
+        if not cc.is_active:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Commission config is already inactive"
+            )
+
+        cc.effective_to = datetime.now(tz.utc)
+        cc.is_active = False
+        cc.updated_by = user.user_id
+        cc.updated_on = datetime.now(tz.utc)
+        db.commit()
+        db.refresh(cc)
+        return cc

@@ -7,6 +7,10 @@ import TenantCreate from '../platform-admin/TenantCreate'
 import TenantDetails from '../platform-admin/TenantDetails'
 import TenantAdmins from '../platform-admin/TenantAdmins'
 import TenantDocuments from '../platform-admin/TenantDocuments'
+import Countries from '../platform-admin/Countries'
+import Cities from '../platform-admin/Cities'
+import FareConfig from '../platform-admin/FareConfig'
+import CommissionConfig from '../platform-admin/CommissionConfig'
 import Dashboard from '../tenant-admin/Dashboard'
 import DriverApprovals from '../tenant-admin/DriverApprovals'
 import FleetApprovals from '../tenant-admin/FleetApprovals'
@@ -61,6 +65,10 @@ const AdminLayout = () => {
                 <Route path="platform/tenants/:tenantId" element={<TenantDetails />} />
                 <Route path="platform/tenants/:tenantId/admins" element={<TenantAdmins />} />
                 <Route path="platform/tenants/:tenantId/documents" element={<TenantDocuments />} />
+                <Route path="platform/countries" element={<Countries />} />
+                <Route path="platform/cities" element={<Cities />} />
+                <Route path="platform/fare-config" element={<FareConfig />} />
+                <Route path="platform/commission-config" element={<CommissionConfig />} />
               </>
             )}
             {adminData.admin_type === 'TENANT' && (

@@ -1,18 +1,25 @@
-from sqlalchemy import Column, BigInteger, String, ForeignKey, Integer, TIMESTAMP, Numeric
+from sqlalchemy import Column, BigInteger, String, ForeignKey, Integer, TIMESTAMP, Numeric, Text, UniqueConstraint
+from sqlalchemy.sql import func
 from .base import Base
 
+
 class TripRating(Base):
-    __tablename__ = "trip_rating"
+    __tablename__ = "trip_ratings"
 
-    rating_id = Column(BigInteger, primary_key=True)
-    trip_id = Column(BigInteger, ForeignKey("trip.trip_id"), nullable=False)
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    trip_id = Column(Integer, ForeignKey("trip.trip_id"), nullable=False)
 
-    rater_id = Column(BigInteger, ForeignKey("app_user.user_id"), nullable=False)
-    ratee_id = Column(BigInteger, ForeignKey("app_user.user_id"), nullable=False)
+    rater_user_id = Column(Integer, ForeignKey("app_user.user_id"), nullable=False)
+    rated_user_id = Column(Integer, ForeignKey("app_user.user_id"), nullable=False)
 
-    rating = Column(Integer)
-    comment = Column(String)
-    created_on = Column(TIMESTAMP(timezone=True), nullable=False)
+    rating = Column(Integer, nullable=False)
+    feedback = Column(Text, nullable=True)
+    role_type = Column(String(10), nullable=True)  # 'DRIVER' or 'RIDER'
+    created_at = Column(TIMESTAMP(timezone=True), server_default=func.now())
+
+    __table_args__ = (
+        UniqueConstraint('trip_id', 'rater_user_id', name='uq_trip_rater'),
+    )
 
 
 class DriverRatingSummary(Base):

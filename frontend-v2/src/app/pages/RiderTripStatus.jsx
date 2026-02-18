@@ -1,7 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import riderService from '../../services/rider.service';
+import ratingService from '../../services/rating.service';
 import Icons from '../../components/Icons';
+import RateTripModal from '../../components/RateTripModal';
 import './RiderTripStatus.css';
 
 // Status messages and colors
@@ -90,6 +92,9 @@ function RiderTripStatus() {
   const [otp, setOtp] = useState(null);
   const [otpLoading, setOtpLoading] = useState(false);
   const [cancelling, setCancelling] = useState(false);
+  const [showRatingModal, setShowRatingModal] = useState(false);
+  const [canRate, setCanRate] = useState(false);
+  const [hasRated, setHasRated] = useState(false);
   
   const pollingRef = useRef(null);
 
@@ -123,6 +128,11 @@ function RiderTripStatus() {
         clearInterval(pollingRef.current);
         pollingRef.current = null;
       }
+    }
+    
+    // Check rating eligibility on PAID status
+    if (trip?.status === 'PAID' && !hasRated) {
+      checkRatingStatus();
     }
   }, [trip?.status]);
 
@@ -190,6 +200,19 @@ function RiderTripStatus() {
 
   const handleBackToDashboard = () => {
     navigate('/app/rider-dashboard');
+  };
+
+  const checkRatingStatus = async () => {
+    try {
+      const status = await ratingService.getRatingStatus(tripId);
+      setCanRate(status.can_rate);
+      setHasRated(status.has_rated);
+      if (status.can_rate) {
+        setShowRatingModal(true);
+      }
+    } catch (err) {
+      console.error('Failed to check rating status:', err);
+    }
   };
 
   const getStatusConfig = () => {
@@ -503,7 +526,49 @@ function RiderTripStatus() {
                 <span style={{ color: '#22c55e', fontWeight: '600' }}>✓ Paid (Cash)</span>
               </div>
             </div>
+
+            {/* Rate Your Driver Button */}
+            {canRate && !hasRated && (
+              <button
+                onClick={() => setShowRatingModal(true)}
+                style={{
+                  width: '100%',
+                  marginTop: '16px',
+                  padding: '14px',
+                  background: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '12px',
+                  fontSize: '15px',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                }}
+              >
+                <Icons.StarFilled size={18} color="white" /> Rate Your Driver
+              </button>
+            )}
+            {hasRated && (
+              <p style={{ textAlign: 'center', color: '#22c55e', fontSize: '14px', fontWeight: '600', marginTop: '12px' }}>
+                ✓ You have rated this trip
+              </p>
+            )}
           </div>
+        )}
+
+        {/* Rating Modal */}
+        {showRatingModal && trip && (
+          <RateTripModal
+            tripId={trip.trip_id}
+            onClose={() => setShowRatingModal(false)}
+            onSuccess={() => {
+              setHasRated(true);
+              setCanRate(false);
+            }}
+          />
         )}
       </div>
     </div>

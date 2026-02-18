@@ -600,6 +600,27 @@ const driverService = {
   },
 
   /**
+   * Get settlement preview before confirming.
+   * Shows breakdown of commissions for selected trips.
+   * @param {string} token - Auth token
+   * @param {number[]} tripIds - Array of trip IDs to preview
+   * @param {string} currency - Currency code (default: INR)
+   */
+  getSettlementPreview: async (token, tripIds, currency = 'INR') => {
+    const validToken = await getValidToken(token);
+    const response = await fetch(`${API_BASE_URL}/financial/driver/settlement-preview`, {
+      method: 'POST',
+      headers: buildHeaders(validToken),
+      body: JSON.stringify({
+        trip_ids: tripIds,
+        currency: currency
+      })
+    });
+
+    return handleResponse(response, 'Failed to get settlement preview');
+  },
+
+  /**
    * Settle selected trips.
    * Driver pays back commission for selected trips.
    * @param {string} token - Auth token

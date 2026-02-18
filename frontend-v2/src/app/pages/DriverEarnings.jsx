@@ -7,7 +7,7 @@
  * - Wallet summary (balance showing amount owed)
  * - Earnings summary from completed trips
  * - Unsettled trips table with checkboxes
- * - Settle button to pay back commission
+ * - Settle button with confirmation modal
  * - Settlement history
  */
 
@@ -36,6 +36,11 @@ const DriverEarnings = () => {
   const [selectedTripIds, setSelectedTripIds] = useState([]);
   const [settling, setSettling] = useState(false);
   
+  // Confirmation modal state
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [settlementPreview, setSettlementPreview] = useState(null);
+  const [loadingPreview, setLoadingPreview] = useState(false);
+  
   // Active tab
   const [activeTab, setActiveTab] = useState('unsettled'); // 'unsettled' | 'earnings' | 'history'
 
@@ -56,13 +61,14 @@ const DriverEarnings = () => {
         driverService.getWallet(token).catch(() => null),
         driverService.getEarnings(token).catch(() => null),
         driverService.getUnsettledTrips(token).catch(() => ({ trips: [] })),
-        driverService.getPayoutHistory(token).catch(() => ({ payouts: [] }))
+        driverService.getPayoutHistory(token).catch(() => ({ payouts: [], requests: [] }))
       ]);
 
       setWallet(walletData);
       setEarnings(earningsData);
       setUnsettledTrips(unsettledData?.trips || []);
-      setPayoutHistory(historyData?.payouts || []);
+      // Support both 'payouts' and 'requests' keys from API
+      setPayoutHistory(historyData?.payouts || historyData?.requests || []);
       
     } catch (err) {
       console.error('Error loading earnings data:', err);
@@ -103,17 +109,52 @@ const DriverEarnings = () => {
       .reduce((sum, t) => sum + (t.total_commission || 0), 0);
   };
 
-  // Handle settlement
-  const handleSettle = async () => {
+  // Show settlement confirmation modal with preview
+  const handleSettleClick = async () => {
     if (selectedTripIds.length === 0) {
       setError('Please select at least one trip to settle');
       return;
     }
 
     try {
+      setLoadingPreview(true);
+      setError(null);
+
+      const token = await authService.getValidToken();
+      const preview = await driverService.getSettlementPreview(token, selectedTripIds);
+      
+      setSettlementPreview(preview);
+      setShowConfirmModal(true);
+    } catch (err) {
+      console.error('Preview error:', err);
+      // If preview endpoint fails, show modal with local calculations
+      const selectedTrips = unsettledTrips.filter(t => selectedTripIds.includes(t.trip_id));
+      const localPreview = {
+        trip_count: selectedTrips.length,
+        currency: 'INR',
+        summary: {
+          total_fare: selectedTrips.reduce((s, t) => s + (t.fare_amount || 0), 0),
+          total_platform_fee: selectedTrips.reduce((s, t) => s + (t.platform_fee || 0), 0),
+          total_tenant_commission: selectedTrips.reduce((s, t) => s + (t.tenant_commission || 0), 0),
+          total_fleet_commission: selectedTrips.reduce((s, t) => s + (t.fleet_commission || 0), 0),
+          total_commission: selectedTrips.reduce((s, t) => s + (t.total_commission || 0), 0),
+          net_driver_earning: selectedTrips.reduce((s, t) => s + (t.driver_earning || 0), 0)
+        }
+      };
+      setSettlementPreview(localPreview);
+      setShowConfirmModal(true);
+    } finally {
+      setLoadingPreview(false);
+    }
+  };
+
+  // Confirm and execute settlement
+  const handleConfirmSettle = async () => {
+    try {
       setSettling(true);
       setError(null);
       setSuccessMessage(null);
+      setShowConfirmModal(false);
 
       const token = await authService.getValidToken();
       const result = await driverService.settleTrips(token, selectedTripIds);
@@ -125,6 +166,7 @@ const DriverEarnings = () => {
 
       // Clear selection and reload data
       setSelectedTripIds([]);
+      setSettlementPreview(null);
       await loadData();
 
     } catch (err) {
@@ -133,6 +175,12 @@ const DriverEarnings = () => {
     } finally {
       setSettling(false);
     }
+  };
+
+  // Cancel settlement
+  const handleCancelSettle = () => {
+    setShowConfirmModal(false);
+    setSettlementPreview(null);
   };
 
   // Format currency
@@ -267,10 +315,10 @@ const DriverEarnings = () => {
                     </button>
                     <button 
                       className="btn-primary settle-btn"
-                      onClick={handleSettle}
-                      disabled={settling || selectedTripIds.length === 0}
+                      onClick={handleSettleClick}
+                      disabled={settling || loadingPreview || selectedTripIds.length === 0}
                     >
-                      {settling ? 'Processing...' : `Settle ₹${getSelectedAmount().toFixed(2)}`}
+                      {loadingPreview ? 'Loading...' : settling ? 'Processing...' : `Settle ₹${getSelectedAmount().toFixed(2)}`}
                     </button>
                   </div>
                 </div>
@@ -382,7 +430,7 @@ const DriverEarnings = () => {
                       <td>{formatCurrency(trip.tenant_commission)}</td>
                       <td>{formatCurrency(trip.fleet_commission)}</td>
                       <td>
-                        <span className={`badge ${trip.payment_status === 'paid' ? 'paid' : 'pending'}`}>
+                        <span className={`badge ${(trip.payment_status || '').toLowerCase() === 'paid' ? 'paid' : 'pending'}`}>
                           {trip.payment_status || 'pending'}
                         </span>
                       </td>
@@ -408,10 +456,10 @@ const DriverEarnings = () => {
               </div>
             ) : (
               <div className="history-list">
-                {payoutHistory.map(payout => (
-                  <div key={payout.id} className="history-item">
+                {payoutHistory.map((payout, index) => (
+                  <div key={payout.id || payout.request_id || index} className="history-item">
                     <div className="history-header">
-                      <span className="payout-id">Settlement #{payout.id}</span>
+                      <span className="payout-id">Settlement #{payout.id || payout.request_id}</span>
                       <span className={`status ${payout.status}`}>{payout.status}</span>
                     </div>
                     <div className="history-details">
@@ -425,7 +473,7 @@ const DriverEarnings = () => {
                       </div>
                       <div>
                         <label>Type:</label>
-                        <span>{payout.payout_type}</span>
+                        <span>{payout.payout_type || 'batch'}</span>
                       </div>
                     </div>
                   </div>
@@ -435,6 +483,80 @@ const DriverEarnings = () => {
           </div>
         )}
       </div>
+
+      {/* Settlement Confirmation Modal */}
+      {showConfirmModal && settlementPreview && (
+        <div className="modal-overlay" onClick={handleCancelSettle}>
+          <div className="modal-content settlement-modal" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Confirm Settlement</h2>
+              <button className="modal-close" onClick={handleCancelSettle}>×</button>
+            </div>
+            
+            <div className="modal-body">
+              <p className="modal-subtitle">
+                You are about to settle <strong>{settlementPreview.trip_count}</strong> trip{settlementPreview.trip_count > 1 ? 's' : ''}.
+                Please review the breakdown below:
+              </p>
+              
+              <div className="settlement-breakdown">
+                <div className="breakdown-row">
+                  <span>Total Fare:</span>
+                  <span className="amount">{formatCurrency(settlementPreview.summary?.total_fare)}</span>
+                </div>
+                <div className="breakdown-divider"></div>
+                <div className="breakdown-row deduction">
+                  <span>Platform Fee:</span>
+                  <span>-{formatCurrency(settlementPreview.summary?.total_platform_fee)}</span>
+                </div>
+                <div className="breakdown-row deduction">
+                  <span>Tenant Commission:</span>
+                  <span>-{formatCurrency(settlementPreview.summary?.total_tenant_commission)}</span>
+                </div>
+                <div className="breakdown-row deduction">
+                  <span>Fleet Commission:</span>
+                  <span>-{formatCurrency(settlementPreview.summary?.total_fleet_commission)}</span>
+                </div>
+                <div className="breakdown-divider"></div>
+                <div className="breakdown-row total-commission">
+                  <span>Total Commission (to settle):</span>
+                  <span className="commission-amount">
+                    {formatCurrency(settlementPreview.summary?.total_commission)}
+                  </span>
+                </div>
+                <div className="breakdown-row net-earning">
+                  <span>Net Driver Earning:</span>
+                  <span className="earning-amount">
+                    {formatCurrency(settlementPreview.summary?.net_driver_earning)}
+                  </span>
+                </div>
+              </div>
+              
+              <div className="settlement-note">
+                <Icons.Warning size={14} style={{verticalAlign: 'middle', marginRight: '4px'}} />
+                This action cannot be undone. The commission amount will be deducted from your outstanding balance.
+              </div>
+            </div>
+            
+            <div className="modal-footer">
+              <button 
+                className="btn-secondary" 
+                onClick={handleCancelSettle}
+                disabled={settling}
+              >
+                Cancel
+              </button>
+              <button 
+                className="btn-primary settle-confirm-btn" 
+                onClick={handleConfirmSettle}
+                disabled={settling}
+              >
+                {settling ? 'Processing...' : `Confirm & Settle ${formatCurrency(settlementPreview.summary?.total_commission)}`}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

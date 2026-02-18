@@ -340,7 +340,7 @@ def get_driver_trips_financial(
         'trips': [
             {
                 'trip_id': t.trip_id,
-                'fare': float(t.fare) if t.fare else None,
+                'fare_amount': float(t.fare_amount) if t.fare_amount else None,
                 'payment_mode': t.payment_mode,
                 'settlement_status': t.settlement_status,
                 'tenant_commission': float(t.tenant_commission) if t.tenant_commission else None,
@@ -417,6 +417,96 @@ def get_driver_unsettled_trips(
         'total_commission_due': float(total_commission),
         'trip_count': len(trip_list),
         'trips': trip_list
+    }
+
+
+@router.post("/driver/settlement-preview")
+def get_settlement_preview(
+    request_data: PayoutRequestCreate,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_jwt_user)
+):
+    """
+    Preview settlement before confirming.
+    
+    Auth: JWT Bearer Token
+    
+    Returns breakdown of commissions for the selected trips
+    WITHOUT actually performing the settlement.
+    """
+    driver_id = current_user.get("user_id")
+    
+    if not request_data.trip_ids:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="trip_ids cannot be empty"
+        )
+    
+    # Fetch trips and calculate totals
+    trips = (
+        db.query(Trip)
+        .filter(
+            Trip.trip_id.in_(request_data.trip_ids),
+            Trip.driver_id == driver_id,
+            Trip.status == 'COMPLETED',
+            Trip.settlement_status == 'unsettled',
+            Trip.currency == request_data.currency
+        )
+        .all()
+    )
+    
+    if not trips:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No eligible unsettled trips found for the given IDs"
+        )
+    
+    total_fare = Decimal('0.00')
+    total_platform_fee = Decimal('0.00')
+    total_tenant_commission = Decimal('0.00')
+    total_fleet_commission = Decimal('0.00')
+    total_driver_earning = Decimal('0.00')
+    total_commission = Decimal('0.00')
+    
+    trip_details = []
+    for trip in trips:
+        fare = Decimal(str(trip.fare_amount or 0))
+        platform = Decimal(str(trip.platform_fee or 0))
+        tenant = Decimal(str(trip.tenant_commission or 0))
+        fleet = Decimal(str(trip.fleet_commission or 0))
+        earning = Decimal(str(trip.driver_earning or 0))
+        commission = platform + tenant + fleet
+        
+        total_fare += fare
+        total_platform_fee += platform
+        total_tenant_commission += tenant
+        total_fleet_commission += fleet
+        total_driver_earning += earning
+        total_commission += commission
+        
+        trip_details.append({
+            'trip_id': trip.trip_id,
+            'fare_amount': float(fare),
+            'platform_fee': float(platform),
+            'tenant_commission': float(tenant),
+            'fleet_commission': float(fleet),
+            'driver_earning': float(earning),
+            'total_commission': float(commission),
+            'completed_at': trip.completed_at.isoformat() if trip.completed_at else None
+        })
+    
+    return {
+        'trip_count': len(trips),
+        'currency': request_data.currency,
+        'summary': {
+            'total_fare': float(total_fare),
+            'total_platform_fee': float(total_platform_fee),
+            'total_tenant_commission': float(total_tenant_commission),
+            'total_fleet_commission': float(total_fleet_commission),
+            'total_commission': float(total_commission),
+            'net_driver_earning': float(total_driver_earning)
+        },
+        'trips': trip_details
     }
 
 
@@ -508,8 +598,23 @@ def get_driver_payout_requests(
         'requests': [
             {
                 'request_id': r.id,
+                'id': r.id,
                 'total_amount': float(r.total_amount),
                 'currency': r.currency,
+                'payout_type': r.payout_type,
+                'status': r.status,
+                'created_on': r.created_on,
+                'processed_on': r.processed_on
+            }
+            for r in requests
+        ],
+        'payouts': [
+            {
+                'request_id': r.id,
+                'id': r.id,
+                'total_amount': float(r.total_amount),
+                'currency': r.currency,
+                'payout_type': r.payout_type,
                 'status': r.status,
                 'created_on': r.created_on,
                 'processed_on': r.processed_on
@@ -658,7 +763,7 @@ def get_fleet_drivers_financial_summary(
     # Get fleet for this owner
     fleet = (
         db.query(Fleet)
-        .filter(Fleet.owner_id == user_id)
+        .filter(Fleet.owner_user_id == user_id)
         .first()
     )
     
@@ -711,7 +816,7 @@ def get_fleet_driver_financial_details(
     # Get fleet for this owner
     fleet = (
         db.query(Fleet)
-        .filter(Fleet.owner_id == user_id)
+        .filter(Fleet.owner_user_id == user_id)
         .first()
     )
     

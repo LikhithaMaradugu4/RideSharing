@@ -13,3 +13,4 @@ from .dispatch import *
 from .ledger import *
 from .payments import *
 from .financial import *
+from .ratings import *

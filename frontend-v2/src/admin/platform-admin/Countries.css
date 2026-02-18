@@ -1,0 +1,46 @@
+.countries-container { max-width: 1400px; }
+.countries-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+.countries-header h1 { margin: 0; font-size: 32px; font-weight: 700; color: #2c3e50; }
+
+/* Shared admin table styles (reused across settings pages) */
+.admin-table-container { background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,.1); overflow: hidden; }
+.admin-table { width: 100%; border-collapse: collapse; }
+.admin-table thead { background: #f8f9fa; }
+.admin-table th { padding: 16px; text-align: left; font-size: 13px; font-weight: 700; color: #555; text-transform: uppercase; letter-spacing: .5px; border-bottom: 2px solid #e0e0e0; }
+.admin-table td { padding: 16px; border-bottom: 1px solid #f0f0f0; font-size: 14px; color: #333; }
+.admin-table tbody tr:hover { background: #f8f9fa; }
+
+/* Modal */
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.45); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+.modal-content { background: white; border-radius: 10px; padding: 32px; width: 480px; max-width: 95vw; max-height: 90vh; overflow-y: auto; box-shadow: 0 12px 40px rgba(0,0,0,.2); }
+.modal-content h2 { margin: 0 0 24px; font-size: 22px; color: #2c3e50; }
+.form-group { margin-bottom: 18px; }
+.form-group label { display: block; font-size: 13px; font-weight: 600; color: #555; margin-bottom: 6px; }
+.form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; box-sizing: border-box; }
+.form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: #3498db; box-shadow: 0 0 0 3px rgba(52,152,219,.15); }
+.modal-actions { display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px; }
+
+.btn-primary { background: #3498db; color: white; border: none; padding: 12px 24px; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; transition: background .2s; }
+.btn-primary:hover { background: #2980b9; }
+.btn-primary:disabled { opacity: .6; cursor: not-allowed; }
+.btn-secondary { background: #95a5a6; color: white; border: none; padding: 12px 24px; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; }
+.btn-secondary:hover { background: #7f8c8d; }
+.btn-action { padding: 6px 14px; border: none; border-radius: 4px; font-size: 13px; cursor: pointer; font-weight: 500; }
+.btn-edit { background: #f0f7ff; color: #3498db; }
+.btn-edit:hover { background: #d6eaff; }
+
+.loading { text-align: center; padding: 50px; font-size: 16px; color: #7f8c8d; }
+.error-message { background: #fee; border: 1px solid #fcc; color: #c33; padding: 15px; border-radius: 6px; margin-bottom: 20px; }
+.success-toast { position: fixed; top: 24px; right: 24px; background: #27ae60; color: white; padding: 14px 24px; border-radius: 8px; font-size: 14px; font-weight: 600; z-index: 2000; box-shadow: 0 4px 12px rgba(0,0,0,.2); animation: fadeIn .3s; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+.empty-state { background: white; border-radius: 8px; padding: 60px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,.1); }
+.empty-state p { font-size: 18px; color: #7f8c8d; margin-bottom: 20px; }
+
+.filters-row { display: flex; gap: 16px; margin-bottom: 20px; align-items: flex-end; flex-wrap: wrap; }
+.filter-group label { display: block; font-size: 12px; font-weight: 600; color: #777; margin-bottom: 4px; text-transform: uppercase; }
+.filter-group select, .filter-group input { padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; min-width: 180px; }
+
+.status-active { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; background: #e6f9ee; color: #27ae60; }
+.status-inactive { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; background: #fde8e8; color: #e74c3c; }
+.btn-deactivate { background: #fde8e8; color: #e74c3c; }
+.btn-deactivate:hover { background: #f9c4c4; }

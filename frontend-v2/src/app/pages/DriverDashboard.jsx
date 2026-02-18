@@ -5,6 +5,7 @@ import userService from '../../services/user.service';
 import tokenStorage from '../../services/tokenStorage';
 import DriverLayout from '../layout/DriverLayout';
 import Icons from '../../components/Icons';
+import RateTripModal from '../../components/RateTripModal';
 import './DriverDashboard.css';
 
 function DriverDashboard() {
@@ -38,6 +39,10 @@ function DriverDashboard() {
   const [cashCollectionData, setCashCollectionData] = useState(null);
   const [cashCollectionLoading, setCashCollectionLoading] = useState(false);
   const [settlementResult, setSettlementResult] = useState(null);
+
+  // ========== Rating State ==========
+  const [showRatingModal, setShowRatingModal] = useState(false);
+  const [ratingTripId, setRatingTripId] = useState(null);
 
   // Polling refs
   const dispatchPollingRef = useRef(null);
@@ -379,11 +384,17 @@ function DriverDashboard() {
     }
   };
 
-  // Close cash collection modal and reset state
+  // Close cash collection modal and show rating prompt
   const handleCloseCashCollection = () => {
+    const tripId = cashCollectionData?.trip_id;
     setShowCashCollection(false);
     setCashCollectionData(null);
     setSettlementResult(null);
+    // After settlement, prompt driver to rate the rider
+    if (tripId) {
+      setRatingTripId(tripId);
+      setShowRatingModal(true);
+    }
   };
 
   const handleSelectVehicle = async (vehicleId, endShiftIfActive = false) => {
@@ -1361,6 +1372,20 @@ function DriverDashboard() {
               )}
             </div>
           </div>
+        )}
+
+        {/* Rating Modal - shown after cash collection is done */}
+        {showRatingModal && ratingTripId && (
+          <RateTripModal
+            tripId={ratingTripId}
+            onClose={() => {
+              setShowRatingModal(false);
+              setRatingTripId(null);
+            }}
+            onSuccess={() => {
+              // Rating submitted, modal will show success state
+            }}
+          />
         )}
       </div>
     </DriverLayout>

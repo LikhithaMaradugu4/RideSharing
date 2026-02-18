@@ -114,19 +114,49 @@ class PayoutService:
         )
         
         if not wallet:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Wallet not found for currency {currency}"
+            # Create wallet if doesn't exist
+            wallet = DriverWallet(
+                driver_id=driver_id,
+                currency=currency,
+                balance=Decimal('0.00')
+            )
+            db.add(wallet)
+            db.flush()
+            wallet = (
+                db.query(DriverWallet)
+                .filter(
+                    DriverWallet.driver_id == driver_id,
+                    DriverWallet.currency == currency
+                )
+                .with_for_update()
+                .first()
             )
         
         current_balance = Decimal(str(wallet.balance))
         
-        # Step 5: Check if there's anything to settle
-        if current_balance >= 0:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Nothing to settle - wallet balance is {current_balance} (must be negative)"
-            )
+        # Step 5: Validate trips belong to driver, are completed and unsettled
+        for trip_id in trip_ids:
+            trip = db.query(Trip).filter(Trip.trip_id == trip_id).first()
+            if not trip:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f"Trip {trip_id} not found"
+                )
+            if trip.driver_id != driver_id:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail=f"Trip {trip_id} does not belong to this driver"
+                )
+            if trip.status != 'COMPLETED':
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Trip {trip_id} is not completed (status: {trip.status})"
+                )
+            if trip.settlement_status == 'settled':
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Trip {trip_id} is already settled"
+                )
         
         # Step 6: Create settlement entry (CREDIT to offset debits)
         settlement_entry = DriverLedger(
@@ -219,6 +249,7 @@ class PayoutService:
         payout_request = PayoutRequest(
             driver_id=driver_id,
             total_amount=float(settlement_amount),
+            currency=currency,
             payout_type='trip_batch',
             status='completed',
             processed_on=datetime.now(timezone.utc)

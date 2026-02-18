@@ -877,6 +877,247 @@ approveOrRejectVehicle: async (vehicleId, data) => {
 
     return response.json();
   },
+
+  // ==================== PLATFORM SETTINGS: COUNTRIES ====================
+
+  platformListCountries: async () => {
+    const sessionId = adminService.getPlatformSessionId();
+    const response = await fetch(`${PLATFORM_BASE_URL}/countries`, {
+      headers: sessionId ? { 'X-Session-Id': sessionId } : {},
+      credentials: 'include'
+    });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || 'Failed to fetch countries');
+    }
+    return response.json();
+  },
+
+  platformCreateCountry: async (data) => {
+    const sessionId = adminService.getPlatformSessionId();
+    const response = await fetch(`${PLATFORM_BASE_URL}/countries`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(sessionId ? { 'X-Session-Id': sessionId } : {})
+      },
+      credentials: 'include',
+      body: JSON.stringify(data)
+    });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || 'Failed to create country');
+    }
+    return response.json();
+  },
+
+  platformUpdateCountry: async (countryCode, data) => {
+    const sessionId = adminService.getPlatformSessionId();
+    const response = await fetch(`${PLATFORM_BASE_URL}/countries/${countryCode}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(sessionId ? { 'X-Session-Id': sessionId } : {})
+      },
+      credentials: 'include',
+      body: JSON.stringify(data)
+    });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || 'Failed to update country');
+    }
+    return response.json();
+  },
+
+  // ==================== PLATFORM SETTINGS: CITIES ====================
+
+  platformListCities: async (countryCode = null) => {
+    const sessionId = adminService.getPlatformSessionId();
+    const params = countryCode ? `?country_code=${countryCode}` : '';
+    const response = await fetch(`${PLATFORM_BASE_URL}/cities${params}`, {
+      headers: sessionId ? { 'X-Session-Id': sessionId } : {},
+      credentials: 'include'
+    });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || 'Failed to fetch cities');
+    }
+    return response.json();
+  },
+
+  platformCreateCity: async (data) => {
+    const sessionId = adminService.getPlatformSessionId();
+    const response = await fetch(`${PLATFORM_BASE_URL}/cities`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(sessionId ? { 'X-Session-Id': sessionId } : {})
+      },
+      credentials: 'include',
+      body: JSON.stringify(data)
+    });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || 'Failed to create city');
+    }
+    return response.json();
+  },
+
+  platformUpdateCity: async (cityId, data) => {
+    const sessionId = adminService.getPlatformSessionId();
+    const response = await fetch(`${PLATFORM_BASE_URL}/cities/${cityId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(sessionId ? { 'X-Session-Id': sessionId } : {})
+      },
+      credentials: 'include',
+      body: JSON.stringify(data)
+    });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || 'Failed to update city');
+    }
+    return response.json();
+  },
+
+  // ==================== PLATFORM SETTINGS: FARE CONFIG ====================
+
+  platformListFareConfigs: async (cityId = null, vehicleCategory = null) => {
+    const sessionId = adminService.getPlatformSessionId();
+    const params = new URLSearchParams();
+    if (cityId) params.append('city_id', cityId);
+    if (vehicleCategory) params.append('vehicle_category', vehicleCategory);
+    const qs = params.toString() ? `?${params.toString()}` : '';
+    const response = await fetch(`${PLATFORM_BASE_URL}/fare-config${qs}`, {
+      headers: sessionId ? { 'X-Session-Id': sessionId } : {},
+      credentials: 'include'
+    });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || 'Failed to fetch fare configs');
+    }
+    return response.json();
+  },
+
+  platformCreateFareConfig: async (data) => {
+    const sessionId = adminService.getPlatformSessionId();
+    const response = await fetch(`${PLATFORM_BASE_URL}/fare-config`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(sessionId ? { 'X-Session-Id': sessionId } : {})
+      },
+      credentials: 'include',
+      body: JSON.stringify(data)
+    });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || 'Failed to create fare config');
+    }
+    return response.json();
+  },
+
+  platformDeactivateFareConfig: async (fareConfigId) => {
+    const sessionId = adminService.getPlatformSessionId();
+    const response = await fetch(`${PLATFORM_BASE_URL}/fare-config/${fareConfigId}/deactivate`, {
+      method: 'PUT',
+      headers: sessionId ? { 'X-Session-Id': sessionId } : {},
+      credentials: 'include'
+    });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || 'Failed to deactivate fare config');
+    }
+    return response.json();
+  },
+
+  // ==================== PLATFORM SETTINGS: COMMISSION CONFIG ====================
+
+  platformListCommissionConfigs: async (cityId = null, vehicleCategory = null) => {
+    const sessionId = adminService.getPlatformSessionId();
+    const params = new URLSearchParams();
+    if (cityId) params.append('city_id', cityId);
+    if (vehicleCategory) params.append('vehicle_category', vehicleCategory);
+    const qs = params.toString() ? `?${params.toString()}` : '';
+    const response = await fetch(`${PLATFORM_BASE_URL}/commission-config${qs}`, {
+      headers: sessionId ? { 'X-Session-Id': sessionId } : {},
+      credentials: 'include'
+    });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || 'Failed to fetch commission configs');
+    }
+    return response.json();
+  },
+
+  platformCreateCommissionConfig: async (data) => {
+    const sessionId = adminService.getPlatformSessionId();
+    const response = await fetch(`${PLATFORM_BASE_URL}/commission-config`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(sessionId ? { 'X-Session-Id': sessionId } : {})
+      },
+      credentials: 'include',
+      body: JSON.stringify(data)
+    });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || 'Failed to create commission config');
+    }
+    return response.json();
+  },
+
+  platformDeactivateCommissionConfig: async (configId) => {
+    const sessionId = adminService.getPlatformSessionId();
+    const response = await fetch(`${PLATFORM_BASE_URL}/commission-config/${configId}/deactivate`, {
+      method: 'PUT',
+      headers: sessionId ? { 'X-Session-Id': sessionId } : {},
+      credentials: 'include'
+    });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || 'Failed to deactivate commission config');
+    }
+    return response.json();
+  },
+
+  platformUpdateFareConfig: async (fareConfigId, data) => {
+    const sessionId = adminService.getPlatformSessionId();
+    const response = await fetch(`${PLATFORM_BASE_URL}/fare-config/${fareConfigId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(sessionId ? { 'X-Session-Id': sessionId } : {})
+      },
+      credentials: 'include',
+      body: JSON.stringify(data)
+    });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || 'Failed to update fare config');
+    }
+    return response.json();
+  },
+
+  platformUpdateCommissionConfig: async (configId, data) => {
+    const sessionId = adminService.getPlatformSessionId();
+    const response = await fetch(`${PLATFORM_BASE_URL}/commission-config/${configId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(sessionId ? { 'X-Session-Id': sessionId } : {})
+      },
+      credentials: 'include',
+      body: JSON.stringify(data)
+    });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || 'Failed to update commission config');
+    }
+    return response.json();
+  },
 };
 
 

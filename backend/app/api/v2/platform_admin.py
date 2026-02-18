@@ -1,5 +1,6 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, status, Query
 from sqlalchemy.orm import Session
+from typing import Optional, List
 
 from app.api.deps.auth import get_current_user
 from app.core.database import SessionLocal
@@ -14,7 +15,19 @@ from app.schemas.platform_admin import (
     TenantAdminResponse,
     TenantDocumentUploadRequest,
     TenantDocumentResponse,
-    TenantDocumentListResponse
+    TenantDocumentListResponse,
+    CountryCreateRequest,
+    CountryUpdateRequest,
+    CountryResponse,
+    CityCreateRequest,
+    CityUpdateRequest,
+    CityResponse,
+    FareConfigCreateRequest,
+    FareConfigUpdateRequest,
+    FareConfigResponse,
+    CommissionConfigCreateRequest,
+    CommissionConfigUpdateRequest,
+    CommissionConfigResponse,
 )
 from app.services.platform_admin_service import PlatformAdminService
 
@@ -142,3 +155,160 @@ def get_tenant_document(
     )
     
     return TenantDocumentResponse.model_validate(document)
+
+
+# ==================== COUNTRY MANAGEMENT ====================
+
+@router.post("/countries", response_model=CountryResponse, status_code=status.HTTP_201_CREATED)
+def create_country(
+    data: CountryCreateRequest,
+    db: Session = Depends(get_db),
+    current_user: AppUser = Depends(get_current_user)
+):
+    country = PlatformAdminService.create_country(db=db, user=current_user, data=data)
+    return CountryResponse.model_validate(country)
+
+
+@router.get("/countries", response_model=List[CountryResponse])
+def list_countries(
+    db: Session = Depends(get_db),
+    current_user: AppUser = Depends(get_current_user)
+):
+    countries = PlatformAdminService.list_countries(db=db, user=current_user)
+    return [CountryResponse.model_validate(c) for c in countries]
+
+
+@router.put("/countries/{country_code}", response_model=CountryResponse)
+def update_country(
+    country_code: str,
+    data: CountryUpdateRequest,
+    db: Session = Depends(get_db),
+    current_user: AppUser = Depends(get_current_user)
+):
+    country = PlatformAdminService.update_country(db=db, user=current_user, country_code=country_code, data=data)
+    return CountryResponse.model_validate(country)
+
+
+# ==================== CITY MANAGEMENT ====================
+
+@router.post("/cities", response_model=CityResponse, status_code=status.HTTP_201_CREATED)
+def create_city(
+    data: CityCreateRequest,
+    db: Session = Depends(get_db),
+    current_user: AppUser = Depends(get_current_user)
+):
+    city = PlatformAdminService.create_city(db=db, user=current_user, data=data)
+    return CityResponse.model_validate(city)
+
+
+@router.get("/cities", response_model=List[CityResponse])
+def list_cities(
+    country_code: Optional[str] = Query(None),
+    db: Session = Depends(get_db),
+    current_user: AppUser = Depends(get_current_user)
+):
+    cities = PlatformAdminService.list_cities(db=db, user=current_user, country_code=country_code)
+    return [CityResponse.model_validate(c) for c in cities]
+
+
+@router.put("/cities/{city_id}", response_model=CityResponse)
+def update_city(
+    city_id: int,
+    data: CityUpdateRequest,
+    db: Session = Depends(get_db),
+    current_user: AppUser = Depends(get_current_user)
+):
+    city = PlatformAdminService.update_city(db=db, user=current_user, city_id=city_id, data=data)
+    return CityResponse.model_validate(city)
+
+
+# ==================== FARE CONFIG MANAGEMENT ====================
+
+@router.post("/fare-config", response_model=FareConfigResponse, status_code=status.HTTP_201_CREATED)
+def create_fare_config(
+    data: FareConfigCreateRequest,
+    db: Session = Depends(get_db),
+    current_user: AppUser = Depends(get_current_user)
+):
+    fare = PlatformAdminService.create_fare_config(db=db, user=current_user, data=data)
+    return FareConfigResponse.model_validate(fare)
+
+
+@router.get("/fare-config", response_model=List[FareConfigResponse])
+def list_fare_configs(
+    city_id: Optional[int] = Query(None),
+    vehicle_category: Optional[str] = Query(None),
+    db: Session = Depends(get_db),
+    current_user: AppUser = Depends(get_current_user)
+):
+    configs = PlatformAdminService.list_fare_configs(
+        db=db, user=current_user, city_id=city_id, vehicle_category=vehicle_category
+    )
+    return [FareConfigResponse.model_validate(c) for c in configs]
+
+
+@router.put("/fare-config/{fare_config_id}", response_model=FareConfigResponse)
+def update_fare_config(
+    fare_config_id: int,
+    data: FareConfigUpdateRequest,
+    db: Session = Depends(get_db),
+    current_user: AppUser = Depends(get_current_user)
+):
+    fare = PlatformAdminService.update_fare_config(db=db, user=current_user, fare_config_id=fare_config_id, data=data)
+    return FareConfigResponse.model_validate(fare)
+
+
+@router.put("/fare-config/{fare_config_id}/deactivate", response_model=FareConfigResponse)
+def deactivate_fare_config(
+    fare_config_id: int,
+    db: Session = Depends(get_db),
+    current_user: AppUser = Depends(get_current_user)
+):
+    fare = PlatformAdminService.deactivate_fare_config(db=db, user=current_user, fare_config_id=fare_config_id)
+    return FareConfigResponse.model_validate(fare)
+
+
+# ==================== COMMISSION CONFIG MANAGEMENT ====================
+
+@router.post("/commission-config", response_model=CommissionConfigResponse, status_code=status.HTTP_201_CREATED)
+def create_commission_config(
+    data: CommissionConfigCreateRequest,
+    db: Session = Depends(get_db),
+    current_user: AppUser = Depends(get_current_user)
+):
+    cc = PlatformAdminService.create_commission_config(db=db, user=current_user, data=data)
+    return CommissionConfigResponse.model_validate(cc)
+
+
+@router.get("/commission-config", response_model=List[CommissionConfigResponse])
+def list_commission_configs(
+    city_id: Optional[int] = Query(None),
+    vehicle_category: Optional[str] = Query(None),
+    db: Session = Depends(get_db),
+    current_user: AppUser = Depends(get_current_user)
+):
+    configs = PlatformAdminService.list_commission_configs(
+        db=db, user=current_user, city_id=city_id, vehicle_category=vehicle_category
+    )
+    return [CommissionConfigResponse.model_validate(c) for c in configs]
+
+
+@router.put("/commission-config/{config_id}", response_model=CommissionConfigResponse)
+def update_commission_config(
+    config_id: int,
+    data: CommissionConfigUpdateRequest,
+    db: Session = Depends(get_db),
+    current_user: AppUser = Depends(get_current_user)
+):
+    cc = PlatformAdminService.update_commission_config(db=db, user=current_user, config_id=config_id, data=data)
+    return CommissionConfigResponse.model_validate(cc)
+
+
+@router.put("/commission-config/{config_id}/deactivate", response_model=CommissionConfigResponse)
+def deactivate_commission_config(
+    config_id: int,
+    db: Session = Depends(get_db),
+    current_user: AppUser = Depends(get_current_user)
+):
+    cc = PlatformAdminService.deactivate_commission_config(db=db, user=current_user, config_id=config_id)
+    return CommissionConfigResponse.model_validate(cc)
