@@ -16,11 +16,7 @@ L.Icon.Default.mergeOptions({
 });
 
 // Reusable SVG marker factory (no external images needed)
-const createMarkerSvg = (color) => `
-  <svg width="25" height="41" viewBox="0 0 25 41" xmlns="http://www.w3.org/2000/svg">
-    <path d="M12.5 0C5.6 0 0 5.6 0 12.5C0 21.9 12.5 41 12.5 41S25 21.9 25 12.5C25 5.6 19.4 0 12.5 0z" fill="${color}" stroke="#fff" stroke-width="1.5"/>
-    <circle cx="12.5" cy="12.5" r="5.5" fill="#fff"/>
-  </svg>`;
+const createMarkerSvg = (color) => `<svg width="25" height="41" viewBox="0 0 25 41" xmlns="http://www.w3.org/2000/svg"><path d="M12.5 0C5.6 0 0 5.6 0 12.5C0 21.9 12.5 41 12.5 41S25 21.9 25 12.5C25 5.6 19.4 0 12.5 0z" fill="${color}" stroke="#fff" stroke-width="1.5"/><circle cx="12.5" cy="12.5" r="5.5" fill="#fff"/></svg>`;
 
 // Reverse geocoding using Nominatim (OpenStreetMap)
 const reverseGeocode = async (lat, lng) => {

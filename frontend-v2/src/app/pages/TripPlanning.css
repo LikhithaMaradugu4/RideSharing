@@ -442,3 +442,30 @@
     font-size: 1.5rem;
   }
 }
+
+/* Fix Leaflet divIcon default styles for custom SVG markers */
+.leaflet-div-icon {
+  background: transparent !important;
+  border: none !important;
+  width: auto !important;
+  height: auto !important;
+}
+
+.leaflet-marker-icon {
+  background: transparent !important;
+  border: none !important;
+}
+
+/* Ensure SVG markers display properly */
+.leaflet-marker-icon svg,
+.leaflet-div-icon svg {
+  display: block !important;
+  width: 25px !important;
+  height: 41px !important;
+}
+
+/* Fix marker pane z-index and display */
+.leaflet-marker-pane .leaflet-marker-icon {
+  margin-left: -12px !important;
+  margin-top: -41px !important;
+}

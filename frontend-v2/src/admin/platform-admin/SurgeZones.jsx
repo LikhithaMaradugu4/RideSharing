@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import adminService from '../../services/admin.service';
 import SurgeMapSelector from './SurgeMapSelector';
+import Icons from '../../components/Icons';
 import './SurgeZones.css';
 
 const SurgeZones = () => {
@@ -350,7 +351,7 @@ const SurgeZones = () => {
 
       {/* Header */}
       <div className="surge-header">
-        <h1>⚡ Surge Zone Management</h1>
+        <h1><Icons.Zap size={24} color="#f59e0b" style={{verticalAlign: 'middle', marginRight: '8px'}} />Surge Zone Management</h1>
         <button className="btn-primary" onClick={openCreate}>+ Create Surge Zone</button>
       </div>
 
@@ -422,7 +423,7 @@ const SurgeZones = () => {
                         onClick={() => setShowMapPreview(z)}
                         title="View on map"
                       >
-                        🗺️
+                        <Icons.Map size={16} />
                       </button>
                     </td>
                     <td className="actions-cell">
