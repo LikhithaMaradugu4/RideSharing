@@ -12,6 +12,7 @@ from app.core.redis.keys import (
     DRIVER_SHIFT_KEY,
     SESSION_KEY,
     AVAILABLE_DRIVERS_KEY,
+    SURGE_CITY_KEY,
     format_key
 )
 
@@ -27,5 +28,6 @@ __all__ = [
     "DRIVER_SHIFT_KEY",
     "SESSION_KEY",
     "AVAILABLE_DRIVERS_KEY",
+    "SURGE_CITY_KEY",
     "format_key"
 ]

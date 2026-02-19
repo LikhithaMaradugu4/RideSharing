@@ -11,6 +11,7 @@ import Countries from '../platform-admin/Countries'
 import Cities from '../platform-admin/Cities'
 import FareConfig from '../platform-admin/FareConfig'
 import CommissionConfig from '../platform-admin/CommissionConfig'
+import SurgeZones from '../platform-admin/SurgeZones'
 import Dashboard from '../tenant-admin/Dashboard'
 import DriverApprovals from '../tenant-admin/DriverApprovals'
 import FleetApprovals from '../tenant-admin/FleetApprovals'
@@ -69,6 +70,7 @@ const AdminLayout = () => {
                 <Route path="platform/cities" element={<Cities />} />
                 <Route path="platform/fare-config" element={<FareConfig />} />
                 <Route path="platform/commission-config" element={<CommissionConfig />} />
+                <Route path="platform/surge-zones" element={<SurgeZones />} />
               </>
             )}
             {adminData.admin_type === 'TENANT' && (

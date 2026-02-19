@@ -1118,6 +1118,83 @@ approveOrRejectVehicle: async (vehicleId, data) => {
     }
     return response.json();
   },
+
+  // ==================== SURGE ZONE MANAGEMENT ====================
+
+  surgeListZones: async (cityId = null) => {
+    const params = cityId ? `?city_id=${cityId}` : '';
+    const response = await fetch(`${API_BASE_URL}/surge-zones/${params}`, {
+      credentials: 'include'
+    });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || 'Failed to fetch surge zones');
+    }
+    return response.json();
+  },
+
+  surgeGetZone: async (zoneId) => {
+    const response = await fetch(`${API_BASE_URL}/surge-zones/${zoneId}`, {
+      credentials: 'include'
+    });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || 'Failed to fetch surge zone');
+    }
+    return response.json();
+  },
+
+  surgeCreateZone: async (data) => {
+    const response = await fetch(`${API_BASE_URL}/surge-zones/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(data)
+    });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || 'Failed to create surge zone');
+    }
+    return response.json();
+  },
+
+  surgeUpdateZone: async (zoneId, data) => {
+    const response = await fetch(`${API_BASE_URL}/surge-zones/${zoneId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(data)
+    });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || 'Failed to update surge zone');
+    }
+    return response.json();
+  },
+
+  surgeActivateZone: async (zoneId, activate = true) => {
+    const response = await fetch(`${API_BASE_URL}/surge-zones/${zoneId}/activate?activate=${activate}`, {
+      method: 'PATCH',
+      credentials: 'include'
+    });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || 'Failed to update surge zone status');
+    }
+    return response.json();
+  },
+
+  surgeDeleteZone: async (zoneId) => {
+    const response = await fetch(`${API_BASE_URL}/surge-zones/${zoneId}`, {
+      method: 'DELETE',
+      credentials: 'include'
+    });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || 'Failed to delete surge zone');
+    }
+    return response.json();
+  },
 };
 
 

@@ -218,10 +218,10 @@ const CommissionConfig = () => {
             <tbody>
               {configs.map(c => (
                 <tr key={c.id}>
-                  <td><strong>{c.vehicle_category}</strong></td>
+                  <td><strong>{c.vehicle_category || '(All)'}</strong></td>
                   <td>{c.commission_type}</td>
-                  <td>{c.commission_type === 'FIXED' ? `${c.currency} ${Number(c.fixed_amount).toFixed(2)}` : '—'}</td>
-                  <td>{c.commission_type === 'PERCENTAGE' ? `${(Number(c.percentage) * 100).toFixed(2)}%` : '—'}</td>
+                  <td>{c.fixed_amount != null && Number(c.fixed_amount) > 0 ? `${c.currency} ${Number(c.fixed_amount).toFixed(2)}` : '—'}</td>
+                  <td>{c.percentage != null && Number(c.percentage) > 0 ? `${(Number(c.percentage) * 100).toFixed(2)}%` : '—'}</td>
                   <td>{c.currency}</td>
                   <td>
                     <span className={c.is_active ? 'status-active' : 'status-inactive'}>

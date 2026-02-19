@@ -1,0 +1,139 @@
+/* ================================================
+   Surge Zone Management — page styles
+   Reuses shared admin table & modal styles from Countries.css
+   ================================================ */
+
+.surge-container { max-width: 1400px; }
+
+.surge-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+}
+.surge-header h1 {
+  margin: 0;
+  font-size: 32px;
+  font-weight: 700;
+  color: #2c3e50;
+}
+
+/* ---- Multiplier badge ---- */
+.multiplier-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 700;
+  background: #fff3e0;
+  color: #e67e22;
+}
+
+/* ---- Status badges ---- */
+.status-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+.status-active   { background: #e6f9ee; color: #27ae60; }
+.status-scheduled { background: #e8f0fe; color: #2b78e4; }
+.status-expired  { background: #fde8e8; color: #e74c3c; }
+.status-disabled { background: #f0f0f0; color: #888; }
+
+/* ---- Time window display ---- */
+.time-window {
+  font-size: 13px;
+  line-height: 1.5;
+}
+.time-separator {
+  color: #aaa;
+  font-size: 11px;
+}
+
+/* ---- Actions cell ---- */
+.actions-cell {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+/* ---- Map preview button ---- */
+.btn-map {
+  background: #f0f7ff;
+  font-size: 16px;
+  padding: 4px 10px;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+}
+.btn-map:hover { background: #d6eaff; }
+
+/* ---- Activate / Delete buttons ---- */
+.btn-activate {
+  background: #e6f9ee;
+  color: #27ae60;
+}
+.btn-activate:hover { background: #c4f0d5; }
+
+.btn-delete {
+  background: #fde8e8;
+  color: #e74c3c;
+}
+.btn-delete:hover { background: #f9c4c4; }
+
+/* ---- Surge modal — wider to fit map ---- */
+.surge-modal {
+  width: 680px !important;
+  max-width: 95vw !important;
+}
+
+/* ---- Form row (side by side inputs) ---- */
+.form-row {
+  display: flex;
+  gap: 16px;
+}
+.form-row .form-group {
+  flex: 1;
+}
+
+/* ---- Form hint text ---- */
+.hint {
+  font-weight: 400;
+  font-size: 12px;
+  color: #999;
+}
+
+/* ---- Checkbox label ---- */
+.checkbox-label {
+  display: flex !important;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+}
+.checkbox-label input[type="checkbox"] {
+  width: auto !important;
+  margin: 0;
+}
+
+/* ---- Form error (inline) ---- */
+.form-error {
+  background: #fde8e8;
+  border: 1px solid #f5c6cb;
+  color: #c33;
+  padding: 10px 14px;
+  border-radius: 6px;
+  margin-bottom: 16px;
+  font-size: 14px;
+}
+
+/* ---- Reuse shared styles ---- */
+/* admin-table-container, admin-table, modal-overlay, modal-content,
+   form-group, btn-primary, btn-secondary, btn-action, btn-edit, btn-deactivate,
+   filters-row, filter-group, loading, error-message, success-toast, empty-state
+   — all defined in Countries.css and automatically available */

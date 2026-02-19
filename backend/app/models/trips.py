@@ -83,6 +83,9 @@ class Trip(Base, AuditMixin):
 
     payment_status = Column(String, ForeignKey("lu_payment_status.status_code"))
 
+    # Surge pricing — locked at trip creation, never modified afterwards
+    surge_multiplier = Column(Numeric(5, 2), nullable=False, default=1.0, server_default="1.0")
+
     # Pickup OTP verification
     pickup_otp = Column(String(6))  # 6-digit OTP
     pickup_otp_expires_at = Column(TIMESTAMP(timezone=True))

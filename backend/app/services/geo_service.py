@@ -3,15 +3,24 @@ Geo Service - City and surge zone detection using point-in-polygon.
 
 Uses application-layer polygon checks (no PostGIS).
 GeoJSON boundaries are stored as TEXT in the database.
+
+Surge lookup strategy:
+  1. Check Redis cache first (fast path)
+  2. If Redis miss or error, fall back to DB query
+  3. On DB fallback, re-populate Redis cache
 """
 
 import json
+import logging
 from datetime import datetime, timezone
 from typing import Optional, Tuple, List
 from sqlalchemy.orm import Session
 
 from app.models.core import City
 from app.models.pricing import SurgeZone
+from app.core.redis.services.surge_store import SurgeStore
+
+logger = logging.getLogger(__name__)
 
 
 def point_in_polygon(lat: float, lng: float, polygon_coords: List[List[float]]) -> bool:
@@ -200,20 +209,77 @@ class GeoService:
     ) -> Tuple[float, Optional[int]]:
         """
         Get surge multiplier and zone ID for a location.
-        
+
+        Strategy:
+          1. Try Redis cache (fast path)
+          2. On cache miss / error → fall back to DB
+          3. On DB fallback → re-populate Redis
+
+        For overlapping surge zones, the highest multiplier wins.
+
         Args:
             db: Database session
             lat: Latitude
             lng: Longitude
             city_id: City ID
-        
+
         Returns:
-            Tuple of (multiplier, surge_zone_id). 
+            Tuple of (multiplier, surge_zone_id).
             Default multiplier is 1.0 if no surge.
         """
-        surge_zone = GeoService.find_active_surge_zone(db, lat, lng, city_id)
-        
-        if surge_zone:
-            return float(surge_zone.multiplier), surge_zone.surge_zone_id
-        
-        return 1.0, None
+        now = datetime.now(timezone.utc)
+
+        # ----- 1. Try Redis -----
+        try:
+            cached_zones = SurgeStore.get_city_surge_zones(city_id)
+            if cached_zones is not None:
+                best_multiplier = 1.0
+                best_zone_id = None
+
+                for z in cached_zones:
+                    # Validate time window
+                    starts = datetime.fromisoformat(z["starts_at"])
+                    ends = datetime.fromisoformat(z["ends_at"])
+                    if not (starts <= now <= ends):
+                        continue
+
+                    # Point-in-polygon check
+                    polygon = parse_geojson_polygon(z["boundary_geojson"])
+                    if polygon and point_in_polygon(lat, lng, polygon):
+                        if z["multiplier"] > best_multiplier:
+                            best_multiplier = z["multiplier"]
+                            best_zone_id = z["surge_zone_id"]
+
+                return best_multiplier, best_zone_id
+        except Exception as e:
+            logger.warning(f"Redis surge lookup failed, falling back to DB: {e}")
+
+        # ----- 2. Fallback to DB -----
+        best_multiplier = 1.0
+        best_zone_id = None
+
+        surge_zones = (
+            db.query(SurgeZone)
+            .filter(
+                SurgeZone.city_id == city_id,
+                SurgeZone.is_active == True,
+                SurgeZone.starts_at <= now,
+                SurgeZone.ends_at >= now,
+            )
+            .all()
+        )
+
+        for zone in surge_zones:
+            polygon = parse_geojson_polygon(zone.boundary_geojson)
+            if polygon and point_in_polygon(lat, lng, polygon):
+                if float(zone.multiplier) > best_multiplier:
+                    best_multiplier = float(zone.multiplier)
+                    best_zone_id = zone.surge_zone_id
+
+        # ----- 3. Re-populate Redis on fallback -----
+        try:
+            SurgeStore.set_city_surge_zones(city_id, surge_zones)
+        except Exception:
+            pass  # non-critical
+
+        return best_multiplier, best_zone_id

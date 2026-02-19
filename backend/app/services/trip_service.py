@@ -132,6 +132,7 @@ class TripService:
             fare_config_id=fare_config.fare_config_id,
             fare_snapshot=fare_snapshot,
             surge_zone_id=fare_breakdown.surge_zone_id,
+            surge_multiplier=fare_breakdown.surge_multiplier,
             pickup_lat=pickup_lat,
             pickup_lng=pickup_lng,
             drop_lat=drop_lat,

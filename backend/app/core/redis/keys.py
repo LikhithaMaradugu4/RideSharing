@@ -32,6 +32,9 @@ DRIVER_AVAILABILITY_KEY = "driver:available:{driver_id}"  # Format: driver:avail
 RIDE_REQUEST_KEY = "ride:request:{ride_id}"  # Format: ride:request:12
 PENDING_RIDES_KEY = "rides:pending:{city_id}"  # Format: rides:pending:1
 
+# Surge Zone Keys
+SURGE_CITY_KEY = "surge:city:{city_id}"  # Format: surge:city:1
+
 # Rate Limiting Keys
 RATE_LIMIT_KEY = "ratelimit:{endpoint}:{user_id}"  # Format: ratelimit:/pricing/estimate:7
 
