@@ -128,5 +128,5 @@ npm run dev
 Likhitha Maradugu
 
 B.Tech CSE
-Curently Doing internship at a company called TechVedika
+Curently Doing internship at TechVedika
 Rajiv Gandhi University of Knowledge Technologies
