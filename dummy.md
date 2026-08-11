@@ -1,0 +1,1 @@
+write tool capability check
